@@ -2,14 +2,9 @@ import os
 from datetime import timedelta
 
 
-class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me-too")
-
-    JWT_TOKEN_LOCATION = ["headers"]
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
-        minutes=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_MINUTES", 15))
-    )
+class BaseConfig:
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret-key")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -19,6 +14,11 @@ class Config:
     MAIL_PORT = int(os.getenv("MAIL_PORT", 1025))
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "no-reply@cadri.local")
 
+    JWT_TOKEN_LOCATION = ["headers"]
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
+        minutes=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_MINUTES", 15))
+    )
+
     ACCOUNT_ACTIVATION_TOKEN_EXPIRES_HOURS = int(
         os.getenv("ACCOUNT_ACTIVATION_TOKEN_EXPIRES_HOURS", 24)
     )
@@ -27,7 +27,7 @@ class Config:
     )
 
 
-class DevelopmentConfig(Config):
+class DevelopmentConfig(BaseConfig):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",
@@ -35,7 +35,7 @@ class DevelopmentConfig(Config):
     )
 
 
-class TestingConfig(Config):
+class TestingConfig(BaseConfig):
     TESTING = True
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.getenv(
@@ -44,6 +44,19 @@ class TestingConfig(Config):
     )
 
 
-class ProductionConfig(Config):
+class ProductionConfig(BaseConfig):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+
+
+def get_config():
+    env = os.getenv("FLASK_ENV", "development")
+
+    config_map = {
+        "development": DevelopmentConfig,
+        "testing": TestingConfig,
+        "production": ProductionConfig,
+    }
+
+    return config_map.get(env, DevelopmentConfig)
+
