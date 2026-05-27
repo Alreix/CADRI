@@ -7,7 +7,13 @@ from sqlalchemy.sql import func
 from app.extensions import db
 
 class BaseModel(db.Model):
-    """Common base model shared by all database entities."""
+    """Shared persistence base for CADRI database entities.
+
+    This abstract model centralizes the columns and helpers that every
+    table-backed entity in the application can reuse: a UUID primary key,
+    creation and update timestamps, a convenience persistence method, and a
+    JSON-friendly serializer.
+    """
 
     __abstract__ = True
 
@@ -21,25 +27,38 @@ class BaseModel(db.Model):
     )
 
     def save(self) -> None:
-        """Persist the current instance in the active database session."""
+        """Persist the current instance in the active database session.
+
+        This keeps service and repository code focused on business rules instead
+        of repeating the same add/commit sequence for every model instance.
+        """
 
         db.session.add(self)
         db.session.commit()
 
     def update_timestamp(self) -> None:
-        """Refresh the in-memory update timestamp and persist the change."""
+        """Refresh the update timestamp and persist the new value immediately.
+
+        The in-memory value is updated explicitly so the object state stays in
+        sync with the timestamp that will be stored in the database.
+        """
 
         self.updated_at = datetime.now(timezone.utc)
         db.session.commit()
 
     def to_dict(self) -> dict:
-        """Serialize the model into JSON-friendly primitives."""
+        """Serialize the model into JSON-friendly primitives.
+
+        Datetime values are converted to ISO 8601 strings and UUID values are
+        stringified so API responses remain stable and easy to consume.
+        """
 
         result = {}
 
         for column in self.__table__.columns:
             value = getattr(self, column.name)
 
+            # Normalize non-JSON-native values before exposing them through APIs.
             if hasattr(value, "isoformat"):
                 result[column.name] = value.isoformat()
 
