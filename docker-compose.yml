@@ -1,0 +1,39 @@
+services:
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: cadri_backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./apps/backend/.env
+    volumes:
+      - ./apps/backend:/app
+    depends_on:
+      - db
+      - mailpit
+
+  db:
+    image: postgres:16
+    container_name: cadri_db
+    restart: always
+    environment:
+      POSTGRES_DB: cadri_db
+      POSTGRES_USER: cadri_user
+      POSTGRES_PASSWORD: cadri_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - cadri_postgres_data:/var/lib/postgresql/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: cadri_mailpit
+    restart: always
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  cadri_postgres_data:
