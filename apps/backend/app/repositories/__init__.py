@@ -1,3 +1,9 @@
+"""Repository exports for the CADRI backend.
+
+This package exposes the repository classes used by services and routes so
+callers can import them from a single place.
+"""
+
 from app.repositories.account_activation_token_repository import AccountActivationTokenRepository
 from app.repositories.password_reset_token_repository import PasswordResetTokenRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
