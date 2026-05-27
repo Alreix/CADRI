@@ -1,9 +1,20 @@
+"""Initial data seeds for CADRI.
+
+This module provides a small idempotent seeding mechanism used to populate
+essential reference data (roles and services) required by the application.
+Seeds are safe to run multiple times: existing records are detected and not
+duplicated. The human-friendly `label` fields include localized strings used
+directly by the UI mockups.
+"""
+
+from typing import Dict, List
+
 from app.extensions import db
 from app.models.role import Role
 from app.models.service import Service
 
 
-DEFAULT_ROLES = [
+DEFAULT_ROLES: List[Dict[str, str]] = [
     {
         "name": "admin",
         "label": "Admin",
@@ -21,7 +32,7 @@ DEFAULT_ROLES = [
     },
 ]
 
-DEFAULT_SERVICES = [
+DEFAULT_SERVICES: List[Dict[str, str]] = [
     {
         "name": "green_spaces",
         "label": "Espaces verts",
@@ -56,6 +67,13 @@ DEFAULT_SERVICES = [
 
 
 def seed_roles():
+    """Create default role records when they do not already exist.
+
+    This function is intentionally idempotent: it queries by the stable
+    `name` key to avoid creating duplicates when the seed runs multiple times
+    (for example in development or CI environments).
+    """
+
     for role_data in DEFAULT_ROLES:
         existing_role = Role.query.filter_by(name=role_data["name"]).first()
         if not existing_role:
@@ -64,6 +82,13 @@ def seed_roles():
 
 
 def seed_services():
+    """Create default service (department) records when missing.
+
+    Services map to municipal departments used in the CADRI UI and mission
+    scoping. Labels in this seed are localized French strings matching the
+    project's mockups.
+    """
+
     for service_data in DEFAULT_SERVICES:
         existing_service = Service.query.filter_by(name=service_data["name"]).first()
         if not existing_service:
@@ -72,6 +97,12 @@ def seed_services():
 
 
 def run_seed():
+    """Run all seed steps and commit the created records.
+
+    Keep the commit centralized so callers can control the transaction scope
+    if they prefer (for example wrapping the seeding in a larger migration).
+    """
+
     seed_roles()
     seed_services()
     db.session.commit()
