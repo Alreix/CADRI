@@ -10,6 +10,12 @@ from email.message import EmailMessage
 from flask import current_app
 
 class EmailService:
+    """Utilities for building and sending email notifications.
+
+    All methods are implemented as stateless helpers. Email content is kept
+    simple and plain-text; the frontend URL is read from configuration so the
+    same code works across environments.
+    """
     @staticmethod
     def build_activation_link(raw_token: str) -> str:
         """Build the frontend activation URL for a raw token."""
