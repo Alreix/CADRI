@@ -33,6 +33,15 @@ class PasswordResetTokenRepository:
             .order_by(PasswordResetToken.created_at.desc())
             .first()
         )
+    
+    @staticmethod
+    def invalidate_unused_tokens_for_user(user_id):
+        """Invalidate unused tokens for user."""
+        tokens = PasswordResetToken.query.filter_by(user_id=user_id).all()
+        for token in tokens:
+            if not token.is_used():
+                token.mark_as_used()
+        db.session.commit()
 
     @staticmethod
     def create(token):
