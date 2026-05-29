@@ -25,6 +25,14 @@ class BaseConfig:
     PASSWORD_RESET_TOKEN_EXPIRES_HOURS = int(
         os.getenv("PASSWORD_RESET_TOKEN_EXPIRES_HOURS", 2)
     )
+    REFRESH_TOKEN_EXPIRES_DAYS = int(
+        os.getenv("REFRESH_TOKEN_EXPIRES_DAYS", 7)
+    )
+
+    REFRESH_COOKIE_NAME = os.getenv("REFRESH_COOKIE_NAME", "refresh_token")
+    REFRESH_COOKIE_PATH = os.getenv("REFRESH_COOKIE_PATH", "/auth")
+    REFRESH_COOKIE_SECURE = os.getenv("REFRESH_COOKIE_SECURE", "false").lower() == "true"
+    REFRESH_COOKIE_SAMESITE = os.getenv("REFRESH_COOKIE_SAMESITE", "Lax")
 
 
 class DevelopmentConfig(BaseConfig):
@@ -59,4 +67,3 @@ def get_config():
     }
 
     return config_map.get(env, DevelopmentConfig)
-
