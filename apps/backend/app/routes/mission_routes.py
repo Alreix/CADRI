@@ -1,8 +1,13 @@
-from flask import Blueprint, jsonify
+"""Mission routes exposed through Flask-RESTX."""
 
-missions_bp = Blueprint("missions", __name__)
+from flask_restx import Namespace, Resource
 
 
-@missions_bp.get("/health")
-def missions_health():
-    return jsonify({"message": "Mission routes working"}), 200
+missions_ns = Namespace("missions", description="Mission operations")
+
+
+@missions_ns.route("/health")
+class MissionsHealthResource(Resource):
+    def get(self):
+        """Return the mission namespace health status."""
+        return {"message": "Mission routes working"}, 200
