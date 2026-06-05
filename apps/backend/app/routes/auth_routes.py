@@ -6,9 +6,10 @@ factory can register it through `Api.add_namespace(...)`.
 
 from __future__ import annotations
 
-from flask import current_app, jsonify, request
+from flask import current_app, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace, Resource, fields
+from werkzeug.http import dump_cookie
 
 from app.facades.auth_facade import AuthFacade
 from app.utils.exceptions import AppError, ValidationError
@@ -63,16 +64,16 @@ def get_json_payload():
 
 
 def build_json_response(body, status_code: int = 200):
-    """Return a JSON response tuple for RESTX resources."""
-    return jsonify(body), status_code
+    """Return a raw RESTX payload tuple."""
+    return body, status_code
 
 
-def set_refresh_cookie(response, raw_refresh_token: str | None):
-    """Attach the refresh token as an HTTP-only cookie."""
+def build_refresh_cookie_header(raw_refresh_token: str | None):
+    """Build the Set-Cookie header for the refresh token."""
     if not raw_refresh_token:
-        return
+        return None
 
-    response.set_cookie(
+    return dump_cookie(
         key=current_app.config["REFRESH_COOKIE_NAME"],
         value=raw_refresh_token,
         httponly=True,
@@ -82,9 +83,9 @@ def set_refresh_cookie(response, raw_refresh_token: str | None):
     )
 
 
-def clear_refresh_cookie(response):
-    """Clear the refresh token cookie."""
-    response.set_cookie(
+def build_clear_refresh_cookie_header():
+    """Build the Set-Cookie header that clears the refresh token."""
+    return dump_cookie(
         key=current_app.config["REFRESH_COOKIE_NAME"],
         value="",
         httponly=True,
@@ -116,9 +117,11 @@ class LoginResource(Resource):
             )
 
             raw_refresh_token = result.pop("refresh_token", None)
-            response = jsonify(result)
-            set_refresh_cookie(response, raw_refresh_token)
-            return response, 200
+            headers = {}
+            cookie_header = build_refresh_cookie_header(raw_refresh_token)
+            if cookie_header:
+                headers["Set-Cookie"] = cookie_header
+            return result, 200, headers
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -132,9 +135,7 @@ class LogoutResource(Resource):
             raw_refresh_token = request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"])
             result = AuthFacade.logout(raw_refresh_token)
 
-            response = jsonify(result)
-            clear_refresh_cookie(response)
-            return response, 200
+            return result, 200, {"Set-Cookie": build_clear_refresh_cookie_header()}
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -149,9 +150,11 @@ class RefreshSessionResource(Resource):
             result = AuthFacade.refresh_session(raw_refresh_token)
 
             new_raw_token = result.pop("refresh_token", None)
-            response = jsonify(result)
-            set_refresh_cookie(response, new_raw_token)
-            return response, 200
+            headers = {}
+            cookie_header = build_refresh_cookie_header(new_raw_token)
+            if cookie_header:
+                headers["Set-Cookie"] = cookie_header
+            return result, 200, headers
 
         except AppError as error:
             return error.to_dict(), error.status_code

@@ -1,6 +1,6 @@
 """User management routes exposed through Flask-RESTX."""
 
-from flask import jsonify, request
+from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace, Resource, fields
 
@@ -69,17 +69,15 @@ class UsersCollectionResource(Resource):
             users = UserFacade.list_users()
             items = [user.to_dict() for user in users]
 
-            return jsonify(
-                {
-                    "items": items,
-                    "pagination": {
-                        "page": 1,
-                        "per_page": len(items),
-                        "total_items": len(items),
-                        "total_pages": 1,
-                    },
-                }
-            ), 200
+            return {
+                "items": items,
+                "pagination": {
+                    "page": 1,
+                    "per_page": len(items),
+                    "total_items": len(items),
+                    "total_pages": 1,
+                },
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -101,12 +99,10 @@ class UsersCollectionResource(Resource):
                 service_id=payload.get("service_id"),
             )
 
-            return jsonify(
-                {
-                    "message": "User created successfully",
-                    "user": user.to_dict(),
-                }
-            ), 201
+            return {
+                "message": "User created successfully",
+                "user": user.to_dict(),
+            }, 201
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -119,7 +115,7 @@ class AssignableUsersResource(Resource):
         """Return the users that can be assigned to missions."""
         try:
             users = UserFacade.list_assignable_users()
-            return jsonify([user.to_dict() for user in users]), 200
+            return [user.to_dict() for user in users], 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -132,7 +128,7 @@ class UserItemResource(Resource):
         """Return details for a single user."""
         try:
             user = UserFacade.get_user_details(user_id)
-            return jsonify(user.to_dict(include_timestamps=True)), 200
+            return user.to_dict(include_timestamps=True), 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -155,12 +151,10 @@ class UserItemResource(Resource):
                 service_id=payload.get("service_id"),
             )
 
-            return jsonify(
-                {
-                    "message": "User updated successfully",
-                    "user": user.to_dict(),
-                }
-            ), 200
+            return {
+                "message": "User updated successfully",
+                "user": user.to_dict(),
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -172,7 +166,7 @@ class UserItemResource(Resource):
             current_user = get_current_user()
             result = UserFacade.delete_user(current_user, user_id)
 
-            return jsonify(result), 200
+            return result, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code

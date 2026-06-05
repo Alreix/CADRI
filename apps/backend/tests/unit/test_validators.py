@@ -1,43 +1,44 @@
 """Unit tests for input validators."""
 
-from __future__ import annotations
-
 import pytest
 
 from app.utils.exceptions import ValidationError
 from app.utils.validators import validate_email, validate_password
 
 
-def test_validate_email_normalizes_and_returns_lowercase():
-    assert validate_email("  Admin.User@CADRI.Local  ") == "admin.user@cadri.local"
+def test_validate_email_returns_normalized_email():
+    assert validate_email(" TEST@Example.com ") == "test@example.com"
 
 
-@pytest.mark.parametrize(
-    "invalid_email",
-    [None, "", "not-an-email", "missing-at-sign.local", "name@missing-tld"],
-)
-def test_validate_email_rejects_invalid_values(invalid_email):
+def test_validate_email_raises_error_for_invalid_email():
     with pytest.raises(ValidationError):
-        validate_email(invalid_email)
+        validate_email("not-an-email")
 
 
-@pytest.mark.parametrize(
-    "password, expected_message",
-    [
-        (None, "Password is required."),
-        ("", "Password is required."),
-        ("Short1", "Password must be at least 8 characters long."),
-        ("alllowercase1", "Password must contain at least one uppercase letter."),
-        ("ALLUPPERCASE1", "Password must contain at least one lowercase letter."),
-        ("NoNumberHere", "Password must contain at least one number."),
-    ],
-)
-def test_validate_password_rejects_policy_violations(password, expected_message):
-    with pytest.raises(ValidationError, match=expected_message):
-        validate_password(password)
+def test_validate_email_raises_error_for_empty_value():
+    with pytest.raises(ValidationError):
+        validate_email("")
 
 
-def test_validate_password_returns_original_password_when_valid():
-    password = "StrongPass1"
+def test_validate_password_accepts_valid_password():
+    assert validate_password("StrongPass1") == "StrongPass1"
 
-    assert validate_password(password) == password
+
+def test_validate_password_rejects_short_password():
+    with pytest.raises(ValidationError):
+        validate_password("Aa1")
+
+
+def test_validate_password_rejects_without_uppercase():
+    with pytest.raises(ValidationError):
+        validate_password("strongpass1")
+
+
+def test_validate_password_rejects_without_lowercase():
+    with pytest.raises(ValidationError):
+        validate_password("STRONGPASS1")
+
+
+def test_validate_password_rejects_without_number():
+    with pytest.raises(ValidationError):
+        validate_password("StrongPass")

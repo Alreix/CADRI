@@ -1,6 +1,6 @@
 """Routes for the current authenticated user's profile."""
 
-from flask import jsonify, request
+from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace, Resource, fields
 
@@ -48,7 +48,7 @@ class MeResource(Resource):
             if not user:
                 raise NotFoundError("User not found.")
 
-            return jsonify(user.to_dict()), 200
+            return user.to_dict(), 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -73,12 +73,10 @@ class MeResource(Resource):
                 email=payload.get("email"),
             )
 
-            return jsonify(
-                {
-                    "message": "Profile updated successfully",
-                    "user": updated_user.to_dict(),
-                }
-            ), 200
+            return {
+                "message": "Profile updated successfully",
+                "user": updated_user.to_dict(),
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code

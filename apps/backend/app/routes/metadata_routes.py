@@ -1,6 +1,5 @@
 """Metadata routes exposed through Flask-RESTX."""
 
-from flask import jsonify
 from flask_restx import Namespace, Resource
 
 from app.repositories.role_repository import RoleRepository
@@ -23,9 +22,7 @@ class RolesMetadataResource(Resource):
         """Return the list of metadata roles."""
         roles = RoleRepository.get_all()
 
-        return jsonify([
-            {"name": role.name, "label": role.label} for role in roles
-        ]), 200
+        return [{"name": role.name, "label": role.label} for role in roles], 200
 
 
 @metadata_ns.route("/services")
@@ -34,34 +31,30 @@ class ServicesMetadataResource(Resource):
         """Return the list of metadata services."""
         services = ServiceRepository.get_all()
 
-        return jsonify([
+        return [
             {"id": str(service.id), "name": service.name, "label": service.label}
             for service in services
-        ]), 200
+        ], 200
 
 
 @metadata_ns.route("/priorities")
 class PrioritiesMetadataResource(Resource):
     def get(self):
         """Return the supported priority values."""
-        return jsonify(
-            [
-                {"name": "low", "label": "Basse"},
-                {"name": "medium", "label": "Moyenne"},
-                {"name": "high", "label": "Haute"},
-            ]
-        ), 200
+        return [
+            {"name": "low", "label": "Basse"},
+            {"name": "medium", "label": "Moyenne"},
+            {"name": "high", "label": "Haute"},
+        ], 200
 
 
 @metadata_ns.route("/statuses")
 class StatusesMetadataResource(Resource):
     def get(self):
         """Return the supported mission statuses."""
-        return jsonify(
-            [
-                {"name": "to_do", "label": "À faire"},
-                {"name": "in_progress", "label": "En cours"},
-                {"name": "remark_pending_validation", "label": "En attente de validation"},
-                {"name": "completed", "label": "Terminée"},
-            ]
-        ), 200
+        return [
+            {"name": "to_do", "label": "À faire"},
+            {"name": "in_progress", "label": "En cours"},
+            {"name": "remark_pending_validation", "label": "En attente de validation"},
+            {"name": "completed", "label": "Terminée"},
+        ], 200

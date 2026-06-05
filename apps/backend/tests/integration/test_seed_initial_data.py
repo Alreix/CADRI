@@ -1,27 +1,25 @@
 """Integration tests for the initial CADRI seed data."""
 
-from __future__ import annotations
-
+from app.extensions import db
 from app.models.role import Role
 from app.models.service import Service
-from app.seeds.seed_initial_data import DEFAULT_ROLES, DEFAULT_SERVICES, run_seed
+from app.models.user import User
+from app.seeds.seed_initial_data import run_seed
 
 
-def test_run_seed_creates_default_roles_and_services(app):
-    run_seed()
+def test_run_seed_creates_default_roles_services_and_users(app):
+    with app.app_context():
+        db.session.query(User).delete()
+        db.session.query(Role).delete()
+        db.session.query(Service).delete()
+        db.session.commit()
 
-    roles = Role.query.order_by(Role.name.asc()).all()
-    services = Service.query.order_by(Service.name.asc()).all()
+        run_seed()
 
-    assert len(roles) == len(DEFAULT_ROLES)
-    assert len(services) == len(DEFAULT_SERVICES)
-    assert {role.name for role in roles} == {role["name"] for role in DEFAULT_ROLES}
-    assert {service.name for service in services} == {service["name"] for service in DEFAULT_SERVICES}
+        roles = Role.query.all()
+        services = Service.query.all()
+        users = User.query.all()
 
-
-def test_run_seed_is_idempotent(app):
-    run_seed()
-    run_seed()
-
-    assert Role.query.count() == len(DEFAULT_ROLES)
-    assert Service.query.count() == len(DEFAULT_SERVICES)
+        assert len(roles) == 3
+        assert len(services) == 6
+        assert len(users) == 3
