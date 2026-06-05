@@ -1,13 +1,10 @@
 """Initial data seeds for CADRI.
 
 This module provides a small idempotent seeding mechanism used to populate
-essential reference data (roles and services) required by the application.
-Seeds are safe to run multiple times: existing records are detected and not
-duplicated. The human-friendly `label` fields include localized strings used
-directly by the UI mockups.
+essential reference data (roles, services, and a few test users) required by
+the application. Seeds are safe to run multiple times: existing records are
+detected and not duplicated.
 """
-
-from typing import Dict, List
 
 from app.extensions import db
 from app.models.role import Role
@@ -15,7 +12,7 @@ from app.models.service import Service
 from app.models.user import User
 
 
-DEFAULT_ROLES: List[Dict[str, str]] = [
+DEFAULT_ROLES: list[dict[str, str]] = [
     {
         "name": "admin",
         "label": "Admin",
@@ -33,7 +30,7 @@ DEFAULT_ROLES: List[Dict[str, str]] = [
     },
 ]
 
-DEFAULT_SERVICES: List[Dict[str, str]] = [
+DEFAULT_SERVICES: list[dict[str, str]] = [
     {
         "name": "green_spaces",
         "label": "Espaces verts",
@@ -98,6 +95,7 @@ def seed_services():
 
 
 def seed_test_users():
+    """Create a small set of default users for development and local tests."""
     admin_role = Role.query.filter_by(name="admin").first()
     responsable_role = Role.query.filter_by(name="responsable").first()
     agent_role = Role.query.filter_by(name="agent").first()
@@ -145,6 +143,7 @@ def seed_test_users():
             )
             user.set_password(user_data["password"])
             db.session.add(user)
+
 
 def run_seed():
     """Run all seed steps and commit the created records."""
