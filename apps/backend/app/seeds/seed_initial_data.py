@@ -12,6 +12,7 @@ from typing import Dict, List
 from app.extensions import db
 from app.models.role import Role
 from app.models.service import Service
+from app.models.user import User
 
 
 DEFAULT_ROLES: List[Dict[str, str]] = [
@@ -96,14 +97,63 @@ def seed_services():
             db.session.add(service)
 
 
-def run_seed():
-    """Run all seed steps and commit the created records.
+def seed_test_users():
+    admin_role = Role.query.filter_by(name="admin").first()
+    responsable_role = Role.query.filter_by(name="responsable").first()
+    agent_role = Role.query.filter_by(name="agent").first()
 
-    Keep the commit centralized so callers can control the transaction scope
-    if they prefer (for example wrapping the seeding in a larger migration).
-    """
+    green_spaces = Service.query.filter_by(name="green_spaces").first()
+    roads = Service.query.filter_by(name="roads").first()
+
+    users_to_seed = [
+        {
+            "first_name": "Admin",
+            "last_name": "Cadri",
+            "email": "admin@cadri.local",
+            "role_id": admin_role.id,
+            "service_id": green_spaces.id,
+            "password": "StrongPass1",
+        },
+        {
+            "first_name": "Responsable",
+            "last_name": "Cadri",
+            "email": "responsable@cadri.local",
+            "role_id": responsable_role.id,
+            "service_id": green_spaces.id,
+            "password": "StrongPass1",
+        },
+        {
+            "first_name": "Agent",
+            "last_name": "Cadri",
+            "email": "agent@cadri.local",
+            "role_id": agent_role.id,
+            "service_id": roads.id,
+            "password": "StrongPass1",
+        },
+    ]
+
+    for user_data in users_to_seed:
+        existing_user = User.query.filter_by(email=user_data["email"]).first()
+        if not existing_user:
+            user = User(
+                first_name=user_data["first_name"],
+                last_name=user_data["last_name"],
+                email=user_data["email"],
+                role_id=user_data["role_id"],
+                service_id=user_data["service_id"],
+                is_active=True,
+            )
+            user.set_password(user_data["password"])
+            db.session.add(user)
+
+def run_seed():
+    """Run all seed steps and commit the created records."""
 
     seed_roles()
     seed_services()
     db.session.commit()
-    print("Initial roles and services seeded successfully.")
+
+    seed_test_users()
+    db.session.commit()
+
+    print("Initial roles, services, and test users seeded successfully.")
