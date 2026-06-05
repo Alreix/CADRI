@@ -1,11 +1,6 @@
-"""User management HTTP routes.
+"""User management routes exposed through Flask-RESTX."""
 
-Provides the RESTX `users_ns` for documentation and a runtime `users_bp`
-blueprint registered by the application. Routes delegate to `UserFacade` and
-`UserRepository` and raise domain `AppError`s translated to HTTP responses.
-"""
-
-from flask import Blueprint, jsonify, request
+from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace, Resource, fields
 
@@ -14,11 +9,7 @@ from app.repositories.user_repository import UserRepository
 from app.utils.exceptions import AppError, NotFoundError, ValidationError
 
 
-# RESTX namespace (for docs)
 users_ns = Namespace("users", description="User management operations")
-
-# Blueprint used at runtime by the app factory
-users_bp = Blueprint("users", __name__)
 
 create_user_model = users_ns.model(
     "CreateUserPayload",
@@ -52,6 +43,7 @@ def get_json_payload():
 
 
 def get_current_user():
+    """Return the authenticated user instance from JWT identity."""
     current_user_id = get_jwt_identity()
     current_user = UserRepository.get_by_id(current_user_id)
 
@@ -64,24 +56,17 @@ def get_current_user():
 @users_ns.route("/health")
 class UsersHealthResource(Resource):
     def get(self):
-        """Health-check for the `users` namespace."""
+        """Return the users namespace health status."""
         return {"message": "User routes working"}, 200
-
-
-@users_bp.get("/health")
-def users_health():
-    """Blueprint health endpoint for runtime tests."""
-    return {"message": "User routes working"}, 200
 
 
 @users_ns.route("")
 class UsersCollectionResource(Resource):
     @jwt_required()
     def get(self):
-        """List all users with simple pagination metadata."""
+        """List users with a simple pagination envelope."""
         try:
             users = UserFacade.list_users()
-
             items = [user.to_dict() for user in users]
 
             return jsonify(
@@ -102,7 +87,7 @@ class UsersCollectionResource(Resource):
     @jwt_required()
     @users_ns.expect(create_user_model, validate=True)
     def post(self):
-        """Create a new user using the provided payload."""
+        """Create a new user from the provided payload."""
         try:
             current_user = get_current_user()
             payload = get_json_payload()
@@ -131,7 +116,7 @@ class UsersCollectionResource(Resource):
 class AssignableUsersResource(Resource):
     @jwt_required()
     def get(self):
-        """Return list of users that can be assigned to missions."""
+        """Return the users that can be assigned to missions."""
         try:
             users = UserFacade.list_assignable_users()
             return jsonify([user.to_dict() for user in users]), 200
@@ -144,7 +129,7 @@ class AssignableUsersResource(Resource):
 class UserItemResource(Resource):
     @jwt_required()
     def get(self, user_id):
-        """Return details for a single user by id."""
+        """Return details for a single user."""
         try:
             user = UserFacade.get_user_details(user_id)
             return jsonify(user.to_dict(include_timestamps=True)), 200
@@ -155,7 +140,7 @@ class UserItemResource(Resource):
     @jwt_required()
     @users_ns.expect(update_user_model, validate=True)
     def patch(self, user_id):
-        """Update an existing user's fields."""
+        """Update an existing user."""
         try:
             current_user = get_current_user()
             payload = get_json_payload()
@@ -182,7 +167,7 @@ class UserItemResource(Resource):
 
     @jwt_required()
     def delete(self, user_id):
-        """Delete a user by id (if permitted)."""
+        """Delete a user if the caller has permission."""
         try:
             current_user = get_current_user()
             result = UserFacade.delete_user(current_user, user_id)

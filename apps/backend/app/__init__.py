@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_restx import Api
 
 from app.config import get_config
 from app.extensions import bcrypt, cors, db, jwt, migrate
@@ -29,14 +30,16 @@ def configure_extensions(app):
 
 
 def configure_routes(app):
-    from app.routes.auth_routes import auth_bp
-    from app.routes.me_routes import me_bp
-    from app.routes.metadata_routes import metadata_bp
-    from app.routes.mission_routes import missions_bp
-    from app.routes.user_routes import users_bp
+    api = Api(app, title="CADRI API", version="1.0", doc="/docs")
 
-    app.register_blueprint(auth_bp, url_prefix="/auth")
-    app.register_blueprint(me_bp, url_prefix="/me")
-    app.register_blueprint(users_bp, url_prefix="/users")
-    app.register_blueprint(missions_bp, url_prefix="/missions")
-    app.register_blueprint(metadata_bp, url_prefix="/metadata")
+    from app.routes.auth_routes import auth_ns
+    from app.routes.me_routes import me_ns
+    from app.routes.metadata_routes import metadata_ns
+    from app.routes.mission_routes import missions_ns
+    from app.routes.user_routes import users_ns
+
+    api.add_namespace(auth_ns, path="/auth")
+    api.add_namespace(me_ns, path="/me")
+    api.add_namespace(users_ns, path="/users")
+    api.add_namespace(metadata_ns, path="/metadata")
+    api.add_namespace(missions_ns, path="/missions")

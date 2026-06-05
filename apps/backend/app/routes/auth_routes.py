@@ -1,33 +1,21 @@
-"""Authentication HTTP routes (blueprint) for the CADRI backend.
+"""Authentication routes exposed through Flask-RESTX.
 
-This module exposes a Flask `Blueprint` (`auth_bp`) with the auth-related
-endpoints used by the application. Each route delegates business logic to the
-`AuthFacade` and translates exceptions into HTTP responses.
-
-The file also defines `auth_ns` and payload models so API documentation tools
-can reuse the same models if the `Namespace` is registered in documentation
-builders. The actual app factory registers `auth_bp` (see `app.__init__`).
+This module keeps the auth API entirely on a RESTX namespace so the app
+factory can register it through `Api.add_namespace(...)`.
 """
 
 from __future__ import annotations
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_restx import Namespace, fields
+from flask_restx import Namespace, Resource, fields
 
 from app.facades.auth_facade import AuthFacade
 from app.utils.exceptions import AppError, ValidationError
 
 
-# RESTX namespace (useful for generating docs). We keep models here but the
-# application registers the function-based `auth_bp` blueprint for runtime.
 auth_ns = Namespace("auth", description="Authentication operations")
 
-# Blueprint consumed by the app factory in `app.__init__.py`.
-auth_bp = Blueprint("auth", __name__)
-
-
-# --- Models used for request validation and API docs ---
 login_model = auth_ns.model(
     "LoginPayload",
     {
@@ -66,16 +54,8 @@ change_password_model = auth_ns.model(
 )
 
 
-# --- Helpers ---
 def get_json_payload():
-    """Parse and validate the incoming JSON payload.
-
-    Raises:
-        ValidationError: when the request body is missing or not a JSON object.
-
-    Returns:
-        dict: parsed JSON body
-    """
+    """Parse and validate the incoming JSON payload."""
     payload = request.get_json(silent=True)
     if not payload or not isinstance(payload, dict):
         raise ValidationError("JSON body is required.")
@@ -83,19 +63,12 @@ def get_json_payload():
 
 
 def build_json_response(body, status_code: int = 200):
-    """Return a Flask-compatible JSON response tuple.
-
-    Returns the pair accepted by Flask view returns: `(Response, status_code)`.
-    """
+    """Return a JSON response tuple for RESTX resources."""
     return jsonify(body), status_code
 
 
 def set_refresh_cookie(response, raw_refresh_token: str | None):
-    """Set the refresh token as a secure HTTP-only cookie on the response.
-
-    If `raw_refresh_token` is falsy nothing is set. Cookie attributes are
-    read from application config so tests and environments control security.
-    """
+    """Attach the refresh token as an HTTP-only cookie."""
     if not raw_refresh_token:
         return
 
@@ -110,7 +83,7 @@ def set_refresh_cookie(response, raw_refresh_token: str | None):
 
 
 def clear_refresh_cookie(response):
-    """Clear the refresh cookie by setting an empty value and immediate expiry."""
+    """Clear the refresh token cookie."""
     response.set_cookie(
         key=current_app.config["REFRESH_COOKIE_NAME"],
         value="",
@@ -122,127 +95,133 @@ def clear_refresh_cookie(response):
     )
 
 
-# --- Blueprint routes ---
-@auth_bp.get("/health")
-def auth_health():
-    """Health-check for the auth blueprint.
-
-    A lightweight endpoint used by tests to assert the blueprint is registered.
-    """
-    return {"message": "Auth routes working"}, 200
+@auth_ns.route("/health")
+class AuthHealthResource(Resource):
+    def get(self):
+        """Return a lightweight auth health response."""
+        return {"message": "Auth routes working"}, 200
 
 
-@auth_bp.post("/login")
-def login():
-    """Authenticate a user and set a refresh cookie.
+@auth_ns.route("/login")
+class LoginResource(Resource):
+    @auth_ns.expect(login_model, validate=True)
+    def post(self):
+        """Authenticate a user and set the refresh cookie."""
+        try:
+            payload = get_json_payload()
 
-    Expected JSON: {"email": str, "password": str}
-    """
-    try:
-        payload = get_json_payload()
+            result = AuthFacade.login(
+                email=payload.get("email"),
+                password=payload.get("password"),
+            )
 
-        result = AuthFacade.login(email=payload.get("email"), password=payload.get("password"))
+            raw_refresh_token = result.pop("refresh_token", None)
+            response = jsonify(result)
+            set_refresh_cookie(response, raw_refresh_token)
+            return response, 200
 
-        raw_refresh_token = result.pop("refresh_token", None)
-        response = jsonify(result)
-        set_refresh_cookie(response, raw_refresh_token)
-        return response, 200
-
-    except AppError as error:
-        return error.to_dict(), error.status_code
-
-
-@auth_bp.post("/logout")
-def logout():
-    """Revoke the user's refresh token and clear the cookie."""
-    try:
-        raw_refresh_token = request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"]) 
-        result = AuthFacade.logout(raw_refresh_token)
-
-        response = jsonify(result)
-        clear_refresh_cookie(response)
-        return response, 200
-
-    except AppError as error:
-        return error.to_dict(), error.status_code
+        except AppError as error:
+            return error.to_dict(), error.status_code
 
 
-@auth_bp.post("/refresh")
-def refresh_session():
-    """Rotate the refresh token and return a new access token payload."""
-    try:
-        raw_refresh_token = request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"]) 
-        result = AuthFacade.refresh_session(raw_refresh_token)
+@auth_ns.route("/logout")
+class LogoutResource(Resource):
+    def post(self):
+        """Revoke the refresh token and clear the cookie."""
+        try:
+            raw_refresh_token = request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"])
+            result = AuthFacade.logout(raw_refresh_token)
 
-        new_raw = result.pop("refresh_token", None)
-        response = jsonify(result)
-        set_refresh_cookie(response, new_raw)
-        return response, 200
+            response = jsonify(result)
+            clear_refresh_cookie(response)
+            return response, 200
 
-    except AppError as error:
-        return error.to_dict(), error.status_code
-
-
-@auth_bp.post("/activate-account")
-def activate_account():
-    """Activate a new account using an activation token and set a password.
-
-    Expected JSON: {"token": str, "password": str}
-    """
-    try:
-        payload = get_json_payload()
-        result = AuthFacade.activate_account(raw_token=payload.get("token"), password=payload.get("password"))
-        return build_json_response(result, 200)
-
-    except AppError as error:
-        return error.to_dict(), error.status_code
+        except AppError as error:
+            return error.to_dict(), error.status_code
 
 
-@auth_bp.post("/forgot-password")
-def forgot_password():
-    """Request a password reset: create a token and send the email."""
-    try:
-        payload = get_json_payload()
-        result = AuthFacade.request_password_reset(email=payload.get("email"))
-        return build_json_response(result, 200)
+@auth_ns.route("/refresh")
+class RefreshSessionResource(Resource):
+    def post(self):
+        """Rotate the refresh token and return a new session payload."""
+        try:
+            raw_refresh_token = request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"])
+            result = AuthFacade.refresh_session(raw_refresh_token)
 
-    except AppError as error:
-        return error.to_dict(), error.status_code
+            new_raw_token = result.pop("refresh_token", None)
+            response = jsonify(result)
+            set_refresh_cookie(response, new_raw_token)
+            return response, 200
 
-
-@auth_bp.post("/reset-password")
-def reset_password():
-    """Reset a user's password using a reset token.
-
-    Expected JSON: {"token": str, "password": str}
-    """
-    try:
-        payload = get_json_payload()
-        result = AuthFacade.reset_password(raw_token=payload.get("token"), password=payload.get("password"))
-        return build_json_response(result, 200)
-
-    except AppError as error:
-        return error.to_dict(), error.status_code
+        except AppError as error:
+            return error.to_dict(), error.status_code
 
 
-@auth_bp.patch("/change-password")
-@jwt_required()
-def change_password():
-    """Change the authenticated user's password.
+@auth_ns.route("/activate-account")
+class ActivateAccountResource(Resource):
+    @auth_ns.expect(activate_account_model, validate=True)
+    def post(self):
+        """Activate a new account from a token and password."""
+        try:
+            payload = get_json_payload()
+            result = AuthFacade.activate_account(
+                raw_token=payload.get("token"),
+                password=payload.get("password"),
+            )
+            return build_json_response(result, 200)
 
-    Expected JSON: {"current_password": str, "new_password": str}
-    """
-    try:
-        payload = get_json_payload()
-        user_id = get_jwt_identity()
+        except AppError as error:
+            return error.to_dict(), error.status_code
 
-        result = AuthFacade.change_password(
-            user_id=user_id,
-            current_password=payload.get("current_password"),
-            new_password=payload.get("new_password"),
-        )
 
-        return build_json_response(result, 200)
+@auth_ns.route("/forgot-password")
+class ForgotPasswordResource(Resource):
+    @auth_ns.expect(forgot_password_model, validate=True)
+    def post(self):
+        """Start the password reset flow for the given email."""
+        try:
+            payload = get_json_payload()
+            result = AuthFacade.request_password_reset(email=payload.get("email"))
+            return build_json_response(result, 200)
 
-    except AppError as error:
-        return error.to_dict(), error.status_code
+        except AppError as error:
+            return error.to_dict(), error.status_code
+
+
+@auth_ns.route("/reset-password")
+class ResetPasswordResource(Resource):
+    @auth_ns.expect(reset_password_model, validate=True)
+    def post(self):
+        """Reset a password using a reset token."""
+        try:
+            payload = get_json_payload()
+            result = AuthFacade.reset_password(
+                raw_token=payload.get("token"),
+                password=payload.get("password"),
+            )
+            return build_json_response(result, 200)
+
+        except AppError as error:
+            return error.to_dict(), error.status_code
+
+
+@auth_ns.route("/change-password")
+class ChangePasswordResource(Resource):
+    @jwt_required()
+    @auth_ns.expect(change_password_model, validate=True)
+    def patch(self):
+        """Change the authenticated user's password."""
+        try:
+            payload = get_json_payload()
+            user_id = get_jwt_identity()
+
+            result = AuthFacade.change_password(
+                user_id=user_id,
+                current_password=payload.get("current_password"),
+                new_password=payload.get("new_password"),
+            )
+
+            return build_json_response(result, 200)
+
+        except AppError as error:
+            return error.to_dict(), error.status_code
