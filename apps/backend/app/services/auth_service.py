@@ -224,6 +224,7 @@ class AuthService:
 
     @staticmethod
     def change_password(user_id, current_password, new_password):
+        """Change the current user's password and revoke active refresh tokens."""
         validate_password(new_password)
 
         user = UserRepository.get_by_id(user_id)
@@ -238,8 +239,10 @@ class AuthService:
 
         user.set_password(new_password)
         UserRepository.update()
+        RefreshTokenRepository.revoke_all_for_user(user.id)
 
         return {"message": "Password changed successfully"}
+
 
     @staticmethod
     def send_activation_email_for_user(user):

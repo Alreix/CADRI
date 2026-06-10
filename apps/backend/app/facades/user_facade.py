@@ -13,7 +13,6 @@ class UserFacade:
     @staticmethod
     def create_user(current_user, first_name, last_name, email, role_name, service_id):
         """Create a user with the requested role and service assignment."""
-
         return UserService.create_user(
             current_user=current_user,
             first_name=first_name,
@@ -24,21 +23,33 @@ class UserFacade:
         )
 
     @staticmethod
-    def list_users():
-        """Return the full user list."""
-
-        return UserService.list_users()
+    def list_users(
+        current_user,
+        *,
+        search: str | None = None,
+        role_name: str | None = None,
+        service_id: str | None = None,
+        page: int = 1,
+        per_page: int = 10,
+    ):
+        """Return the filtered user list with pagination."""
+        return UserService.list_users(
+            current_user=current_user,
+            search=search,
+            role_name=role_name,
+            service_id=service_id,
+            page=page,
+            per_page=per_page,
+        )
 
     @staticmethod
     def get_user_details(user_id):
         """Return a single user's details."""
-
         return UserService.get_user_details(user_id)
 
     @staticmethod
     def update_user(current_user, user_id, first_name, last_name, email, role_name, service_id):
         """Update an existing user record."""
-
         return UserService.update_user(
             current_user=current_user,
             user_id=user_id,
@@ -52,24 +63,20 @@ class UserFacade:
     @staticmethod
     def delete_user(current_user, user_id):
         """Delete a user record."""
-
         return UserService.delete_user(current_user, user_id)
 
     @staticmethod
     def list_assignable_users():
         """Return users that can be assigned to missions."""
-
         return UserService.list_assignable_users()
 
     @staticmethod
     def update_own_profile(current_user, first_name, last_name, email):
         """Update the currently authenticated user's profile."""
-
         return UserService.update_own_profile(
             current_user=current_user,
             first_name=first_name,
             last_name=last_name,
             email=email,
         )
-
     
