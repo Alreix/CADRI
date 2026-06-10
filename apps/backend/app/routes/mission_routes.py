@@ -113,6 +113,16 @@ class MissionCollectionResource(Resource):
             page = int(request.args.get("page", 1))
             per_page = int(request.args.get("per_page", 10))
 
+            start_date_raw = request.args.get("start_date")
+            end_date_raw = request.args.get("end_date")
+
+            start_date = (
+                datetime.fromisoformat(start_date_raw) if start_date_raw else None
+            )
+            end_date = (
+                datetime.fromisoformat(end_date_raw) if end_date_raw else None
+            )
+
             missions, total_items = MissionFacade.list_missions(
                 current_user=current_user,
                 search=request.args.get("search"),
@@ -120,6 +130,8 @@ class MissionCollectionResource(Resource):
                 priority=request.args.get("priority"),
                 service_id=request.args.get("service_id"),
                 my_missions_only=request.args.get("my_missions_only") == "true",
+                start_date=start_date,
+                end_date=end_date,
                 page=page,
                 per_page=per_page,
             )
