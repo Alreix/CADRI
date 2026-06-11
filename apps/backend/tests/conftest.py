@@ -1,5 +1,3 @@
-"""Shared pytest fixtures for CADRI backend tests."""
-
 import os
 
 import pytest
@@ -26,6 +24,12 @@ def app():
     application.config["SQLALCHEMY_EXPIRE_ON_COMMIT"] = False
 
     with application.app_context():
+        database_uri = application.config["SQLALCHEMY_DATABASE_URI"]
+        if "test" not in database_uri and "cadri_test_db" not in database_uri:
+            raise RuntimeError(
+                "Tests must run against the test database, not the development DB."
+            )
+
         db.drop_all()
         db.create_all()
         yield application
@@ -40,12 +44,6 @@ def client(app):
 
 @pytest.fixture(autouse=True)
 def clean_db(app):
-    """Clean database tables before each test.
-
-    Mission-related tables must be deleted before users, roles and services
-    because they depend on them through foreign keys.
-    """
-
     with app.app_context():
         db.session.query(MissionAssignment).delete()
         db.session.query(MissionServiceLink).delete()
@@ -75,12 +73,12 @@ def roles_services(app):
         green_spaces = Service(
             name="green_spaces",
             label="Espaces verts",
-            description="Green spaces",
+            description="Green spaces service",
         )
         roads = Service(
             name="roads",
             label="Voirie",
-            description="Roads",
+            description="Roads service",
         )
 
         db.session.add_all(
@@ -104,37 +102,32 @@ def roles_services(app):
 
 @pytest.fixture()
 def user_factory(app, roles_services):
-    """Create a persisted User model for tests."""
-
     def _create_user(
+        *,
+        email="user@cadri.test",
         first_name="Test",
         last_name="User",
-        email="test.user@cadri.test",
         role=None,
-        role_name=None,
+        role_id=None,
         service=None,
-        service_name="green_spaces",
+        service_id=None,
         is_active=True,
         password="StrongPass1",
     ):
-        selected_role = role
-        if selected_role is None and role_name:
-            selected_role = roles_services[f"{role_name}_role"]
-        if selected_role is None:
-            selected_role = roles_services["agent_role"]
-
-        selected_service = service
-        if selected_service is None:
-            selected_service = roles_services[service_name]
+        selected_role_id = role_id or (role.id if role else roles_services["agent_role_id"])
+        selected_service_id = service_id or (
+            service.id if service else roles_services["green_spaces_id"]
+        )
 
         user = User(
             first_name=first_name,
             last_name=last_name,
             email=email,
-            role_id=selected_role.id,
-            service_id=selected_service.id,
+            role_id=selected_role_id,
+            service_id=selected_service_id,
             is_active=is_active,
         )
+
         if password:
             user.set_password(password)
 
@@ -146,50 +139,54 @@ def user_factory(app, roles_services):
 
 
 @pytest.fixture()
-def admin_user(user_factory):
+def admin_user(user_factory, roles_services):
     return user_factory(
+        email="admin@cadri.local",
         first_name="Admin",
         last_name="Cadri",
-        email="admin@cadri.local",
-        role_name="admin",
-        service_name="green_spaces",
+        role_id=roles_services["admin_role_id"],
+        service_id=roles_services["green_spaces_id"],
         is_active=True,
+        password="StrongPass1",
     )
 
 
 @pytest.fixture()
-def responsable_user(user_factory):
+def responsable_user(user_factory, roles_services):
     return user_factory(
+        email="responsable@cadri.local",
         first_name="Responsable",
         last_name="Cadri",
-        email="responsable@cadri.local",
-        role_name="responsable",
-        service_name="green_spaces",
+        role_id=roles_services["responsable_role_id"],
+        service_id=roles_services["green_spaces_id"],
         is_active=True,
+        password="StrongPass1",
     )
 
 
 @pytest.fixture()
-def agent_user(user_factory):
+def agent_user(user_factory, roles_services):
     return user_factory(
+        email="agent@cadri.local",
         first_name="Agent",
         last_name="Cadri",
-        email="agent@cadri.local",
-        role_name="agent",
-        service_name="roads",
+        role_id=roles_services["agent_role_id"],
+        service_id=roles_services["roads_id"],
         is_active=True,
+        password="StrongPass1",
     )
 
 
 @pytest.fixture()
-def inactive_user(user_factory):
+def inactive_user(user_factory, roles_services):
     return user_factory(
+        email="inactive@cadri.local",
         first_name="Inactive",
         last_name="Cadri",
-        email="inactive@cadri.local",
-        role_name="agent",
-        service_name="roads",
+        role_id=roles_services["agent_role_id"],
+        service_id=roles_services["roads_id"],
         is_active=False,
+        password="StrongPass1",
     )
 
 

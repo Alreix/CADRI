@@ -40,4 +40,3 @@ def test_mission_complete_sets_status_and_completed_at(admin_user):
 
     assert mission.status == MISSION_STATUS_COMPLETED
     assert mission.completed_at is not None
-
