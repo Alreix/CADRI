@@ -96,7 +96,9 @@ def test_admin_create_user_rejects_unknown_role_and_service(
             "service_id": str(roles_services["green_spaces"].id),
         },
     )
-    assert unknown_role_response.status_code == 404
+
+    assert unknown_role_response.status_code == 403
+    assert unknown_role_response.get_json()["error"] == "Target role is not allowed."
 
     unknown_service_response = client.post(
         "/users",
@@ -109,7 +111,9 @@ def test_admin_create_user_rejects_unknown_role_and_service(
             "service_id": str(uuid.uuid4()),
         },
     )
+
     assert unknown_service_response.status_code == 404
+    assert unknown_service_response.get_json()["error"] == "Service not found."
 
 
 def test_agent_cannot_create_user(client, agent_token, roles_services):
