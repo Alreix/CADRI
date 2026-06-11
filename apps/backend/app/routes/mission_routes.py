@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from flask import jsonify, request
+from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace, Resource, fields
 
@@ -149,17 +149,15 @@ class MissionCollectionResource(Resource):
 
             total_pages = (total_items + per_page - 1) // per_page
 
-            return jsonify(
-                {
-                    "items": [mission.to_dict() for mission in missions],
-                    "pagination": {
-                        "page": page,
-                        "per_page": per_page,
-                        "total_items": total_items,
-                        "total_pages": total_pages,
-                    },
-                }
-            ), 200
+            return {
+                "items": [mission.to_dict() for mission in missions],
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total_items": total_items,
+                    "total_pages": total_pages,
+                },
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -174,12 +172,10 @@ class MissionCollectionResource(Resource):
 
             mission = MissionFacade.create_mission(current_user, payload)
 
-            return jsonify(
-                {
-                    "message": "Mission created successfully",
-                    "mission": mission.to_dict(include_relations=True),
-                }
-            ), 201
+            return {
+                "message": "Mission created successfully",
+                "mission": mission.to_dict(include_relations=True),
+                }, 201
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -194,7 +190,7 @@ class MissionItemResource(Resource):
         """Return mission details."""
         try:
             mission = MissionFacade.get_mission_details(mission_id)
-            return jsonify(mission.to_dict(include_relations=True)), 200
+            return mission.to_dict(include_relations=True), 200
         except AppError as error:
             return error.to_dict(), error.status_code
 
@@ -208,12 +204,10 @@ class MissionItemResource(Resource):
 
             mission = MissionFacade.update_mission(current_user, mission_id, payload)
 
-            return jsonify(
-                {
-                    "message": "Mission updated successfully",
-                    "mission": mission.to_dict(include_relations=True),
-                }
-            ), 200
+            return {
+                "message": "Mission updated successfully",
+                "mission": mission.to_dict(include_relations=True),
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -224,7 +218,7 @@ class MissionItemResource(Resource):
         try:
             current_user = get_current_user()
             MissionFacade.delete_mission(current_user, mission_id)
-            return jsonify({"message": "Mission deleted successfully"}), 200
+            return {"message": "Mission deleted successfully"}, 200
         except AppError as error:
             return error.to_dict(), error.status_code
 
@@ -247,12 +241,10 @@ class MissionStatusResource(Resource):
                 payload["status"],
             )
 
-            return jsonify(
-                {
-                    "message": "Mission status updated successfully",
-                    "mission": mission.to_dict(),
-                }
-            ), 200
+            return {
+                "message": "Mission status updated successfully",
+                "mission": mission.to_dict(),
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -276,12 +268,10 @@ class MissionActualDurationResource(Resource):
                 payload["actual_duration"],
             )
 
-            return jsonify(
-                {
-                    "message": "Actual duration updated successfully",
-                    "mission": mission.to_dict(),
-                }
-            ), 200
+            return {
+                "message": "Actual duration updated successfully",
+                "mission": mission.to_dict(),
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -305,12 +295,10 @@ class MissionRemarkResource(Resource):
                 payload["remark"],
             )
 
-            return jsonify(
-                {
-                    "message": "Remark added successfully",
-                    "mission": mission.to_dict(),
-                }
-            ), 200
+            return {
+                "message": "Remark added successfully",
+                "mission": mission.to_dict(),
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -327,12 +315,10 @@ class MissionValidateResource(Resource):
             current_user = get_current_user()
             mission = MissionFacade.validate_mission(current_user, mission_id)
 
-            return jsonify(
-                {
-                    "message": "Mission validated successfully",
-                    "mission": mission.to_dict(),
-                }
-            ), 200
+            return {
+                "message": "Mission validated successfully",
+                "mission": mission.to_dict(),
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -349,14 +335,12 @@ class MissionCompleteResource(Resource):
             current_user = get_current_user()
             mission = MissionFacade.complete_mission(current_user, mission_id)
 
-            return jsonify(
-                {
-                    "message": "Mission completed successfully",
-                    "completed_at": mission.completed_at.isoformat()
-                    if mission.completed_at
-                    else None,
-                }
-            ), 200
+            return {
+                "message": "Mission completed successfully",
+                "completed_at": mission.completed_at.isoformat()
+                if mission.completed_at
+                else None,
+            }, 200
 
         except AppError as error:
             return error.to_dict(), error.status_code
