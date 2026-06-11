@@ -1,4 +1,4 @@
-"""Unit tests for input validators."""
+"""Unit tests for validation helpers."""
 
 import pytest
 
@@ -6,39 +6,22 @@ from app.utils.exceptions import ValidationError
 from app.utils.validators import validate_email, validate_password
 
 
-def test_validate_email_returns_normalized_email():
-    assert validate_email(" TEST@Example.com ") == "test@example.com"
+def test_validate_email_normalizes_email():
+    assert validate_email("  USER@Example.COM  ") == "user@example.com"
 
 
-def test_validate_email_raises_error_for_invalid_email():
+@pytest.mark.parametrize("email", ["", "invalid", "missing-at.example.com"])
+def test_validate_email_rejects_invalid_values(email):
     with pytest.raises(ValidationError):
-        validate_email("not-an-email")
+        validate_email(email)
 
 
-def test_validate_email_raises_error_for_empty_value():
+@pytest.mark.parametrize("password", ["StrongPass1", "AnotherPass2"])
+def test_validate_password_accepts_valid_passwords(password):
+    assert validate_password(password) == password
+
+
+@pytest.mark.parametrize("password", ["short", "lowercase1", "NOLOWERCASE1", "NoNumber"])
+def test_validate_password_rejects_weak_passwords(password):
     with pytest.raises(ValidationError):
-        validate_email("")
-
-
-def test_validate_password_accepts_valid_password():
-    assert validate_password("StrongPass1") == "StrongPass1"
-
-
-def test_validate_password_rejects_short_password():
-    with pytest.raises(ValidationError):
-        validate_password("Aa1")
-
-
-def test_validate_password_rejects_without_uppercase():
-    with pytest.raises(ValidationError):
-        validate_password("strongpass1")
-
-
-def test_validate_password_rejects_without_lowercase():
-    with pytest.raises(ValidationError):
-        validate_password("STRONGPASS1")
-
-
-def test_validate_password_rejects_without_number():
-    with pytest.raises(ValidationError):
-        validate_password("StrongPass")
+        validate_password(password)
