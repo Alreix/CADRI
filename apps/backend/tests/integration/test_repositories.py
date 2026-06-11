@@ -16,7 +16,7 @@ def test_service_repository_get_by_name(roles_services):
     service = ServiceRepository.get_by_name("green_spaces")
 
     assert service is not None
-    assert service.label == "Green spaces"
+    assert service.label == "Espaces verts"
 
 
 def test_user_repository_list_filtered_by_search(admin_user, agent_user):

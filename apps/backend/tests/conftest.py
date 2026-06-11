@@ -1,5 +1,4 @@
 import os
-from types import SimpleNamespace
 
 import pytest
 from flask_jwt_extended import create_access_token
@@ -74,12 +73,12 @@ def roles_services(app):
         green_spaces = Service(
             name="green_spaces",
             label="Espaces verts",
-            description="Green spaces",
+            description="Green spaces service",
         )
         roads = Service(
             name="roads",
             label="Voirie",
-            description="Roads",
+            description="Roads service",
         )
 
         db.session.add_all(
@@ -88,6 +87,11 @@ def roles_services(app):
         db.session.commit()
 
         return {
+            "admin_role": admin_role,
+            "responsable_role": responsable_role,
+            "agent_role": agent_role,
+            "green_spaces": green_spaces,
+            "roads": roads,
             "admin_role_id": admin_role.id,
             "responsable_role_id": responsable_role.id,
             "agent_role_id": agent_role.id,
@@ -97,102 +101,93 @@ def roles_services(app):
 
 
 @pytest.fixture()
-def admin_user(app, roles_services):
-    with app.app_context():
-        user = User(
-            first_name="Admin",
-            last_name="Cadri",
-            email="admin@cadri.local",
-            role_id=roles_services["admin_role_id"],
-            service_id=roles_services["green_spaces_id"],
-            is_active=True,
+def user_factory(app, roles_services):
+    def _create_user(
+        *,
+        email="user@cadri.test",
+        first_name="Test",
+        last_name="User",
+        role=None,
+        role_id=None,
+        service=None,
+        service_id=None,
+        is_active=True,
+        password="StrongPass1",
+    ):
+        selected_role_id = role_id or (role.id if role else roles_services["agent_role_id"])
+        selected_service_id = service_id or (
+            service.id if service else roles_services["green_spaces_id"]
         )
-        user.set_password("StrongPass1")
+
+        user = User(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            role_id=selected_role_id,
+            service_id=selected_service_id,
+            is_active=is_active,
+        )
+
+        if password:
+            user.set_password(password)
+
         db.session.add(user)
         db.session.commit()
-        return SimpleNamespace(
-            id=user.id,
-            email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            role_id=user.role_id,
-            service_id=user.service_id,
-            is_active=user.is_active,
-        )
+        return user
+
+    return _create_user
 
 
 @pytest.fixture()
-def responsable_user(app, roles_services):
-    with app.app_context():
-        user = User(
-            first_name="Responsable",
-            last_name="Cadri",
-            email="responsable@cadri.local",
-            role_id=roles_services["responsable_role_id"],
-            service_id=roles_services["green_spaces_id"],
-            is_active=True,
-        )
-        user.set_password("StrongPass1")
-        db.session.add(user)
-        db.session.commit()
-        return SimpleNamespace(
-            id=user.id,
-            email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            role_id=user.role_id,
-            service_id=user.service_id,
-            is_active=user.is_active,
-        )
+def admin_user(user_factory, roles_services):
+    return user_factory(
+        email="admin@cadri.local",
+        first_name="Admin",
+        last_name="Cadri",
+        role_id=roles_services["admin_role_id"],
+        service_id=roles_services["green_spaces_id"],
+        is_active=True,
+        password="StrongPass1",
+    )
 
 
 @pytest.fixture()
-def agent_user(app, roles_services):
-    with app.app_context():
-        user = User(
-            first_name="Agent",
-            last_name="Cadri",
-            email="agent@cadri.local",
-            role_id=roles_services["agent_role_id"],
-            service_id=roles_services["roads_id"],
-            is_active=True,
-        )
-        user.set_password("StrongPass1")
-        db.session.add(user)
-        db.session.commit()
-        return SimpleNamespace(
-            id=user.id,
-            email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            role_id=user.role_id,
-            service_id=user.service_id,
-            is_active=user.is_active,
-        )
+def responsable_user(user_factory, roles_services):
+    return user_factory(
+        email="responsable@cadri.local",
+        first_name="Responsable",
+        last_name="Cadri",
+        role_id=roles_services["responsable_role_id"],
+        service_id=roles_services["green_spaces_id"],
+        is_active=True,
+        password="StrongPass1",
+    )
 
 
 @pytest.fixture()
-def inactive_user(app, roles_services):
-    with app.app_context():
-        user = User(
-            first_name="Inactive",
-            last_name="Cadri",
-            email="inactive@cadri.local",
-            role_id=roles_services["agent_role_id"],
-            service_id=roles_services["roads_id"],
-            is_active=False,
-        )
-        db.session.add(user)
-        db.session.commit()
-        return SimpleNamespace(
-            id=user.id,
-            email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            role_id=user.role_id,
-            service_id=user.service_id,
-            is_active=user.is_active,
-        )
+def agent_user(user_factory, roles_services):
+    return user_factory(
+        email="agent@cadri.local",
+        first_name="Agent",
+        last_name="Cadri",
+        role_id=roles_services["agent_role_id"],
+        service_id=roles_services["roads_id"],
+        is_active=True,
+        password="StrongPass1",
+    )
+
+
+@pytest.fixture()
+def inactive_user(user_factory, roles_services):
+    return user_factory(
+        email="inactive@cadri.local",
+        first_name="Inactive",
+        last_name="Cadri",
+        role_id=roles_services["agent_role_id"],
+        service_id=roles_services["roads_id"],
+        is_active=False,
+        password="StrongPass1",
+    )
 
 
 @pytest.fixture()
@@ -211,3 +206,18 @@ def responsable_access_token(app, responsable_user):
 def agent_access_token(app, agent_user):
     with app.app_context():
         return create_access_token(identity=str(agent_user.id))
+
+
+@pytest.fixture()
+def admin_token(admin_access_token):
+    return admin_access_token
+
+
+@pytest.fixture()
+def responsable_token(responsable_access_token):
+    return responsable_access_token
+
+
+@pytest.fixture()
+def agent_token(agent_access_token):
+    return agent_access_token
