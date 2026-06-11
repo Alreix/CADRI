@@ -36,6 +36,23 @@ class MissionService:
     def _require_agent_or_manager(current_user) -> None:
         if current_user.role.name not in (AGENT_ROLE, RESPONSABLE_ROLE, ADMIN_ROLE):
             raise AuthorizationError("You are not allowed to access this mission action.")
+        
+    @staticmethod
+    def _is_user_assigned_to_mission(current_user, mission: Mission) -> bool:
+        """Return whether the current user is assigned to the mission."""
+        return any(
+            str(assignment.user_id) == str(current_user.id)
+            for assignment in mission.assignments
+        )
+
+    @staticmethod
+    def _require_agent_assignment_if_agent(current_user, mission: Mission) -> None:
+        """Ensure agents can act only on missions assigned to them."""
+        if current_user.role.name == AGENT_ROLE and not MissionService._is_user_assigned_to_mission(
+            current_user,
+            mission,
+        ):
+            raise AuthorizationError("Agent can only act on assigned missions.")
 
     @staticmethod
     def _validate_dates(start_date, end_date) -> None:
@@ -118,10 +135,8 @@ class MissionService:
             priority=filters.get("priority"),
             service_id=filters.get("service_id"),
             assigned_to_user_id=assigned_to_user_id,
+            has_remark=filters.get("has_remark"),
             start_date=filters.get("start_date"),
-            end_date=filters.get("end_date"),
-            page=filters.get("page", 1),
-            per_page=filters.get("per_page", 10),
         )
 
     @staticmethod
@@ -181,6 +196,7 @@ class MissionService:
         """Update mission status according to business rules."""
         MissionService._require_agent_or_manager(current_user)
         mission = MissionService.get_mission_details(mission_id)
+        MissionService._require_agent_assignment_if_agent(current_user, mission)
 
         if new_status == MISSION_STATUS_IN_PROGRESS:
             if current_user.role.name != AGENT_ROLE:
@@ -197,6 +213,7 @@ class MissionService:
         """Update the actual duration."""
         MissionService._require_agent_or_manager(current_user)
         mission = MissionService.get_mission_details(mission_id)
+        MissionService._require_agent_assignment_if_agent(current_user, mission)
 
         if actual_duration <= 0:
             raise ValidationError("Actual duration must be greater than zero.")
@@ -212,6 +229,7 @@ class MissionService:
             raise AuthorizationError("Only an agent can add a remark.")
 
         mission = MissionService.get_mission_details(mission_id)
+        MissionService._require_agent_assignment_if_agent(current_user, mission)
 
         if mission.remark:
             raise ConflictError("A remark already exists for this mission.")
@@ -237,7 +255,7 @@ class MissionService:
             raise ValidationError("Actual duration is required before validation.")
 
         mission.validate_mission(current_user.id)
-        mission.update_status(MISSION_STATUS_IN_PROGRESS)
+        mission.complete_mission()
         MissionRepository.update()
         return mission
 
@@ -246,6 +264,7 @@ class MissionService:
         """Complete a mission if business conditions are met."""
         MissionService._require_agent_or_manager(current_user)
         mission = MissionService.get_mission_details(mission_id)
+        MissionService._require_agent_assignment_if_agent(current_user, mission)
 
         if mission.actual_duration is None:
             raise ValidationError("Actual duration is required before completion.")

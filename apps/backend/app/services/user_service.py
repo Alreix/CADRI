@@ -95,6 +95,12 @@ class UserService:
         """Ensure only admins can list all users."""
         if current_user.role.name != ADMIN_ROLE:
             raise AuthorizationError("Only admin can list users.")
+        
+    @staticmethod
+    def _check_assignable_users_permissions(current_user):
+        """Ensure only admins and responsables can list assignable users."""
+        if current_user.role.name not in (ADMIN_ROLE, RESPONSABLE_ROLE):
+            raise AuthorizationError("Only admin or responsable can list assignable users.")
 
     @staticmethod
     def create_user(current_user, first_name, last_name, email, role_name, service_id):
@@ -229,8 +235,9 @@ class UserService:
         return {"message": "User deleted successfully"}
 
     @staticmethod
-    def list_assignable_users():
+    def list_assignable_users(current_user):
         """Return active users that can be assigned to missions."""
+        UserService._check_assignable_users_permissions(current_user)
         users = UserRepository.get_all()
 
         assignable_users = [

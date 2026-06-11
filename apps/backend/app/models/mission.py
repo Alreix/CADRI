@@ -45,8 +45,8 @@ class Mission(BaseModel):
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     created_by = db.Column(
-        db.ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=True,
+        db.ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
     )
 
     creator = db.relationship("User", foreign_keys=[created_by], lazy=True)

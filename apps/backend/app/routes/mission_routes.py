@@ -123,6 +123,16 @@ class MissionCollectionResource(Resource):
                 datetime.fromisoformat(end_date_raw) if end_date_raw else None
             )
 
+            has_remark_raw = request.args.get("has_remark")
+            has_remark = None
+
+            if has_remark_raw == "true":
+                has_remark = True
+            elif has_remark_raw == "false":
+                has_remark = False
+            elif has_remark_raw is not None:
+                raise ValidationError("has_remark must be true or false.")
+
             missions, total_items = MissionFacade.list_missions(
                 current_user=current_user,
                 search=request.args.get("search"),
@@ -130,6 +140,7 @@ class MissionCollectionResource(Resource):
                 priority=request.args.get("priority"),
                 service_id=request.args.get("service_id"),
                 my_missions_only=request.args.get("my_missions_only") == "true",
+                has_remark=has_remark,
                 start_date=start_date,
                 end_date=end_date,
                 page=page,

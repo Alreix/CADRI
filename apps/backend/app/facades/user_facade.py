@@ -66,9 +66,9 @@ class UserFacade:
         return UserService.delete_user(current_user, user_id)
 
     @staticmethod
-    def list_assignable_users():
+    def list_assignable_users(current_user):
         """Return users that can be assigned to missions."""
-        return UserService.list_assignable_users()
+        return UserService.list_assignable_users(current_user)
 
     @staticmethod
     def update_own_profile(current_user, first_name, last_name, email):
