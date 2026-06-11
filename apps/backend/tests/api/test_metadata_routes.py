@@ -1,67 +1,42 @@
-"""API tests for the current metadata routes.
+"""API tests for metadata routes."""
 
-Only the registered health endpoint exists at the moment, so the test keeps to
-that real behavior instead of fabricating missing metadata resources.
-"""
-
-from flask_restx import Namespace, Resource
-
-from app.repositories.role_repository import RoleRepository
-from app.repositories.service_repository import ServiceRepository
-
-metadata_ns = Namespace("metadata", description="Metadata operations")
+from tests.helpers.auth_helpers import auth_headers
 
 
-@metadata_ns.route("/health")
-class MetadataHealthResource(Resource):
-    def get(self):
-        return {"message": "Metadata routes working"}, 200
+def test_metadata_health_is_public(client):
+    response = client.get("/metadata/health")
+
+    assert response.status_code == 200
+    assert response.get_json()["message"] == "Metadata routes working"
 
 
-@metadata_ns.route("/roles")
-class RolesMetadataResource(Resource):
-    def get(self):
-        roles = RoleRepository.get_all()
-        return [
-            {
-                "name": role.name,
-                "label": role.label,
-            }
-            for role in roles
-        ], 200
+def test_roles_requires_authentication(client):
+    response = client.get("/metadata/roles")
+
+    assert response.status_code == 401
 
 
-@metadata_ns.route("/services")
-class ServicesMetadataResource(Resource):
-    def get(self):
-        services = ServiceRepository.get_all()
-        return [
-            {
-                "id": str(service.id),
-                "name": service.name,
-                "label": service.label,
-            }
-            for service in services
-        ], 200
+def test_roles_returns_controlled_roles(client, admin_token, roles_services):
+    response = client.get("/metadata/roles", headers=auth_headers(admin_token))
+
+    assert response.status_code == 200
+    role_names = {role["name"] for role in response.get_json()}
+    assert {"admin", "responsable", "agent"}.issubset(role_names)
 
 
-@metadata_ns.route("/priorities")
-class PrioritiesMetadataResource(Resource):
-    def get(self):
-        return [
-            {"name": "low", "label": "Basse"},
-            {"name": "medium", "label": "Moyenne"},
-            {"name": "high", "label": "Haute"},
-        ], 200
+def test_services_returns_controlled_services(client, admin_token, roles_services):
+    response = client.get("/metadata/services", headers=auth_headers(admin_token))
+
+    assert response.status_code == 200
+    service_names = {service["name"] for service in response.get_json()}
+    assert {"green_spaces", "roads"}.issubset(service_names)
 
 
-@metadata_ns.route("/statuses")
-class StatusesMetadataResource(Resource):
-    def get(self):
-        return [
-            {"name": "to_do", "label": "À faire"},
-            {"name": "in_progress", "label": "En cours"},
-            {"name": "remark_pending_validation", "label": "En attente de validation"},
-            {"name": "completed", "label": "Terminée"},
-        ], 200
+def test_priorities_and_statuses_are_available(client, admin_token, roles_services):
+    priorities_response = client.get("/metadata/priorities", headers=auth_headers(admin_token))
+    statuses_response = client.get("/metadata/statuses", headers=auth_headers(admin_token))
 
+    assert priorities_response.status_code == 200
+    assert statuses_response.status_code == 200
+    assert "high" in {priority["name"] for priority in priorities_response.get_json()}
+    assert "completed" in {status["name"] for status in statuses_response.get_json()}
