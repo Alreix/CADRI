@@ -9,6 +9,10 @@ class MissionServiceLink(BaseModel):
 
     __tablename__ = "mission_service_links"
 
+    __table_args__ = (
+        db.UniqueConstraint("mission_id", "service_id", name="uq_mission_service_link"),
+    )
+
     mission_id = db.Column(
         db.ForeignKey("missions.id", ondelete="CASCADE"),
         nullable=False,

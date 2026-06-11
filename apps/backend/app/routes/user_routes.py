@@ -132,7 +132,8 @@ class AssignableUsersResource(Resource):
     def get(self):
         """Return active assignable users."""
         try:
-            users = UserFacade.list_assignable_users()
+            current_user = get_current_user()
+            users = UserFacade.list_assignable_users(current_user)
             return jsonify([user.to_dict() for user in users]), 200
 
         except AppError as error:

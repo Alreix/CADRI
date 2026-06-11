@@ -40,6 +40,7 @@ class MissionRepository:
         priority: str | None = None,
         service_id: str | None = None,
         assigned_to_user_id: str | None = None,
+        has_remark: bool | None = None,
         start_date=None,
         end_date=None,
         page: int = 1,
@@ -75,6 +76,11 @@ class MissionRepository:
 
         if assigned_to_user_id:
             query = query.join(Mission.assignments).filter_by(user_id=assigned_to_user_id)
+
+        if has_remark is True:
+            query = query.filter(Mission.remark.isnot(None), Mission.remark != "")
+        elif has_remark is False:
+            query = query.filter(or_(Mission.remark.is_(None), Mission.remark == ""))
 
         total_items = query.distinct().count()
 
