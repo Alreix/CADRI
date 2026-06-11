@@ -14,7 +14,7 @@ def test_user_password_hashing(admin_user):
 def test_user_to_dict_contains_role_and_service(admin_user):
     data = admin_user.to_dict(include_timestamps=True)
 
-    assert data["email"] == "admin@cadri.test"
+    assert data["email"] == admin_user.email
     assert data["role"]["name"] == "admin"
     assert data["service"]["name"] == "green_spaces"
     assert "created_at" in data
@@ -40,3 +40,4 @@ def test_mission_complete_sets_status_and_completed_at(admin_user):
 
     assert mission.status == MISSION_STATUS_COMPLETED
     assert mission.completed_at is not None
+
