@@ -137,6 +137,8 @@ class MissionService:
             assigned_to_user_id=assigned_to_user_id,
             has_remark=filters.get("has_remark"),
             start_date=filters.get("start_date"),
+            page=filters.get("page", 1),
+            per_page=filters.get("per_page", 10),
         )
 
     @staticmethod
