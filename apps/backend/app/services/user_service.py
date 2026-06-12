@@ -6,6 +6,10 @@ and producing lists of assignable users. Business rules are enforced here
 while persistence is delegated to repositories.
 """
 
+from app.extensions import db
+from app.models.account_activation_token import AccountActivationToken
+from app.models.password_reset_token import PasswordResetToken
+from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.repositories.role_repository import RoleRepository
 from app.repositories.service_repository import ServiceRepository
@@ -224,14 +228,20 @@ class UserService:
 
     @staticmethod
     def delete_user(current_user, user_id):
-        """Delete a user directly."""
+        """Delete a user and related authentication tokens directly."""
         UserService._check_user_delete_permissions(current_user)
 
         user = UserRepository.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found.")
 
-        UserRepository.delete(user)
+        AccountActivationToken.query.filter_by(user_id=user.id).delete()
+        PasswordResetToken.query.filter_by(user_id=user.id).delete()
+        RefreshToken.query.filter_by(user_id=user.id).delete()
+
+        db.session.delete(user)
+        db.session.commit()
+
         return {"message": "User deleted successfully"}
 
     @staticmethod
