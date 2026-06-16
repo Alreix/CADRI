@@ -3,8 +3,16 @@ import { getPriorities, getStatuses } from "../../api/metadataApi";
 
 
 function MissionFilters({ filters, onChange }) {
-  const [statuses, setStatuses] = useState(["À faire", "En cours", "Terminée"]);
-  const [priorities, setPriorities] = useState(["Urgente", "Haute", "Moyenne", "Basse"]);
+  const [statuses, setStatuses] = useState([
+    { value: "to_do", label: "À faire" },
+    { value: "in_progress", label: "En cours" },
+    { value: "completed", label: "Terminée" },
+  ]);
+  const [priorities, setPriorities] = useState([
+    { value: "high", label: "Urgente" },
+    { value: "medium", label: "Moyenne" },
+    { value: "low", label: "Basse" },
+  ]);
 
   useEffect(() => {
     getStatuses()
@@ -36,13 +44,13 @@ function MissionFilters({ filters, onChange }) {
           <span className="filter-label">Statut</span>
           <div className="filter-checkboxes">
             {statuses.map((status) => (
-              <label key={status} className="filter-checkbox-item">
+              <label key={status.value} className="filter-checkbox-item">
                 <input
                   type="checkbox"
-                  checked={filters.statuses.includes(status)}
-                  onChange={() => handleStatus(status)}
+                  checked={filters.statuses.includes(status.value)}
+                  onChange={() => handleStatus(status.value)}
                 />
-                {status}
+                {status.label}
               </label>
             ))}
           </div>
@@ -68,7 +76,7 @@ function MissionFilters({ filters, onChange }) {
           >
             <option value="">Toutes</option>
             {priorities.map((priority) => (
-              <option key={priority} value={priority}>{priority}</option>
+              <option key={priority.value} value={priority.value}>{priority.label}</option>
             ))}
           </select>
         </div>

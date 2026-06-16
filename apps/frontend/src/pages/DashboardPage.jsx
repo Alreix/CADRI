@@ -27,8 +27,8 @@ function DashboardPage({ user }) {
     getMissions().then((data) => {
       setMissions(data);
       setStats({
-        inProgressCount: data.filter((mission) => mission.status === "En cours").length,
-        urgentCount: data.filter((mission) => mission.priority === "Urgente").length,
+        inProgressCount: data.filter((mission) => mission.status === "in_progress").length,
+        urgentCount: data.filter((mission) => mission.priority === "high").length,
       });
     });
   }, []);
@@ -41,7 +41,7 @@ function DashboardPage({ user }) {
   const filtered = missions.filter((mission) => {
     if (search && !mission.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (filters.statuses.length && !filters.statuses.includes(mission.status)) return false;
-    if (filters.myMissions && mission.agentId !== user?.id) return false;
+    if (filters.myMissions && !mission.assignedUsers?.includes(user?.id)) return false;
     if (filters.priority && mission.priority !== filters.priority) return false;
     if (filters.startDate && mission.startDate < filters.startDate) return false;
     if (filters.endDate && mission.endDate > filters.endDate) return false;

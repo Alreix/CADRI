@@ -34,7 +34,7 @@ function ForgotPasswordPage() {
             Un lien de réinitialisation a été envoyé à <strong>{email}</strong>.
             Vérifiez votre boîte de réception.
           </p>
-          <Link to="/connexion" className="auth-back-link">
+          <Link to="/login" className="auth-back-link">
             Retour à la connexion
           </Link>
         </div>
@@ -81,7 +81,7 @@ function ForgotPasswordPage() {
           </button>
         </form>
 
-        <Link to="/connexion" className="auth-back-link">
+        <Link to="/login" className="auth-back-link">
           Retour à la connexion
         </Link>
       </div>

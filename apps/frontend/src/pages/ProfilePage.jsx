@@ -3,6 +3,7 @@ import { User, Info } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import { AuthContext } from "../contexts/AuthContext";
 import { getProfile, updateProfile } from "../api/profileApi";
+import { changePassword } from "../api/authApi";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import "../styles/ProfilePage.css";
 
@@ -38,6 +39,7 @@ function ProfilePage() {
     firstName: "",
     lastName: "",
     email: "",
+    currentPassword: "",
     password: "",
     confirmPassword: "",
   });
@@ -49,6 +51,7 @@ function ProfilePage() {
         firstName: data.firstName || "",
         lastName: data.lastName || "",
         email: data.email || "",
+        currentPassword: "",
         password: "",
         confirmPassword: "",
       });
@@ -57,8 +60,19 @@ function ProfilePage() {
 
   const handleSave = async (event) => {
     event.preventDefault();
-    await updateProfile(form);
-    setProfile((prevProfile) => ({ ...prevProfile, ...form }));
+    if (form.password || form.confirmPassword || form.currentPassword) {
+      if (form.password !== form.confirmPassword) {
+        window.alert("Les mots de passe ne correspondent pas.");
+        return;
+      }
+      await changePassword({
+        currentPassword: form.currentPassword,
+        newPassword: form.password,
+      });
+    }
+
+    const updatedProfile = await updateProfile(form);
+    setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
     setEditing(false);
   };
 
@@ -67,6 +81,7 @@ function ProfilePage() {
       firstName: profile.firstName || "",
       lastName: profile.lastName || "",
       email: profile.email || "",
+      currentPassword: "",
       password: "",
       confirmPassword: "",
     });
@@ -147,6 +162,21 @@ function ProfilePage() {
               <p className="profile-section-title">Informations personnelles</p>
 
               <div className="profile-form-grid">
+                <div className="profile-field profile-form-grid--full">
+                  <label className="profile-field-label" htmlFor="currentPassword">
+                    Mot de passe actuel
+                  </label>
+                  <input
+                    id="currentPassword"
+                    type="password"
+                    className="profile-field-input"
+                    placeholder="Obligatoire pour changer le mot de passe"
+                    value={form.currentPassword}
+                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, currentPassword: event.target.value }))}
+                    autoComplete="current-password"
+                  />
+                </div>
+
                 <div className="profile-field">
                   <label className="profile-field-label">Rôle</label>
                   <input className="profile-field-input" value={profile.role} readOnly />

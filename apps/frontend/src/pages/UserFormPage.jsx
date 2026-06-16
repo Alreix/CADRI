@@ -69,7 +69,7 @@ function UserFormPage({ mode = "create" }) {
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setRoleOptionsSource(
-            data.map((role) => ({ value: role, label: role.charAt(0).toUpperCase() + role.slice(1) }))
+            data.map((role) => ({ value: role.value, label: role.label }))
           );
         }
       })
@@ -79,7 +79,7 @@ function UserFormPage({ mode = "create" }) {
       getUser(id).then((data) => {
         setForm({
           role: data.role || "",
-          service: data.service || "",
+          service: data.serviceId || "",
           firstName: data.firstName || "",
           lastName: data.lastName || "",
           email: data.email || "",
@@ -111,6 +111,9 @@ function UserFormPage({ mode = "create" }) {
   const roleOptions = isAdmin
     ? roleOptionsSource
     : roleOptionsSource.filter((role) => role.value !== "admin");
+  const selectedServiceLabel = (
+    serviceOptions.find((service) => service.id === form.service)?.label || form.service
+  );
 
   const titles = {
     create: isManager ? "Créer un nouvel agent" : "Créer un nouvel utilisateur",
@@ -180,7 +183,7 @@ function UserFormPage({ mode = "create" }) {
                   <input
                     id="service"
                     className="profile-field-input"
-                    value={form.service}
+                    value={selectedServiceLabel}
                     readOnly
                   />
                 ) : (
@@ -193,7 +196,7 @@ function UserFormPage({ mode = "create" }) {
                   >
                     <option value="" />
                     {serviceOptions.map((service) => (
-                      <option key={service} value={service}>{service}</option>
+                      <option key={service.id} value={service.id}>{service.label}</option>
                     ))}
                   </select>
                 )}

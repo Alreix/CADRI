@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
-import { activateAccount, getActivationInfo } from "../api/authApi";
+import { activateAccount } from "../api/authApi";
 import "../styles/AuthLayout.css";
 
 function WelcomeModal({ onClose }) {
@@ -36,18 +36,10 @@ function ActivateAccountPage() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
 
-  const [info, setInfo] = useState({ role: "", service: "", firstName: "", lastName: "" });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!token) return;
-    getActivationInfo(token)
-      .then((data) => setInfo(data))
-      .catch(() => {});
-  }, [token]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -56,10 +48,10 @@ function ActivateAccountPage() {
       return;
     }
     setLoading(true);
-    setError(null);
+      setError(null);
     try {
       await activateAccount({ token, password });
-      navigate("/connexion");
+      navigate("/login");
     } catch (err) {
       setError(err.message || "Une erreur s'est produite.");
     } finally {
@@ -79,54 +71,6 @@ function ActivateAccountPage() {
         <h1 className="auth-card-title">Activer votre compte</h1>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="role">Rôle</label>
-            <input
-              id="role"
-              type="text"
-              className="auth-input"
-              value={info.role}
-              readOnly
-              placeholder="Agent"
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="service">Service</label>
-            <input
-              id="service"
-              type="text"
-              className="auth-input"
-              value={info.service}
-              readOnly
-              placeholder="Public Works"
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="firstName">Prénom</label>
-            <input
-              id="firstName"
-              type="text"
-              className="auth-input"
-              value={info.firstName}
-              readOnly
-              placeholder="Jean"
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="lastName">Nom</label>
-            <input
-              id="lastName"
-              type="text"
-              className="auth-input"
-              value={info.lastName}
-              readOnly
-              placeholder="Dupont"
-            />
-          </div>
-
           <div className="auth-field">
             <label className="auth-label" htmlFor="password">
               Mot de passe<span className="auth-label-required">*</span>

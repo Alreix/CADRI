@@ -4,7 +4,7 @@ import Layout from "../components/layout/Layout";
 import { AuthContext } from "../contexts/AuthContext";
 import { getServices } from "../api/metadataApi";
 import { getMission, createMission, updateMission, deleteMission } from "../api/missionsApi";
-import { getUsers } from "../api/usersApi";
+import { getAssignableUsers } from "../api/usersApi";
 import "../styles/MissionFormPage.css";
 
 function DeleteConfirmModal({ onConfirm, onCancel }) {
@@ -31,7 +31,7 @@ function MissionFormPage({ mode = "create" }) {
   const navigate = useNavigate();
   const { user: currentUser } = useContext(AuthContext);
 
-  const isManager = currentUser?.role === "manager" || currentUser?.role === "admin";
+  const isManager = currentUser?.role === "responsable" || currentUser?.role === "admin";
 
   const [form, setForm] = useState({
     title: "",
@@ -44,7 +44,7 @@ function MissionFormPage({ mode = "create" }) {
     location: "",
     equipment: "",
     signageRequired: false,
-    priority: "Normal",
+    priority: "medium",
     assignedUsers: [],
   });
 
@@ -63,7 +63,7 @@ function MissionFormPage({ mode = "create" }) {
   useEffect(() => {
     Promise.all([
       getServices().then(setServiceOptions),
-      getUsers().then(setUsers),
+      getAssignableUsers().then(setUsers),
     ]).then(() => {
       if (isEdit && id) {
         getMission(id)
@@ -71,7 +71,7 @@ function MissionFormPage({ mode = "create" }) {
             setForm({
               title: mission.title || "",
               description: mission.description || "",
-              service: mission.service || "",
+              service: mission.serviceIds?.[0] || "",
               startDate: mission.startDate || "",
               endDate: mission.endDate || "",
               estimatedDuration: mission.estimatedDuration || "",
@@ -79,7 +79,7 @@ function MissionFormPage({ mode = "create" }) {
               location: mission.location || "",
               equipment: mission.equipment || "",
               signageRequired: mission.signageRequired || false,
-              priority: mission.priority || "Normal",
+              priority: mission.priority || "medium",
               assignedUsers: mission.assignedUsers || [],
             });
           })
@@ -181,8 +181,8 @@ function MissionFormPage({ mode = "create" }) {
             >
               <option value="">-- Sélectionner --</option>
               {serviceOptions.map((service) => (
-                <option key={service} value={service}>
-                  {service}
+                <option key={service.id} value={service.id}>
+                  {service.label}
                 </option>
               ))}
             </select>
@@ -309,8 +309,9 @@ function MissionFormPage({ mode = "create" }) {
               value={form.priority}
               onChange={handleChange}
             >
-              <option value="Normal">Normal</option>
-              <option value="Urgente">Urgente</option>
+              <option value="low">Basse</option>
+              <option value="medium">Moyenne</option>
+              <option value="high">Urgente</option>
             </select>
           </div>
 

@@ -12,7 +12,6 @@ function ResetPasswordPage() {
 
   const token = searchParams.get("token") || "";
 
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [modal, setModal] = useState(null);
@@ -27,8 +26,8 @@ function ResetPasswordPage() {
     }
     setLoading(true);
     try {
-      await resetPassword({ token, email, password });
-      navigate("/connexion");
+      await resetPassword({ token, password });
+      navigate("/login");
     } catch (err) {
       setModal({ title: "Erreur", message: err.message || "Une erreur s'est produite." });
     } finally {
@@ -54,22 +53,6 @@ function ResetPasswordPage() {
         <h1 className="auth-card-title">Réinitialiser le mot de passe</h1>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="email">
-              Email<span className="auth-label-required">*</span>
-            </label>
-            <input
-              id="email"
-              type="email"
-              className="auth-input"
-              placeholder="votre.email@exemple.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              autoComplete="email"
-            />
-          </div>
-
           <div className="auth-field">
             <label className="auth-label" htmlFor="password">
               Nouveau mot de passe<span className="auth-label-required">*</span>
@@ -119,7 +102,7 @@ function ResetPasswordPage() {
           </button>
         </form>
 
-        <Link to="/connexion" className="auth-back-link">
+        <Link to="/login" className="auth-back-link">
           Retour à la connexion
         </Link>
       </div>

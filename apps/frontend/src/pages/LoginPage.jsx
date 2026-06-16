@@ -78,7 +78,7 @@ function LoginPage() {
             />
           </div>
 
-          <Link to="/mot-de-passe-oublie" className="auth-forgot-link">
+          <Link to="/forgot-password" className="auth-forgot-link">
             Mot de passe oublié ?
           </Link>
 

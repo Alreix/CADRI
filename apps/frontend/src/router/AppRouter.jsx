@@ -16,16 +16,19 @@ import ErrorPage from "../pages/ErrorPage";
 
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage />, errorElement: <ErrorPage /> },
+  { path: "/connexion", element: <LoginPage />, errorElement: <ErrorPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage />, errorElement: <ErrorPage /> },
+  { path: "/mot-de-passe-oublie", element: <ForgotPasswordPage />, errorElement: <ErrorPage /> },
   { path: "/reset-password", element: <ResetPasswordPage />, errorElement: <ErrorPage /> },
   { path: "/activate", element: <ActivateAccountPage />, errorElement: <ErrorPage /> },
 
   { path: "/", element: <ProtectedRoute><DashboardPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  { path: "/missions", element: <ProtectedRoute><DashboardPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
   { path: "/profile", element: <ProtectedRoute><ProfilePage /></ProtectedRoute>, errorElement: <ErrorPage /> },
 
   { path: "/missions/new", element: <ProtectedRoute requiredRole="responsable"><MissionFormPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
   { path: "/missions/:id", element: <ProtectedRoute><MissionDetailPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
-  { path: "/missions/:id/edit", element: <ProtectedRoute requiredRole="responsable"><MissionFormPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  { path: "/missions/:id/edit", element: <ProtectedRoute requiredRole="responsable"><MissionFormPage mode="edit" /></ProtectedRoute>, errorElement: <ErrorPage /> },
 
   { path: "/users", element: <ProtectedRoute requiredRole="admin"><UserManagementPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
   { path: "/users/new", element: <ProtectedRoute requiredRole="responsable"><UserFormPage mode="create" /></ProtectedRoute>, errorElement: <ErrorPage /> },

@@ -26,7 +26,11 @@ function MissionDetailPage() {
     setValidating(true);
     try {
       await validateMission(id);
-      setMission((missionState) => ({ ...missionState, status: "Terminée" }));
+      setMission((missionState) => ({
+        ...missionState,
+        status: "completed",
+        statusLabel: "Terminée",
+      }));
     } finally {
       setValidating(false);
     }
@@ -35,7 +39,7 @@ function MissionDetailPage() {
   if (loading) return null;
   if (!mission) return null;
 
-  const priorityIsUrgent = mission.priority === "Urgente";
+  const priorityIsUrgent = mission.priority === "high";
 
   return (
     <Layout>
@@ -52,7 +56,7 @@ function MissionDetailPage() {
               <span className="mission-badge mission-badge--urgente">Urgente</span>
             )}
             {mission.status && (
-              <span className="mission-badge mission-badge--status">{mission.status}</span>
+              <span className="mission-badge mission-badge--status">{mission.statusLabel}</span>
             )}
           </div>
 
@@ -61,7 +65,9 @@ function MissionDetailPage() {
               <span className="mission-detail-label">Service</span>
               <div className="mission-service-tags">
                 {(mission.services || []).map((service) => (
-                  <span key={service} className="mission-service-tag">{service}</span>
+                  <span key={service.id ?? service.name} className="mission-service-tag">
+                    {service.label ?? service.name}
+                  </span>
                 ))}
               </div>
             </div>
