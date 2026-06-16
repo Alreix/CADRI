@@ -1,0 +1,74 @@
+.error-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 48px 40px 40px;
+  width: 100%;
+  max-width: 460px;
+  text-align: center;
+}
+
+.error-code {
+  display: block;
+  font-size: 5rem;
+  font-weight: 800;
+  color: #1a56db;
+  line-height: 1;
+  margin-bottom: 12px;
+  letter-spacing: -2px;
+}
+
+.error-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1a2332;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.error-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin-bottom: 20px;
+}
+
+.error-message {
+  font-size: 0.9rem;
+  color: #52606d;
+  line-height: 1.7;
+  margin-bottom: 36px;
+}
+
+.error-btn {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #1e3a5f;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 150ms;
+  text-align: center;
+}
+
+.error-btn:hover {
+  background-color: #162d4a;
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .error-card {
+    padding: 32px 20px 28px;
+  }
+
+  .error-code {
+    font-size: 4rem;
+  }
+}

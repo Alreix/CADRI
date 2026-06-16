@@ -1,0 +1,23 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid #d1d9e0;
+  color: #1a2332;
+  background: #ffffff;
+}
+
+.tag--urgente {
+  background: #fde8e8;
+  border-color: #fca5a5;
+  color: #e02424;
+}
+
+.tag--validation {
+  background: #fdf6b2;
+  border-color: #fcd34d;
+  color: #92400e;
+}
