@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+
+import ProtectedRoute from "../components/common/ProtectedRoute";
 
 import LoginPage from "../pages/LoginPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
@@ -12,28 +14,29 @@ import UserFormPage from "../pages/UserFormPage";
 import ProfilePage from "../pages/ProfilePage";
 import ErrorPage from "../pages/ErrorPage";
 
+const router = createBrowserRouter([
+  { path: "/login", element: <LoginPage />, errorElement: <ErrorPage /> },
+  { path: "/forgot-password", element: <ForgotPasswordPage />, errorElement: <ErrorPage /> },
+  { path: "/reset-password", element: <ResetPasswordPage />, errorElement: <ErrorPage /> },
+  { path: "/activate", element: <ActivateAccountPage />, errorElement: <ErrorPage /> },
+
+  { path: "/", element: <ProtectedRoute><DashboardPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  { path: "/profile", element: <ProtectedRoute><ProfilePage /></ProtectedRoute>, errorElement: <ErrorPage /> },
+
+  { path: "/missions/new", element: <ProtectedRoute requiredRole="responsable"><MissionFormPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  { path: "/missions/:id", element: <ProtectedRoute><MissionDetailPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  { path: "/missions/:id/edit", element: <ProtectedRoute requiredRole="responsable"><MissionFormPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
+
+  { path: "/users", element: <ProtectedRoute requiredRole="admin"><UserManagementPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  { path: "/users/new", element: <ProtectedRoute requiredRole="responsable"><UserFormPage mode="create" /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  { path: "/users/:id", element: <ProtectedRoute requiredRole="admin"><UserFormPage mode="view" /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  { path: "/users/:id/edit", element: <ProtectedRoute requiredRole="admin"><UserFormPage mode="edit" /></ProtectedRoute>, errorElement: <ErrorPage /> },
+
+  { path: "*", element: <ErrorPage />, errorElement: <ErrorPage /> },
+]);
+
 function AppRouter() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/activate" element={<ActivateAccountPage />} />
-
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/missions/new" element={<MissionFormPage />} />
-        <Route path="/missions/:id" element={<MissionDetailPage />} />
-        <Route path="/missions/:id/edit" element={<MissionFormPage />} />
-        <Route path="/users" element={<UserManagementPage />} />
-        <Route path="/users/new" element={<UserFormPage />} />
-        <Route path="/users/:id/edit" element={<UserFormPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-
-        <Route path="*" element={<ErrorPage />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default AppRouter;
