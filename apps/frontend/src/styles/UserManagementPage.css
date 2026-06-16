@@ -1,0 +1,67 @@
+.users-table-wrapper {
+  background: #ffffff;
+  border-radius: 10px;
+  overflow-x: auto;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  margin-bottom: 24px;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+}
+
+.users-table th {
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #52606d;
+  padding: 14px 20px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e4e7eb;
+}
+
+.users-table td {
+  padding: 14px 20px;
+  font-size: 0.875rem;
+  color: #1a2332;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.users-table tr:last-child td { border-bottom: none; }
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid #d1d9e0;
+  color: #1a2332;
+}
+
+.role-badge--admin {
+  border-color: #fca5a5;
+  color: #e02424;
+  background: #fde8e8;
+}
+
+.role-badge--manager {
+  border-color: #d1d9e0;
+  color: #1a2332;
+}
+
+.table-action-link {
+  color: #1e3a5f;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+
+.table-action-link:hover { text-decoration: underline; }
