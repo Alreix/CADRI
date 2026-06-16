@@ -1,6 +1,6 @@
 """Repository for mission persistence operations."""
 
-from sqlalchemy import or_
+from sqlalchemy import case, or_
 
 from app.extensions import db
 from app.models.mission import Mission
@@ -84,13 +84,20 @@ class MissionRepository:
 
         total_items = query.distinct().count()
 
+        # Sort upcoming deadlines first, then surface higher priority missions.
+        priority_order = case(
+            (Mission.priority == "high", 1),
+            (Mission.priority == "medium", 2),
+            (Mission.priority == "low", 3),
+            else_=4,
+        )
+
         items = (
-            query.order_by(Mission.start_date.desc())
-            .distinct()
+            query.order_by(Mission.end_date.asc(), priority_order.asc())
+            .group_by(Mission.id)
             .offset((page - 1) * per_page)
             .limit(per_page)
             .all()
         )
 
         return items, total_items
-
