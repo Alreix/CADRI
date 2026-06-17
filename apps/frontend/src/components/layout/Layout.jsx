@@ -12,12 +12,12 @@ const nav_items = [
 ];
 
 const manager_items = [
-  { to: "/missions/new", label: "Création de mission" },
-  { to: "/users/new", label: "Création d'utilisateur" },
+  { to: "/missions/new", label: "Création de mission", end: true },
+  { to: "/users/new", label: "Création d'utilisateur", end: true },
 ];
 
 const admin_items = [
-  { to: "/users", label: "Liste des utilisateurs" },
+  { to: "/users", label: "Liste des utilisateurs", end: true },
 ];
 
 function LogoutModal({ onConfirm, onCancel }) {
@@ -94,10 +94,11 @@ function Layout({ children }) {
             </NavLink>
           ))}
 
-          {isManager && manager_items.map(({ to, label }) => (
+          {isManager && manager_items.map(({ to, label, end }) => (
             <NavLink
               key={to}
               to={to}
+              end={end}
               className={({ isActive }) =>
                 "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
               }
@@ -106,10 +107,11 @@ function Layout({ children }) {
             </NavLink>
           ))}
 
-          {isAdmin && admin_items.map(({ to, label }) => (
+          {isAdmin && admin_items.map(({ to, label, end }) => (
             <NavLink
               key={to}
               to={to}
+              end={end}
               className={({ isActive }) =>
                 "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
               }

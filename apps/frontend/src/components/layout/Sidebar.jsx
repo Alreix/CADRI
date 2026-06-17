@@ -18,12 +18,12 @@ const nav_items = [
 ];
 
 const manager_items = [
-  { to: "/missions/new", label: "Création de mission", icon: ClipboardList },
-  { to: "/users/new", label: "Création d'utilisateur", icon: UserPlus },
+  { to: "/missions/new", label: "Création de mission", icon: ClipboardList, end: true },
+  { to: "/users/new", label: "Création d'utilisateur", icon: UserPlus, end: true },
 ];
 
 const admin_items = [
-  { to: "/users", label: "Liste des utilisateurs", icon: Users },
+  { to: "/users", label: "Liste des utilisateurs", icon: Users, end: true },
 ];
 
 function Sidebar({ isOpen, onClose, onLogout }) {
