@@ -114,7 +114,7 @@ function MissionFormPage({ mode = "create" }) {
       } else {
         await createMission(form);
       }
-      navigate("/missions");
+      navigate("/");
     } catch (err) {
       console.error("Error saving mission:", err);
     } finally {
@@ -126,7 +126,7 @@ function MissionFormPage({ mode = "create" }) {
     setSaving(true);
     try {
       await deleteMission(id);
-      navigate("/missions");
+      navigate("/");
     } catch (err) {
       console.error("Error deleting mission:", err);
     } finally {
