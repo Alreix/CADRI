@@ -5,7 +5,7 @@ function StatusBadge({ priority, status, type }) {
     return <span className="tag tag--validation">Nécessite validation</span>;
   }
 
-  if (priority === "Urgente") {
+  if (priority === "high") {
     return <span className="tag tag--urgent">Urgente</span>;
   }
 
