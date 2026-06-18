@@ -58,11 +58,26 @@ function ProfilePage() {
     });
   }, []);
 
+  const clearPasswordFields = () => {
+    setForm((prevForm) => ({
+      ...prevForm,
+      currentPassword: "",
+      password: "",
+      confirmPassword: "",
+    }));
+  };
+
   const handleSave = async (event) => {
     event.preventDefault();
-    if (form.password || form.confirmPassword || form.currentPassword) {
+    const wantsPasswordChange = form.password || form.confirmPassword;
+
+    if (wantsPasswordChange) {
       if (form.password !== form.confirmPassword) {
         window.alert("Les mots de passe ne correspondent pas.");
+        return;
+      }
+      if (!form.currentPassword) {
+        window.alert("Le mot de passe actuel est obligatoire pour changer le mot de passe.");
         return;
       }
       await changePassword({
@@ -73,6 +88,7 @@ function ProfilePage() {
 
     const updatedProfile = await updateProfile(form);
     setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
+    clearPasswordFields();
     setEditing(false);
   };
 
@@ -158,22 +174,23 @@ function ProfilePage() {
           )}
 
           {editing && (
-            <form onSubmit={handleSave} noValidate>
+            <form onSubmit={handleSave} autoComplete="off" noValidate>
               <p className="profile-section-title">Informations personnelles</p>
 
               <div className="profile-form-grid">
                 <div className="profile-field profile-form-grid--full">
-                  <label className="profile-field-label" htmlFor="currentPassword">
+                  <label className="profile-field-label" htmlFor="profile-current-password">
                     Mot de passe actuel
                   </label>
                   <input
-                    id="currentPassword"
+                    id="profile-current-password"
+                    name="profile-current-password"
                     type="password"
                     className="profile-field-input"
                     placeholder="Obligatoire pour changer le mot de passe"
                     value={form.currentPassword}
                     onChange={(event) => setForm((prevForm) => ({ ...prevForm, currentPassword: event.target.value }))}
-                    autoComplete="current-password"
+                    autoComplete="off"
                   />
                 </div>
 
@@ -235,12 +252,13 @@ function ProfilePage() {
 
               <div className="profile-form-grid">
                 <div className="profile-field">
-                  <label className="profile-field-label" htmlFor="password">
+                  <label className="profile-field-label" htmlFor="profile-new-password">
                     Nouveau mot de passe
                   </label>
                   <div className="profile-input-wrapper">
                     <input
-                      id="password"
+                      id="profile-new-password"
+                      name="profile-new-password"
                       type="password"
                       className="profile-field-input"
                       placeholder="Laisser vide pour conserver l'actuel"
@@ -248,6 +266,7 @@ function ProfilePage() {
                       onChange={(event) => setForm((prevForm) => ({ ...prevForm, password: event.target.value }))}
                       onFocus={() => setShowPasswordHint(true)}
                       aria-label="new password"
+                      autoComplete="new-password"
                     />
                     <span
                       className="profile-input-info"
@@ -262,16 +281,18 @@ function ProfilePage() {
                 </div>
 
                 <div className="profile-field">
-                  <label className="profile-field-label" htmlFor="confirmPassword">
+                  <label className="profile-field-label" htmlFor="profile-confirm-password">
                     Confirmer le nouveau mot de passe
                   </label>
                   <input
-                    id="confirmPassword"
+                    id="profile-confirm-password"
+                    name="profile-confirm-password"
                     type="password"
                     className="profile-field-input"
                     placeholder="Laisser vide pour conserver l'actuel"
                     value={form.confirmPassword}
                     onChange={(event) => setForm((prevForm) => ({ ...prevForm, confirmPassword: event.target.value }))}
+                    autoComplete="new-password"
                   />
                 </div>
               </div>

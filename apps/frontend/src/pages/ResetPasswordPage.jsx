@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import Modal from "../components/common/Modal";
@@ -18,6 +18,11 @@ function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
 
+  useEffect(() => {
+    setPassword("");
+    setConfirmPassword("");
+  }, [token]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (password !== confirmPassword) {
@@ -27,6 +32,8 @@ function ResetPasswordPage() {
     setLoading(true);
     try {
       await resetPassword({ token, password });
+      setPassword("");
+      setConfirmPassword("");
       navigate("/login");
     } catch (err) {
       setModal({ title: "Erreur", message: err.message || "Une erreur s'est produite." });
@@ -52,14 +59,15 @@ function ResetPasswordPage() {
       <div className="auth-card">
         <h1 className="auth-card-title">Réinitialiser le mot de passe</h1>
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} autoComplete="off" noValidate>
           <div className="auth-field">
-            <label className="auth-label" htmlFor="password">
+            <label className="auth-label" htmlFor="reset-new-password">
               Nouveau mot de passe<span className="auth-label-required">*</span>
             </label>
             <div className="auth-input-wrapper">
               <input
-                id="password"
+                id="reset-new-password"
+                name="reset-new-password"
                 type="password"
                 className="auth-input"
                 placeholder="••••••••"
@@ -82,11 +90,12 @@ function ResetPasswordPage() {
           </div>
 
           <div className="auth-field">
-            <label className="auth-label" htmlFor="confirmPassword">
+            <label className="auth-label" htmlFor="reset-confirm-password">
               Confirmer le mot de passe<span className="auth-label-required">*</span>
             </label>
             <input
-              id="confirmPassword"
+              id="reset-confirm-password"
+              name="reset-confirm-password"
               type="password"
               className="auth-input"
               placeholder="••••••••"

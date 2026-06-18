@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
@@ -41,6 +41,11 @@ function ActivateAccountPage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    setPassword("");
+    setConfirmPassword("");
+  }, [token]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (password !== confirmPassword) {
@@ -48,9 +53,11 @@ function ActivateAccountPage() {
       return;
     }
     setLoading(true);
-      setError(null);
+    setError(null);
     try {
       await activateAccount({ token, password });
+      setPassword("");
+      setConfirmPassword("");
       navigate("/login");
     } catch (err) {
       setError(err.message || "Une erreur s'est produite.");
@@ -70,14 +77,15 @@ function ActivateAccountPage() {
       <div className="auth-card">
         <h1 className="auth-card-title">Activer votre compte</h1>
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} autoComplete="off" noValidate>
           <div className="auth-field">
-            <label className="auth-label" htmlFor="password">
+            <label className="auth-label" htmlFor="activation-new-password">
               Mot de passe<span className="auth-label-required">*</span>
             </label>
             <div className="auth-input-wrapper">
               <input
-                id="password"
+                id="activation-new-password"
+                name="activation-new-password"
                 type="password"
                 className="auth-input"
                 placeholder="••••••••"
@@ -100,11 +108,12 @@ function ActivateAccountPage() {
           </div>
 
           <div className="auth-field">
-            <label className="auth-label" htmlFor="confirmPassword">
+            <label className="auth-label" htmlFor="activation-confirm-password">
               Confirmer le mot de passe<span className="auth-label-required">*</span>
             </label>
             <input
-              id="confirmPassword"
+              id="activation-confirm-password"
+              name="activation-confirm-password"
               type="password"
               className="auth-input"
               placeholder="••••••••"
