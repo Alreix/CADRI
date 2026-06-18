@@ -17,6 +17,7 @@ function MissionDetailPage() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
+  const isAgent = user?.role === "agent";
   const isManager = user?.role === "responsable" || user?.role === "admin";
 
   const [mission, setMission] = useState(null);
@@ -139,19 +140,13 @@ function MissionDetailPage() {
           <hr className="mission-detail-divider" />
 
           <div className="mission-detail-actions">
+            {isAgent && isManager (
             <button
               className="profile-btn-primary"
               onClick={() => navigate(`/missions/${id}/edit`)}
             >
               Modifier
             </button>
-            {isManager && (
-              <button
-                type="button"
-                onClick={() => navigate(`/missions/${id}/edit`)}
-              >
-                Modifier
-              </button>
             )}
 
             {isManager && (
