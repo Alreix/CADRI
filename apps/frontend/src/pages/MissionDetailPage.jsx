@@ -145,6 +145,14 @@ function MissionDetailPage() {
             >
               Modifier
             </button>
+            {isManager && (
+              <button
+                type="button"
+                onClick={() => navigate(`/missions/${id}/edit`)}
+              >
+                Modifier
+              </button>
+            )}
 
             {isManager && (
               <button
