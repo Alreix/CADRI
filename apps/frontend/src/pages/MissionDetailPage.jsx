@@ -2,8 +2,15 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import { AuthContext } from "../contexts/AuthContext";
-import { getMission, validateMission } from "../api/missionsApi";
 import "../styles/MissionDetailPage.css";
+import {
+  getMission,
+  validateMission,
+  updateMissionStatus,
+  updateMissionActualDuration,
+  addMissionRemark,
+  completeMission,
+} from "../api/missionsApi";
 
 function MissionDetailPage() {
   const { id } = useParams();
