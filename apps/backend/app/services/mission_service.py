@@ -85,6 +85,7 @@ class MissionService:
 
         MissionService._validate_services(service_ids)
         MissionService._validate_assignable_users(assigned_user_ids)
+        MissionService._validate_estimated_duration(payload["estimated_duration"])
         MissionService._validate_dates(payload["start_date"], payload["end_date"])
 
         mission = Mission(
@@ -160,6 +161,7 @@ class MissionService:
         service_ids = payload.get("service_ids", [])
         assigned_user_ids = payload.get("assigned_user_ids", [])
 
+        MissionService._validate_estimated_duration(payload["estimated_duration"])
         MissionService._validate_services(service_ids)
         MissionService._validate_assignable_users(assigned_user_ids)
         MissionService._validate_dates(payload["start_date"], payload["end_date"])
@@ -202,8 +204,8 @@ class MissionService:
         MissionService._require_agent_assignment_if_agent(current_user, mission)
 
         if new_status == MISSION_STATUS_IN_PROGRESS:
-            if current_user.role.name != AGENT_ROLE:
-                raise AuthorizationError("Only an agent can start a mission directly.")
+            if mission.status != MISSION_STATUS_TO_DO:
+                raise ValidationError("Mission can only be started from to_do status.")
             mission.update_status(new_status)
         else:
             raise ValidationError("Invalid mission status transition.")
@@ -241,6 +243,11 @@ class MissionService:
         mission.update_status(MISSION_STATUS_REMARK_PENDING_VALIDATION)
         MissionRepository.update()
         return mission
+    
+    @staticmethod
+    def _validate_estimated_duration(estimated_duration) -> None:
+        if estimated_duration < 1:
+            raise ValidationError("Estimated duration must be greater than or equal to 1.")
 
     @staticmethod
     def validate_mission(current_user, mission_id) -> Mission:
