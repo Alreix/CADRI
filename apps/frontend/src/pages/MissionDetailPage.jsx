@@ -140,7 +140,7 @@ function MissionDetailPage() {
           <hr className="mission-detail-divider" />
 
           <div className="mission-detail-actions">
-            {isAgent && isManager (
+            {(isAgent || isManager) && (
             <button
               className="profile-btn-primary"
               onClick={() => navigate(`/missions/${id}/edit`)}
