@@ -1,5 +1,10 @@
 import { createContext, useState, useEffect } from "react";
-import { ACCESS_TOKEN_STORAGE_KEY } from "../api/apiClient";
+import {
+  apiRequest,
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from "../api/apiClient";
 import { logout as logoutApi } from "../api/authApi";
 
 export const AuthContext = createContext({
@@ -26,15 +31,62 @@ function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(storage_key);
-    if (stored) {
+    let isMounted = true;
+
+    async function restoreSession() {
+      const stored = localStorage.getItem(storage_key);
+      const token = getAccessToken();
+      let storedUser = null;
+
+      if (stored) {
+        try {
+          storedUser = normalizeUser(JSON.parse(stored));
+        } catch {
+          localStorage.removeItem(storage_key);
+        }
+      }
+
+      if (storedUser && token) {
+        if (isMounted) {
+          setUser(storedUser);
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (!storedUser && !token) {
+        if (isMounted) {
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
-        setUser(JSON.parse(stored));
+        const profile = await apiRequest("/me");
+        const normalizedUser = normalizeUser(profile);
+
+        if (isMounted) {
+          setUser(normalizedUser);
+          localStorage.setItem(storage_key, JSON.stringify(normalizedUser));
+        }
       } catch {
+        if (isMounted) {
+          setUser(null);
+        }
         localStorage.removeItem(storage_key);
+        clearAccessToken();
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
-    setLoading(false);
+
+    restoreSession();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = ({ user: userData, accessToken }) => {
@@ -44,7 +96,7 @@ function AuthProvider({ children }) {
     localStorage.setItem(storage_key, JSON.stringify(normalizedUser));
 
     if (accessToken) {
-      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+      setAccessToken(accessToken);
     }
   };
 
@@ -57,7 +109,7 @@ function AuthProvider({ children }) {
 
     setUser(null);
     localStorage.removeItem(storage_key);
-    localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+    clearAccessToken();
   };
 
   return (
