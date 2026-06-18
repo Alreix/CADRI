@@ -329,8 +329,8 @@ function MissionFormPage({ mode = "create" }) {
             </label>
           </div>
 
-          {/* Utilisateurs assignés — edit + manager/admin only */}
-          {isEdit && (isManager) && (
+          {/* Utilisateurs assignés — manager/admin only */}
+          {isManager && (
             <div className="form-group">
               <label className="mission-field-label">Utilisateurs assignés</label>
               <table className="users-assignment-table">
