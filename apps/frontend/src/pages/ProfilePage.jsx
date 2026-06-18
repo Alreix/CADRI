@@ -178,22 +178,6 @@ function ProfilePage() {
               <p className="profile-section-title">Informations personnelles</p>
 
               <div className="profile-form-grid">
-                <div className="profile-field profile-form-grid--full">
-                  <label className="profile-field-label" htmlFor="profile-current-password">
-                    Mot de passe actuel
-                  </label>
-                  <input
-                    id="profile-current-password"
-                    name="profile-current-password"
-                    type="password"
-                    className="profile-field-input"
-                    placeholder="Obligatoire pour changer le mot de passe"
-                    value={form.currentPassword}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, currentPassword: event.target.value }))}
-                    autoComplete="off"
-                  />
-                </div>
-
                 <div className="profile-field">
                   <label className="profile-field-label">Rôle</label>
                   <input className="profile-field-input" value={profile.role} readOnly />
@@ -251,6 +235,22 @@ function ProfilePage() {
               <p className="profile-section-title">Changer le mot de passe (optionnel)</p>
 
               <div className="profile-form-grid">
+                <div className="profile-field profile-form-grid--full">
+                  <label className="profile-field-label" htmlFor="profile-current-password">
+                    Mot de passe actuel
+                  </label>
+                  <input
+                    id="profile-current-password"
+                    name="profile-current-password"
+                    type="password"
+                    className="profile-field-input"
+                    placeholder="Saisir votre mot de passe actuel"
+                    value={form.currentPassword}
+                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, currentPassword: event.target.value }))}
+                    autoComplete="current-password"
+                  />
+                </div>
+
                 <div className="profile-field">
                   <label className="profile-field-label" htmlFor="profile-new-password">
                     Nouveau mot de passe
@@ -264,19 +264,17 @@ function ProfilePage() {
                       placeholder="Laisser vide pour conserver l'actuel"
                       value={form.password}
                       onChange={(event) => setForm((prevForm) => ({ ...prevForm, password: event.target.value }))}
-                      onFocus={() => setShowPasswordHint(true)}
                       aria-label="new password"
                       autoComplete="new-password"
                     />
-                    <span
+                    <button
+                      type="button"
                       className="profile-input-info"
                       onClick={() => setShowPasswordHint(true)}
-                      role="button"
-                      tabIndex={0}
                       aria-label="Voir les exigences du mot de passe"
                     >
                       <Info size={16} />
-                    </span>
+                    </button>
                   </div>
                 </div>
 
