@@ -69,6 +69,47 @@ function mapMissionToBackend(mission) {
   };
 }
 
+export async function updateMissionStatus(id, status) {
+  const data = await apiRequest(`/missions/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+
+  return mapMissionFromBackend(data.mission);
+}
+
+export async function updateMissionActualDuration(id, actualDuration) {
+  const data = await apiRequest(`/missions/${id}/actual-duration`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      actual_duration: Number(actualDuration),
+    }),
+  });
+
+  return mapMissionFromBackend(data.mission);
+}
+
+export async function addMissionRemark(id, remark) {
+  const data = await apiRequest(`/missions/${id}/remark`, {
+    method: "POST",
+    body: JSON.stringify({ remark }),
+  });
+
+  return mapMissionFromBackend(data.mission);
+}
+
+export async function completeMission(id) {
+  const data = await apiRequest(`/missions/${id}/complete`, {
+    method: "POST",
+  });
+
+  return {
+    ...data,
+    status: "completed",
+    statusLabel: "Terminée",
+  };
+}
+
 export async function getMissions() {
   const data = await apiRequest("/missions");
   const missions = Array.isArray(data) ? data : data.items ?? [];
