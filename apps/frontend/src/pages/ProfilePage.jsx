@@ -5,6 +5,7 @@ import { AuthContext } from "../contexts/AuthContext";
 import { getProfile, updateProfile } from "../api/profileApi";
 import { changePassword } from "../api/authApi";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
+import PasswordInput from "../components/common/PasswordInput";
 import "../styles/ProfilePage.css";
 
 function LogoutConfirmModal({ onConfirm, onCancel }) {
@@ -241,10 +242,9 @@ function ProfilePage() {
                   <label className="profile-field-label" htmlFor="profile-current-password">
                     Mot de passe actuel
                   </label>
-                  <input
+                  <PasswordInput
                     id="profile-current-password"
                     name="profile-current-password"
-                    type="password"
                     className="profile-field-input"
                     placeholder="Saisir votre mot de passe actuel"
                     value={form.currentPassword}
@@ -258,10 +258,9 @@ function ProfilePage() {
                     Nouveau mot de passe
                   </label>
                   <div className="profile-input-wrapper">
-                    <input
+                    <PasswordInput
                       id="profile-new-password"
                       name="profile-new-password"
-                      type="password"
                       className="profile-field-input"
                       placeholder="Laisser vide pour conserver l'actuel"
                       value={form.password}
@@ -284,10 +283,9 @@ function ProfilePage() {
                   <label className="profile-field-label" htmlFor="profile-confirm-password">
                     Confirmer le nouveau mot de passe
                   </label>
-                  <input
+                  <PasswordInput
                     id="profile-confirm-password"
                     name="profile-confirm-password"
-                    type="password"
                     className="profile-field-input"
                     placeholder="Laisser vide pour conserver l'actuel"
                     value={form.confirmPassword}

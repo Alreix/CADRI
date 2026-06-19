@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
+import PasswordInput from "../components/common/PasswordInput";
 import { activateAccount } from "../api/authApi";
 import { Info, X } from "lucide-react";
 import "../styles/AuthLayout.css";
@@ -86,10 +87,9 @@ function ActivateAccountPage() {
               Mot de passe<span className="auth-label-required">*</span>
             </label>
             <div className="auth-input-wrapper">
-              <input
+              <PasswordInput
                 id="activation-new-password"
                 name="activation-new-password"
-                type="password"
                 className="auth-input"
                 placeholder="••••••••"
                 value={password}
@@ -111,10 +111,9 @@ function ActivateAccountPage() {
             <label className="auth-label" htmlFor="activation-confirm-password">
               Confirmer le mot de passe<span className="auth-label-required">*</span>
             </label>
-            <input
+            <PasswordInput
               id="activation-confirm-password"
               name="activation-confirm-password"
-              type="password"
               className="auth-input"
               placeholder="••••••••"
               value={confirmPassword}
