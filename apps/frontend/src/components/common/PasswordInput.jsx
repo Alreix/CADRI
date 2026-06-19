@@ -16,7 +16,7 @@ export default function PasswordInput(props) {
         className="password-toggle"
         onClick={() => setVisible((isVisible) => !isVisible)}
       >
-        {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+        {visible ? <Eye size={18} /> : <EyeOff size={18} />}
       </button>
     </div>
   );
