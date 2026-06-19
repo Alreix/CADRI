@@ -86,25 +86,25 @@ function ActivateAccountPage() {
             <label className="auth-label" htmlFor="activation-new-password">
               Mot de passe<span className="auth-label-required">*</span>
             </label>
-            <div className="auth-input-wrapper">
-              <PasswordInput
-                id="activation-new-password"
-                name="activation-new-password"
-                className="auth-input"
-                placeholder="••••••••"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                autoComplete="new-password"
-              />
-              <Info
-                size={18}
-                className="auth-password-info"
-                onClick={() => setShowPasswordHint(true)}
-                role="button"
-                tabIndex={0}
-              />
-            </div>
+            <PasswordInput
+              id="activation-new-password"
+              name="activation-new-password"
+              className="auth-input"
+              placeholder="••••••••"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              autoComplete="new-password"
+              rightIcon={
+                <Info
+                  size={18}
+                  className="auth-password-info"
+                  onClick={() => setShowPasswordHint(true)}
+                  role="button"
+                  tabIndex={0}
+                />
+              }
+            />
           </div>
 
           <div className="auth-field">
@@ -120,6 +120,15 @@ function ActivateAccountPage() {
               onChange={(event) => setConfirmPassword(event.target.value)}
               required
               autoComplete="new-password"
+              rightIcon={
+                <Info
+                  size={18}
+                  className="auth-password-info"
+                  onClick={() => setShowPasswordHint(true)}
+                  role="button"
+                  tabIndex={0}
+                />
+              }
             />
           </div>
 

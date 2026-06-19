@@ -66,25 +66,25 @@ function ResetPasswordPage() {
             <label className="auth-label" htmlFor="reset-new-password">
               Nouveau mot de passe<span className="auth-label-required">*</span>
             </label>
-            <div className="auth-input-wrapper">
-              <PasswordInput
-                id="reset-new-password"
-                name="reset-new-password"
-                className="auth-input"
-                placeholder="••••••••"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                autoComplete="new-password"
-              />
-              <Info
-                size={18}
-                className="auth-password-info"
-                onClick={() => setShowPasswordHint(true)}
-                role="button"
-                tabIndex={0}
-              />
-            </div>
+            <PasswordInput
+              id="reset-new-password"
+              name="reset-new-password"
+              className="auth-input"
+              placeholder="••••••••"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              autoComplete="new-password"
+              rightIcon={
+                <Info
+                  size={18}
+                  className="auth-password-info"
+                  onClick={() => setShowPasswordHint(true)}
+                  role="button"
+                  tabIndex={0}
+                />
+              }
+            />
           </div>
 
           <div className="auth-field">
@@ -100,6 +100,15 @@ function ResetPasswordPage() {
               onChange={(event) => setConfirmPassword(event.target.value)}
               required
               autoComplete="new-password"
+              rightIcon={
+                <Info
+                  size={18}
+                  className="auth-password-info"
+                  onClick={() => setShowPasswordHint(true)}
+                  role="button"
+                  tabIndex={0}
+                />
+              }
             />
           </div>
 

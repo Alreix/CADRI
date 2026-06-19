@@ -250,6 +250,16 @@ function ProfilePage() {
                     value={form.currentPassword}
                     onChange={(event) => setForm((prevForm) => ({ ...prevForm, currentPassword: event.target.value }))}
                     autoComplete="current-password"
+                    rightIcon={
+                      <button
+                        type="button"
+                        className="profile-input-info"
+                        onClick={() => setShowPasswordHint(true)}
+                        aria-label="Voir les exigences du mot de passe"
+                      >
+                        <Info size={16} />
+                      </button>
+                    }
                   />
                 </div>
 
@@ -257,26 +267,30 @@ function ProfilePage() {
                   <label className="profile-field-label" htmlFor="profile-new-password">
                     Nouveau mot de passe
                   </label>
-                  <div className="profile-input-wrapper">
-                    <PasswordInput
-                      id="profile-new-password"
-                      name="profile-new-password"
-                      className="profile-field-input"
-                      placeholder="Laisser vide pour conserver l'actuel"
-                      value={form.password}
-                      onChange={(event) => setForm((prevForm) => ({ ...prevForm, password: event.target.value }))}
-                      aria-label="new password"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      className="profile-input-info"
-                      onClick={() => setShowPasswordHint(true)}
-                      aria-label="Voir les exigences du mot de passe"
-                    >
-                      <Info size={16} />
-                    </button>
-                  </div>
+                  <PasswordInput
+                    id="profile-new-password"
+                    name="profile-new-password"
+                    className="profile-field-input"
+                    placeholder="Laisser vide pour conserver l'actuel"
+                    value={form.password}
+                    onChange={(event) =>
+                      setForm((prevForm) => ({
+                        ...prevForm,
+                        password: event.target.value,
+                      }))
+                    }
+                    autoComplete="new-password"
+                    rightIcon={
+                      <button
+                        type="button"
+                        className="profile-input-info"
+                        onClick={() => setShowPasswordHint(true)}
+                        aria-label="Voir les exigences du mot de passe"
+                      >
+                        <Info size={16} />
+                      </button>
+                    }
+                  />
                 </div>
 
                 <div className="profile-field">
@@ -291,6 +305,16 @@ function ProfilePage() {
                     value={form.confirmPassword}
                     onChange={(event) => setForm((prevForm) => ({ ...prevForm, confirmPassword: event.target.value }))}
                     autoComplete="new-password"
+                    rightIcon={
+                      <button
+                        type="button"
+                        className="profile-input-info"
+                        onClick={() => setShowPasswordHint(true)}
+                        aria-label="Voir les exigences du mot de passe"
+                      >
+                        <Info size={16} />
+                      </button>
+                    }
                   />
                 </div>
               </div>
