@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { AuthContext } from "../../contexts/AuthContext";
+import { Menu, X } from "lucide-react";
 import logo from "../../assets/logo.png";
 import "../../styles/Layout.css";
 
@@ -26,7 +27,9 @@ function LogoutModal({ onConfirm, onCancel }) {
       <div className="logout-modal">
         <div className="logout-modal-header">
           <span className="logout-modal-title">Déconnexion</span>
-          <button className="logout-modal-close" onClick={onCancel} aria-label="Fermer">✕</button>
+          <button className="logout-modal-close" onClick={onCancel} aria-label="Fermer">
+            <X size={18} />
+          </button>
         </div>
         <div className="logout-modal-body">
           Êtes-vous sûr de vouloir vous déconnecter ?
@@ -72,7 +75,7 @@ function Layout({ children }) {
           aria-label="Ouvrir le menu"
           aria-expanded={sidebarOpen}
         >
-          ☰
+          <Menu size={20} />
         </button>
 
         <span className="intranet-logo">
