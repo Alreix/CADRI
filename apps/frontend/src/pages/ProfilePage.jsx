@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { User, Info } from "lucide-react";
+import { User, Info, X } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import { AuthContext } from "../contexts/AuthContext";
 import { getProfile, updateProfile } from "../api/profileApi";
@@ -13,7 +13,9 @@ function LogoutConfirmModal({ onConfirm, onCancel }) {
       <div className="confirm-modal">
         <div className="confirm-modal-header">
           <span className="confirm-modal-title">Déconnexion</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">✕</button>
+          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
+            <X size={18} />
+          </button>
         </div>
         <div className="confirm-modal-body">
           Êtes-vous sûr de vouloir vous déconnecter ?
