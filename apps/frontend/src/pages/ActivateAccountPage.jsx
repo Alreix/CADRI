@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import { activateAccount } from "../api/authApi";
+import { Info, X } from "lucide-react";
 import "../styles/AuthLayout.css";
 
 function WelcomeModal({ onClose }) {
@@ -11,7 +12,9 @@ function WelcomeModal({ onClose }) {
       <div className="auth-modal">
         <div className="auth-modal-header">
           <span className="auth-modal-title">Bienvenue sur CADRI !</span>
-          <button className="auth-modal-close" onClick={onClose} aria-label="Fermer">✕</button>
+          <button className="auth-modal-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </button>
         </div>
         <div className="auth-modal-body" style={{ display: "block", padding: "20px 24px" }}>
           <p style={{ fontSize: "0.9rem", color: "#1a2332", lineHeight: "1.6" }}>
@@ -94,16 +97,13 @@ function ActivateAccountPage() {
                 required
                 autoComplete="new-password"
               />
-              <span
-                className="auth-input-icon"
+              <Info
+                size={18}
+                className="auth-password-info"
                 onClick={() => setShowPasswordHint(true)}
-                title="Voir les exigences"
-                aria-label="Voir les exigences du mot de passe"
                 role="button"
                 tabIndex={0}
-              >
-                ⓘ
-              </span>
+              />
             </div>
           </div>
 
