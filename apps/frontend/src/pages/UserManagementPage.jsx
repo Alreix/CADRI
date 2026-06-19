@@ -4,6 +4,7 @@ import Layout from "../components/layout/Layout";
 import UserFilters from "../components/user/UserFilters";
 import UserTable from "../components/user/UserTable";
 import { getUsers } from "../api/usersApi";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import '../styles/UserManagementPage.css';
 
 
@@ -54,13 +55,20 @@ function UserManagementPage() {
 
       <div className="search-bar">
         <div className="search-input-wrapper">
-          <span className="search-input-icon" aria-hidden="true">🔍</span>
+          <Search
+            className="search-input-icon"
+            size={18}
+            aria-hidden="true"
+          />
           <input
             type="search"
             className="search-input"
             placeholder="Rechercher des utilisateurs..."
             value={search}
-            onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
           />
         </div>
         <button
@@ -68,7 +76,8 @@ function UserManagementPage() {
           onClick={() => setShowFilters((toggleFilters) => !toggleFilters)}
           aria-expanded={showFilters}
         >
-          ⧉ Filtres
+          <SlidersHorizontal size={18} aria-hidden="true" />
+          <span>Filtres</span>
         </button>
       </div>
 
@@ -88,7 +97,8 @@ function UserManagementPage() {
           onClick={() => setPage((currentPage) => currentPage - 1)}
           disabled={page === 1}
         >
-          &lt; Précédent
+          <ChevronLeft size={16} aria-hidden="true" />
+          <span>Précédent</span>
         </button>
         {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
           <button
@@ -104,7 +114,8 @@ function UserManagementPage() {
           onClick={() => setPage((prevPage) => prevPage + 1)}
           disabled={page === totalPages}
         >
-          Suivant &gt;
+          <span>Suivant</span>
+          <ChevronRight size={16} aria-hidden="true" />
         </button>
       </div>
     </Layout>
