@@ -7,8 +7,6 @@ import {
   getMission,
   validateMission,
   updateMissionStatus,
-  updateMissionActualDuration,
-  addMissionRemark,
   completeMission,
 } from "../api/missionsApi";
 
@@ -23,6 +21,7 @@ function MissionDetailPage() {
   const [mission, setMission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState(false);
+  const [savingAction, setSavingAction] = useState(false);
 
   useEffect(() => {
     getMission(id)
@@ -30,15 +29,47 @@ function MissionDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const refreshMission = async () => {
+    const updatedMission = await getMission(id);
+    setMission(updatedMission);
+  };
+
+  const handleStartMission = async () => {
+    setSavingAction(true);
+    try {
+      const updatedMission = await updateMissionStatus(id, "in_progress");
+      setMission(updatedMission);
+    } catch (err) {
+      window.alert(err.message || "Impossible de démarrer la mission.");
+    } finally {
+      setSavingAction(false);
+    }
+  };
+
+  const handleCompleteMission = async () => {
+    if (!hasActualDuration) {
+      window.alert("Veuillez renseigner la durée réelle avant de clôturer la mission.");
+      return;
+    }
+
+    setSavingAction(true);
+    try {
+      await completeMission(id);
+      await refreshMission();
+    } catch (err) {
+      window.alert(err.message || "Impossible de terminer la mission.");
+    } finally {
+      setSavingAction(false);
+    }
+  };
+
   const handleValidate = async () => {
     setValidating(true);
     try {
       await validateMission(id);
-      setMission((missionState) => ({
-        ...missionState,
-        status: "completed",
-        statusLabel: "Terminée",
-      }));
+      await refreshMission();
+    } catch (err) {
+      window.alert(err.message || "Impossible de valider la mission.");
     } finally {
       setValidating(false);
     }
@@ -48,11 +79,42 @@ function MissionDetailPage() {
   if (!mission) return null;
 
   const priorityIsUrgent = mission.priority === "high";
+  const isAssignedToMission = (mission.assignedUsers || []).some(
+    (assignedUserId) => String(assignedUserId) === String(user?.id),
+  );
+  const canActOnMission = isManager || (isAgent && isAssignedToMission);
+  const hasActualDuration =
+    mission.actualDuration !== null &&
+    mission.actualDuration !== undefined &&
+    mission.actualDuration !== "";
+  const canStartMission =
+    canActOnMission &&
+    mission.status === "to_do";
+  const canEditMission =
+    mission.status !== "completed" &&
+    (
+      isManager ||
+      (
+        isAgent &&
+        isAssignedToMission &&
+        mission.status === "in_progress" &&
+        !mission.remark
+      )
+    );
+  const canRequestCompleteMission =
+    canActOnMission &&
+    mission.status === "in_progress" &&
+    !mission.remark;
+  const canValidateMission =
+    isManager &&
+    mission.status === "remark_pending_validation" &&
+    mission.remark &&
+    hasActualDuration;
 
   return (
     <Layout>
       <div className="mission-detail-page">
-        <button className="back-link" onClick={() => navigate(-1)}>
+        <button className="back-link" onClick={() => navigate("/missions")}>
           ← Retour
         </button>
 
@@ -140,16 +202,36 @@ function MissionDetailPage() {
           <hr className="mission-detail-divider" />
 
           <div className="mission-detail-actions">
-            {(isAgent || isManager) && (
-            <button
-              className="profile-btn-primary"
-              onClick={() => navigate(`/missions/${id}/edit`)}
-            >
-              Modifier
-            </button>
+            {canEditMission && (
+              <button
+                className="profile-btn-primary"
+                onClick={() => navigate(`/missions/${id}/edit`)}
+              >
+                Modifier
+              </button>
             )}
 
-            {isManager && (
+            {canStartMission && (
+              <button
+                className="profile-btn-primary"
+                onClick={handleStartMission}
+                disabled={savingAction}
+              >
+                {savingAction ? "Démarrage…" : "Démarrer la mission"}
+              </button>
+            )}
+
+            {canRequestCompleteMission && (
+              <button
+                className="mission-btn-validate"
+                onClick={handleCompleteMission}
+                disabled={savingAction}
+              >
+                {savingAction ? "Finalisation…" : "Terminer la mission"}
+              </button>
+            )}
+
+            {canValidateMission && (
               <button
                 className="mission-btn-validate"
                 onClick={handleValidate}

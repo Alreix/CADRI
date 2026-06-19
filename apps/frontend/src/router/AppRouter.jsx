@@ -28,7 +28,7 @@ const router = createBrowserRouter([
 
   { path: "/missions/new", element: <ProtectedRoute requiredRole="responsable"><MissionFormPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
   { path: "/missions/:id", element: <ProtectedRoute><MissionDetailPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
-  { path: "/missions/:id/edit", element: <ProtectedRoute requiredRole="responsable"><MissionFormPage mode="edit" /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  { path: "/missions/:id/edit", element: <ProtectedRoute requiredRole="agent"><MissionFormPage mode="edit" /></ProtectedRoute>, errorElement: <ErrorPage /> },
 
   { path: "/users", element: <ProtectedRoute requiredRole="admin"><UserManagementPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
   { path: "/users/new", element: <ProtectedRoute requiredRole="responsable"><UserFormPage mode="create" /></ProtectedRoute>, errorElement: <ErrorPage /> },

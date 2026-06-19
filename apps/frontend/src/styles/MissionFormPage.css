@@ -86,7 +86,9 @@
 }
 
 .mission-field-input[readonly],
-.mission-field-textarea[readonly] {
+.mission-field-input:disabled,
+.mission-field-textarea[readonly],
+.mission-field-textarea:disabled {
   background-color: #f5f7fa;
   color: #6b7280;
   cursor: default;
@@ -209,6 +211,11 @@
   gap: 16px;
   margin-top: 24px;
   flex-wrap: wrap;
+}
+
+.mission-form-actions button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
