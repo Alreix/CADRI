@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import Modal from "../components/common/Modal";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
+import PasswordInput from "../components/common/PasswordInput";
 import { resetPassword } from "../api/authApi";
 import { Info } from "lucide-react";
 import "../styles/AuthLayout.css";
@@ -66,10 +67,9 @@ function ResetPasswordPage() {
               Nouveau mot de passe<span className="auth-label-required">*</span>
             </label>
             <div className="auth-input-wrapper">
-              <input
+              <PasswordInput
                 id="reset-new-password"
                 name="reset-new-password"
-                type="password"
                 className="auth-input"
                 placeholder="••••••••"
                 value={password}
@@ -91,10 +91,9 @@ function ResetPasswordPage() {
             <label className="auth-label" htmlFor="reset-confirm-password">
               Confirmer le mot de passe<span className="auth-label-required">*</span>
             </label>
-            <input
+            <PasswordInput
               id="reset-confirm-password"
               name="reset-confirm-password"
-              type="password"
               className="auth-input"
               placeholder="••••••••"
               value={confirmPassword}
