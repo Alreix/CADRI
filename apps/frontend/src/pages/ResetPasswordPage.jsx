@@ -4,6 +4,7 @@ import AuthLayout from "../components/layout/AuthLayout";
 import Modal from "../components/common/Modal";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import { resetPassword } from "../api/authApi";
+import { Info } from "lucide-react";
 import "../styles/AuthLayout.css";
 
 function ResetPasswordPage() {
@@ -76,16 +77,13 @@ function ResetPasswordPage() {
                 required
                 autoComplete="new-password"
               />
-              <span
-                className="auth-input-icon"
+              <Info
+                size={18}
+                className="auth-password-info"
                 onClick={() => setShowPasswordHint(true)}
-                title="Voir les exigences"
-                aria-label="Voir les exigences du mot de passe"
                 role="button"
                 tabIndex={0}
-              >
-                ⓘ
-              </span>
+              />
             </div>
           </div>
 
