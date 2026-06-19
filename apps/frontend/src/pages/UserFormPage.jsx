@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import { AuthContext } from "../contexts/AuthContext";
 import { getUser, createUser, updateUser, deleteUser } from "../api/usersApi";
@@ -13,7 +13,9 @@ function DeleteConfirmModal({ onConfirm, onCancel }) {
       <div className="confirm-modal">
         <div className="confirm-modal-header">
           <span className="confirm-modal-title">Supprimer l'utilisateur</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">✕</button>
+          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
+            <X size={18} />
+          </button>
         </div>
         <div className="confirm-modal-body">
           Êtes-vous sûr de vouloir supprimer cet utilisateur ?
