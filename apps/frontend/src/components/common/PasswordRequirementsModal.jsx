@@ -1,3 +1,5 @@
+import { X, Check } from "lucide-react";
+
 const PASSWORD_REQUIREMENTS = [
   "Au moins 8 caractères",
   "Au moins une lettre majuscule",
@@ -12,14 +14,18 @@ function PasswordRequirementsModal({ onClose }) {
       <div className="confirm-modal">
         <div className="confirm-modal-header">
           <span className="confirm-modal-title">Exigences du mot de passe</span>
-          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">✕</button>
+          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </button>
         </div>
         <div className="confirm-modal-body">
           <p>Votre mot de passe doit respecter les exigences suivantes :</p>
           <ul className="pwd-req-list">
             {PASSWORD_REQUIREMENTS.map((req) => (
               <li key={req} className="pwd-req-item">
-                <span className="pwd-req-check">✓</span>
+                <span className="pwd-req-check">
+                  <Check size={16} />
+                </span>
                 {req}
               </li>
             ))}
