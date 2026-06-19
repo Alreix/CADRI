@@ -65,3 +65,16 @@
 }
 
 .table-action-link:hover { text-decoration: underline; }
+
+.search-input-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.filter-btn,
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
