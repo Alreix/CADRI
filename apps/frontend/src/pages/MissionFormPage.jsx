@@ -187,22 +187,6 @@ function MissionFormPage({ mode = "create" }) {
     setSaving(true);
 
     try {
-      if (isAgentEdit && !canAgentUpdateTracking) {
-        window.alert(
-          "Vous ne pouvez pas modifier cette mission."
-        );
-        return;
-      }
-      if (
-        isAgentEdit &&
-        (!form.actualDuration ||
-          Number(form.actualDuration) <= 0)
-      ) {
-        window.alert(
-          "La durée réelle doit être supérieure à 0."
-        );
-        return;
-      }
       if (isEdit) {
         if (!isAgent) {
           await updateMission(id, form);
@@ -262,12 +246,18 @@ function MissionFormPage({ mode = "create" }) {
         String(assignedUserId) === String(currentUser?.id)
     );
 
+  // The backend only restricts actual-duration/remark updates by assignment
+  // for agents; a manager/admin can always edit these fields regardless of
+  // assignment (MissionService._require_agent_assignment_if_agent only
+  // applies to the agent role).
   const canAgentUpdateTracking =
     isAgentEdit &&
     isAssignedToMission &&
     ["in_progress", "remark_pending_validation"].includes(
       loadedMission?.status
     );
+
+  const canEditActualDuration = isManager || canAgentUpdateTracking;
 
   const canAgentAddRemark =
     canAgentUpdateTracking &&
@@ -641,7 +631,7 @@ function MissionFormPage({ mode = "create" }) {
                   placeholder="Nombre d'heures réellement effectuées"
                   value={form.actualDuration}
                   onChange={handleChange}
-                  disabled={!canAgentUpdateTracking}
+                  disabled={!canEditActualDuration}
                   required
                 />
               </div>
