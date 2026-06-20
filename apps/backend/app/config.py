@@ -6,6 +6,13 @@ class BaseConfig:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret-key")
 
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_size": 10,
+        "max_overflow": 20,
+    }
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")

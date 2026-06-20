@@ -1,26 +1,39 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { apiRequest } from "./apiClient";
+
+function mapOption(option) {
+  if (!option || typeof option !== "object") return option;
+  return {
+    id: option.id,
+    value: option.name,
+    label: option.label ?? option.name,
+    name: option.name,
+  };
+}
+
+function mapOptions(data) {
+  return Array.isArray(data) ? data.map(mapOption) : [];
+}
 
 export async function metadataHealth() {
-  const response = await fetch(`${API_BASE_URL}/metadata/health`);
-  return response.json();
+  return apiRequest("/metadata/health");
 }
 
 export async function getRoles() {
-  const response = await fetch(`${API_BASE_URL}/metadata/roles`);
-  return response.json();
+  const data = await apiRequest("/metadata/roles");
+  return mapOptions(data);
 }
 
 export async function getServices() {
-  const response = await fetch(`${API_BASE_URL}/metadata/services`);
-  return response.json();
+  const data = await apiRequest("/metadata/services");
+  return mapOptions(data);
 }
 
 export async function getPriorities() {
-  const response = await fetch(`${API_BASE_URL}/metadata/priorities`);
-  return response.json();
+  const data = await apiRequest("/metadata/priorities");
+  return mapOptions(data);
 }
 
 export async function getStatuses() {
-  const response = await fetch(`${API_BASE_URL}/metadata/statuses`);
-  return response.json();
+  const data = await apiRequest("/metadata/statuses");
+  return mapOptions(data);
 }

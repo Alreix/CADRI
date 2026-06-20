@@ -1,9 +1,11 @@
 import { useState, useEffect, useContext } from "react";
-import { User, Info } from "lucide-react";
+import { User, Info, X } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import { AuthContext } from "../contexts/AuthContext";
 import { getProfile, updateProfile } from "../api/profileApi";
+import { changePassword } from "../api/authApi";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
+import PasswordInput from "../components/common/PasswordInput";
 import "../styles/ProfilePage.css";
 
 function LogoutConfirmModal({ onConfirm, onCancel }) {
@@ -12,7 +14,9 @@ function LogoutConfirmModal({ onConfirm, onCancel }) {
       <div className="confirm-modal">
         <div className="confirm-modal-header">
           <span className="confirm-modal-title">Déconnexion</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">✕</button>
+          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
+            <X size={18} />
+          </button>
         </div>
         <div className="confirm-modal-body">
           Êtes-vous sûr de vouloir vous déconnecter ?
@@ -38,6 +42,7 @@ function ProfilePage() {
     firstName: "",
     lastName: "",
     email: "",
+    currentPassword: "",
     password: "",
     confirmPassword: "",
   });
@@ -49,16 +54,44 @@ function ProfilePage() {
         firstName: data.firstName || "",
         lastName: data.lastName || "",
         email: data.email || "",
+        currentPassword: "",
         password: "",
         confirmPassword: "",
       });
     });
   }, []);
 
+  const clearPasswordFields = () => {
+    setForm((prevForm) => ({
+      ...prevForm,
+      currentPassword: "",
+      password: "",
+      confirmPassword: "",
+    }));
+  };
+
   const handleSave = async (event) => {
     event.preventDefault();
-    await updateProfile(form);
-    setProfile((prevProfile) => ({ ...prevProfile, ...form }));
+    const wantsPasswordChange = form.password || form.confirmPassword;
+
+    if (wantsPasswordChange) {
+      if (form.password !== form.confirmPassword) {
+        window.alert("Les mots de passe ne correspondent pas.");
+        return;
+      }
+      if (!form.currentPassword) {
+        window.alert("Le mot de passe actuel est obligatoire pour changer le mot de passe.");
+        return;
+      }
+      await changePassword({
+        currentPassword: form.currentPassword,
+        newPassword: form.password,
+      });
+    }
+
+    const updatedProfile = await updateProfile(form);
+    setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
+    clearPasswordFields();
     setEditing(false);
   };
 
@@ -67,6 +100,7 @@ function ProfilePage() {
       firstName: profile.firstName || "",
       lastName: profile.lastName || "",
       email: profile.email || "",
+      currentPassword: "",
       password: "",
       confirmPassword: "",
     });
@@ -143,7 +177,7 @@ function ProfilePage() {
           )}
 
           {editing && (
-            <form onSubmit={handleSave} noValidate>
+            <form onSubmit={handleSave} autoComplete="off" noValidate>
               <p className="profile-section-title">Informations personnelles</p>
 
               <div className="profile-form-grid">
@@ -204,44 +238,83 @@ function ProfilePage() {
               <p className="profile-section-title">Changer le mot de passe (optionnel)</p>
 
               <div className="profile-form-grid">
-                <div className="profile-field">
-                  <label className="profile-field-label" htmlFor="password">
-                    Nouveau mot de passe
+                <div className="profile-field profile-form-grid--full">
+                  <label className="profile-field-label" htmlFor="profile-current-password">
+                    Mot de passe actuel
                   </label>
-                  <div className="profile-input-wrapper">
-                    <input
-                      id="password"
-                      type="password"
-                      className="profile-field-input"
-                      placeholder="Laisser vide pour conserver l'actuel"
-                      value={form.password}
-                      onChange={(event) => setForm((prevForm) => ({ ...prevForm, password: event.target.value }))}
-                      onFocus={() => setShowPasswordHint(true)}
-                      aria-label="new password"
-                    />
-                    <span
-                      className="profile-input-info"
-                      onClick={() => setShowPasswordHint(true)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Voir les exigences du mot de passe"
-                    >
-                      <Info size={16} />
-                    </span>
-                  </div>
+                  <PasswordInput
+                    id="profile-current-password"
+                    name="profile-current-password"
+                    className="profile-field-input"
+                    placeholder="Saisir votre mot de passe actuel"
+                    value={form.currentPassword}
+                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, currentPassword: event.target.value }))}
+                    autoComplete="current-password"
+                    rightIcon={
+                      <button
+                        type="button"
+                        className="profile-input-info"
+                        onClick={() => setShowPasswordHint(true)}
+                        aria-label="Voir les exigences du mot de passe"
+                      >
+                        <Info size={16} />
+                      </button>
+                    }
+                  />
                 </div>
 
                 <div className="profile-field">
-                  <label className="profile-field-label" htmlFor="confirmPassword">
+                  <label className="profile-field-label" htmlFor="profile-new-password">
+                    Nouveau mot de passe
+                  </label>
+                  <PasswordInput
+                    id="profile-new-password"
+                    name="profile-new-password"
+                    className="profile-field-input"
+                    placeholder="Laisser vide pour conserver l'actuel"
+                    value={form.password}
+                    onChange={(event) =>
+                      setForm((prevForm) => ({
+                        ...prevForm,
+                        password: event.target.value,
+                      }))
+                    }
+                    autoComplete="new-password"
+                    rightIcon={
+                      <button
+                        type="button"
+                        className="profile-input-info"
+                        onClick={() => setShowPasswordHint(true)}
+                        aria-label="Voir les exigences du mot de passe"
+                      >
+                        <Info size={16} />
+                      </button>
+                    }
+                  />
+                </div>
+
+                <div className="profile-field">
+                  <label className="profile-field-label" htmlFor="profile-confirm-password">
                     Confirmer le nouveau mot de passe
                   </label>
-                  <input
-                    id="confirmPassword"
-                    type="password"
+                  <PasswordInput
+                    id="profile-confirm-password"
+                    name="profile-confirm-password"
                     className="profile-field-input"
                     placeholder="Laisser vide pour conserver l'actuel"
                     value={form.confirmPassword}
                     onChange={(event) => setForm((prevForm) => ({ ...prevForm, confirmPassword: event.target.value }))}
+                    autoComplete="new-password"
+                    rightIcon={
+                      <button
+                        type="button"
+                        className="profile-input-info"
+                        onClick={() => setShowPasswordHint(true)}
+                        aria-label="Voir les exigences du mot de passe"
+                      >
+                        <Info size={16} />
+                      </button>
+                    }
                   />
                 </div>
               </div>

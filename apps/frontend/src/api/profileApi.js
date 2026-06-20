@@ -1,46 +1,35 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { apiRequest } from "./apiClient";
 
 function mapProfileFromBackend(profile) {
   if (!profile) return profile;
   return {
     ...profile,
-    firstName: profile.prenom ?? profile.firstName,
-    lastName: profile.nom ?? profile.lastName,
+    firstName: profile.first_name ?? profile.firstName,
+    lastName: profile.last_name ?? profile.lastName,
+    role: profile.role?.label ?? profile.role?.name ?? profile.role,
+    service: profile.service?.label ?? profile.service?.name ?? profile.service,
   };
 }
 
 function mapProfileToBackend(profile) {
   if (!profile) return profile;
   return {
-    ...profile,
-    prenom: profile.firstName ?? profile.prenom,
-    nom: profile.lastName ?? profile.nom,
+    first_name: profile.firstName,
+    last_name: profile.lastName,
+    email: profile.email,
   };
 }
 
 export async function getProfile() {
-  const response = await fetch(`${API_BASE_URL}/profile`);
-  if (!response.ok) {
-    throw new Error("Impossible de récupérer le profil utilisateur.");
-  }
-  const data = await response.json();
+  const data = await apiRequest("/me");
   return mapProfileFromBackend(data);
 }
 
 export async function updateProfile(profileData) {
   const body = mapProfileToBackend(profileData);
-  const response = await fetch(`${API_BASE_URL}/profile`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+  const data = await apiRequest("/me", {
+    method: "PATCH",
     body: JSON.stringify(body),
   });
-
-  if (!response.ok) {
-    throw new Error("Impossible de mettre à jour le profil utilisateur.");
-  }
-
-  const data = await response.json();
-  return mapProfileFromBackend(data);
+  return mapProfileFromBackend(data.user);
 }

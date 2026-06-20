@@ -2,7 +2,9 @@ import { useState, useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { AuthContext } from "../../contexts/AuthContext";
+import { Menu, X } from "lucide-react";
 import logo from "../../assets/logo.png";
+import "../../styles/Layout.css";
 
 
 const nav_items = [
@@ -11,12 +13,12 @@ const nav_items = [
 ];
 
 const manager_items = [
-  { to: "/missions/new", label: "Création de mission" },
-  { to: "/users/new", label: "Création d'utilisateur" },
+  { to: "/missions/new", label: "Création de mission", end: true },
+  { to: "/users/new", label: "Création d'utilisateur", end: true },
 ];
 
 const admin_items = [
-  { to: "/users", label: "Liste des utilisateurs" },
+  { to: "/users", label: "Liste des utilisateurs", end: true },
 ];
 
 function LogoutModal({ onConfirm, onCancel }) {
@@ -25,7 +27,9 @@ function LogoutModal({ onConfirm, onCancel }) {
       <div className="logout-modal">
         <div className="logout-modal-header">
           <span className="logout-modal-title">Déconnexion</span>
-          <button className="logout-modal-close" onClick={onCancel} aria-label="Fermer">✕</button>
+          <button className="logout-modal-close" onClick={onCancel} aria-label="Fermer">
+            <X size={18} />
+          </button>
         </div>
         <div className="logout-modal-body">
           Êtes-vous sûr de vouloir vous déconnecter ?
@@ -71,7 +75,7 @@ function Layout({ children }) {
           aria-label="Ouvrir le menu"
           aria-expanded={sidebarOpen}
         >
-          ☰
+          <Menu size={20} />
         </button>
 
         <span className="intranet-logo">
@@ -93,10 +97,11 @@ function Layout({ children }) {
             </NavLink>
           ))}
 
-          {isManager && manager_items.map(({ to, label }) => (
+          {isManager && manager_items.map(({ to, label, end }) => (
             <NavLink
               key={to}
               to={to}
+              end={end}
               className={({ isActive }) =>
                 "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
               }
@@ -105,10 +110,11 @@ function Layout({ children }) {
             </NavLink>
           ))}
 
-          {isAdmin && admin_items.map(({ to, label }) => (
+          {isAdmin && admin_items.map(({ to, label, end }) => (
             <NavLink
               key={to}
               to={to}
+              end={end}
               className={({ isActive }) =>
                 "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
               }

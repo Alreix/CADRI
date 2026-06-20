@@ -4,6 +4,12 @@ import MissionFilters from "../components/mission/MissionFilters";
 import MissionList from "../components/mission/MissionList";
 import { getMissions } from "../api/missionsApi";
 import "../styles/DashboardPage.css";
+import {
+  Clock3,
+  TriangleAlert,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 
 const items_per_page = 5;
 
@@ -27,8 +33,8 @@ function DashboardPage({ user }) {
     getMissions().then((data) => {
       setMissions(data);
       setStats({
-        inProgressCount: data.filter((mission) => mission.status === "En cours").length,
-        urgentCount: data.filter((mission) => mission.priority === "Urgente").length,
+        inProgressCount: data.filter((mission) => mission.status === "in_progress").length,
+        urgentCount: data.filter((mission) => mission.priority === "high").length,
       });
     });
   }, []);
@@ -41,7 +47,7 @@ function DashboardPage({ user }) {
   const filtered = missions.filter((mission) => {
     if (search && !mission.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (filters.statuses.length && !filters.statuses.includes(mission.status)) return false;
-    if (filters.myMissions && mission.agentId !== user?.id) return false;
+    if (filters.myMissions && !mission.assignedUsers?.includes(user?.id)) return false;
     if (filters.priority && mission.priority !== filters.priority) return false;
     if (filters.startDate && mission.startDate < filters.startDate) return false;
     if (filters.endDate && mission.endDate > filters.endDate) return false;
@@ -63,26 +69,37 @@ function DashboardPage({ user }) {
             <p className="stat-card-label">Missions en cours</p>
             <p className="stat-card-value">{stats.inProgressCount}</p>
           </div>
-          <div className="stat-card-icon stat-card-icon--blue" aria-hidden="true">🕐</div>
+          <div className="stat-card-icon stat-card-icon--blue" aria-hidden="true">
+            <Clock3 size={24} />
+          </div>
         </div>
         <div className="stat-card">
           <div>
             <p className="stat-card-label">Missions urgentes</p>
             <p className="stat-card-value stat-card-value--urgent">{stats.urgentCount}</p>
           </div>
-          <div className="stat-card-icon stat-card-icon--red" aria-hidden="true">⚠</div>
+          <div className="stat-card-icon stat-card-icon--red" aria-hidden="true">
+            <TriangleAlert size={24} />
+          </div>
         </div>
       </div>
 
       <div className="search-bar">
         <div className="search-input-wrapper">
-          <span className="search-input-icon" aria-hidden="true">🔍</span>
+          <Search
+            size={18}
+            className="search-input-icon"
+            aria-hidden="true"
+          />
           <input
             type="search"
             className="search-input"
             placeholder="Rechercher des missions..."
             value={search}
-            onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
           />
         </div>
         <button
@@ -90,7 +107,8 @@ function DashboardPage({ user }) {
           onClick={() => setShowFilters((isVisible) => !isVisible)}
           aria-expanded={showFilters}
         >
-          ⧉ Filtres
+          <SlidersHorizontal size={18} aria-hidden="true" />
+          <span>Filtres</span>
         </button>
       </div>
 

@@ -18,12 +18,12 @@ function MissionList({ missions }) {
           <div className="mission-card-body">
             <p className="mission-card-title">{mission.title}</p>
             <div className="mission-card-tags">
-              <StatusBadge priorite={mission.priority} statut={mission.status} />
+              <StatusBadge priority={mission.priorityLabel} status={mission.statusLabel} />
               {mission.requiresValidation && (
                 <StatusBadge type="validation" />
               )}
-              {mission.typeIntervention && (
-                <span className="tag">{mission.typeIntervention}</span>
+              {mission.interventionType && (
+                <span className="tag">{mission.interventionType}</span>
               )}
               {mission.service && (
                 <span className="tag">{mission.service}</span>

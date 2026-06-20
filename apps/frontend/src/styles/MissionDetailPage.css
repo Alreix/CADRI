@@ -127,6 +127,11 @@
   background-color: #2d6a4f;
 }
 
+.mission-detail-actions button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .mission-detail-card {
     padding: 20px 16px;

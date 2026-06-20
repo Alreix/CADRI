@@ -16,7 +16,7 @@ function UserFilters({ filters, services, onChange }) {
           >
             <option value="">Tous</option>
             <option value="admin">Admin</option>
-            <option value="manager">Responsable</option>
+            <option value="responsable">Responsable</option>
             <option value="agent">Agent</option>
           </select>
         </div>

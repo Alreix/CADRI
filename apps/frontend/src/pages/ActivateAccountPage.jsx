@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
-import { activateAccount, getActivationInfo } from "../api/authApi";
+import PasswordInput from "../components/common/PasswordInput";
+import { activateAccount } from "../api/authApi";
+import { Info, X } from "lucide-react";
 import "../styles/AuthLayout.css";
 
 function WelcomeModal({ onClose }) {
@@ -11,7 +13,9 @@ function WelcomeModal({ onClose }) {
       <div className="auth-modal">
         <div className="auth-modal-header">
           <span className="auth-modal-title">Bienvenue sur CADRI !</span>
-          <button className="auth-modal-close" onClick={onClose} aria-label="Fermer">✕</button>
+          <button className="auth-modal-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </button>
         </div>
         <div className="auth-modal-body" style={{ display: "block", padding: "20px 24px" }}>
           <p style={{ fontSize: "0.9rem", color: "#1a2332", lineHeight: "1.6" }}>
@@ -36,17 +40,14 @@ function ActivateAccountPage() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
 
-  const [info, setInfo] = useState({ role: "", service: "", firstName: "", lastName: "" });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!token) return;
-    getActivationInfo(token)
-      .then((data) => setInfo(data))
-      .catch(() => {});
+    setPassword("");
+    setConfirmPassword("");
   }, [token]);
 
   const handleSubmit = async (event) => {
@@ -59,7 +60,9 @@ function ActivateAccountPage() {
     setError(null);
     try {
       await activateAccount({ token, password });
-      navigate("/connexion");
+      setPassword("");
+      setConfirmPassword("");
+      navigate("/login");
     } catch (err) {
       setError(err.message || "Une erreur s'est produite.");
     } finally {
@@ -78,96 +81,54 @@ function ActivateAccountPage() {
       <div className="auth-card">
         <h1 className="auth-card-title">Activer votre compte</h1>
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} autoComplete="off" noValidate>
           <div className="auth-field">
-            <label className="auth-label" htmlFor="role">Rôle</label>
-            <input
-              id="role"
-              type="text"
-              className="auth-input"
-              value={info.role}
-              readOnly
-              placeholder="Agent"
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="service">Service</label>
-            <input
-              id="service"
-              type="text"
-              className="auth-input"
-              value={info.service}
-              readOnly
-              placeholder="Public Works"
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="firstName">Prénom</label>
-            <input
-              id="firstName"
-              type="text"
-              className="auth-input"
-              value={info.firstName}
-              readOnly
-              placeholder="Jean"
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="lastName">Nom</label>
-            <input
-              id="lastName"
-              type="text"
-              className="auth-input"
-              value={info.lastName}
-              readOnly
-              placeholder="Dupont"
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="password">
+            <label className="auth-label" htmlFor="activation-new-password">
               Mot de passe<span className="auth-label-required">*</span>
             </label>
-            <div className="auth-input-wrapper">
-              <input
-                id="password"
-                type="password"
-                className="auth-input"
-                placeholder="••••••••"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                autoComplete="new-password"
-              />
-              <span
-                className="auth-input-icon"
-                onClick={() => setShowPasswordHint(true)}
-                title="Voir les exigences"
-                aria-label="Voir les exigences du mot de passe"
-                role="button"
-                tabIndex={0}
-              >
-                ⓘ
-              </span>
-            </div>
+            <PasswordInput
+              id="activation-new-password"
+              name="activation-new-password"
+              className="auth-input"
+              placeholder="••••••••"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              autoComplete="new-password"
+              rightIcon={
+                <Info
+                  size={18}
+                  className="auth-password-info"
+                  onClick={() => setShowPasswordHint(true)}
+                  role="button"
+                  tabIndex={0}
+                />
+              }
+            />
           </div>
 
           <div className="auth-field">
-            <label className="auth-label" htmlFor="confirmPassword">
+            <label className="auth-label" htmlFor="activation-confirm-password">
               Confirmer le mot de passe<span className="auth-label-required">*</span>
             </label>
-            <input
-              id="confirmPassword"
-              type="password"
+            <PasswordInput
+              id="activation-confirm-password"
+              name="activation-confirm-password"
               className="auth-input"
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               required
               autoComplete="new-password"
+              rightIcon={
+                <Info
+                  size={18}
+                  className="auth-password-info"
+                  onClick={() => setShowPasswordHint(true)}
+                  role="button"
+                  tabIndex={0}
+                />
+              }
             />
           </div>
 

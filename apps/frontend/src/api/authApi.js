@@ -1,54 +1,52 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { apiRequest } from "./apiClient";
 
 export async function authHealth() {
-  const response = await fetch(`${API_BASE_URL}/auth/health`);
-  return response.json();
+  return apiRequest("/auth/health");
 }
 
 export async function login({ email, password }) {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+  const data = await apiRequest("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
   });
-  if (!response.ok) throw new Error('Identifiants invalides');
-  return response.json();
+
+  return {
+    accessToken: data.access_token,
+    user: data.user,
+  };
 }
 
 export async function requestPasswordReset({ email }) {
-  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
+  return apiRequest("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
   });
-  if (!response.ok) throw new Error('Une erreur s\'est produite');
-  return response.json();
 }
 
-export async function resetPassword({ token, email, password }) {
-  const response = await fetch(`${API_BASE_URL}/auth/reset-password/${token}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+export async function resetPassword({ token, password }) {
+  return apiRequest("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
   });
-  if (!response.ok) throw new Error('Une erreur s\'est produite');
-  return response.json();
 }
 
-export async function activateAccount({ token, email, password }) {
-  const response = await fetch(`${API_BASE_URL}/auth/activate/${token}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+export async function activateAccount({ token, password }) {
+  return apiRequest("/auth/activate-account", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
   });
-  if (!response.ok) throw new Error('Une erreur s\'est produite');
-  return response.json();
 }
 
-export async function getActivationInfo(token) {
-  const response = await fetch(`${API_BASE_URL}/auth/activate/${token}`, {
-    method: 'GET'
+export async function changePassword({ currentPassword, newPassword }) {
+  return apiRequest("/auth/change-password", {
+    method: "PATCH",
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
   });
-  if (!response.ok) throw new Error('Lien d\'activation invalide ou expiré');
-  return response.json();
+}
+
+export async function logout() {
+  return apiRequest("/auth/logout", { method: "POST" });
 }

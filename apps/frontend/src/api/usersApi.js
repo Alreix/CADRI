@@ -1,86 +1,69 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { apiRequest } from "./apiClient";
 
 function mapUserFromBackend(u) {
   if (!u) return u;
   return {
     ...u,
-    firstName: u.prenom ?? u.firstName,
-    lastName: u.nom ?? u.lastName,
+    firstName: u.first_name ?? u.firstName,
+    lastName: u.last_name ?? u.lastName,
+    role: u.role?.name ?? u.role,
+    roleLabel: u.role?.label ?? u.role?.name ?? u.role,
+    service: u.service?.label ?? u.service?.name ?? u.service,
+    serviceId: u.service?.id ?? u.service_id ?? u.serviceId,
   };
 }
 
 function mapUserToBackend(u) {
   if (!u) return u;
   return {
-    ...u,
-    prenom: u.firstName ?? u.prenom,
-    nom: u.lastName ?? u.nom,
+    first_name: u.firstName,
+    last_name: u.lastName,
+    email: u.email,
+    role: u.role,
+    service_id: u.serviceId ?? u.service,
   };
 }
 
 export async function getUsers() {
-  const response = await fetch(`${API_BASE_URL}/users`);
-  if (!response.ok) {
-    throw new Error("Impossible de récupérer la liste des utilisateurs.");
-  }
-  const data = await response.json();
-  if (Array.isArray(data)) return data.map(mapUserFromBackend);
-  return mapUserFromBackend(data);
+  const data = await apiRequest("/users");
+  const users = Array.isArray(data) ? data : data.items ?? [];
+  return users.map(mapUserFromBackend);
 }
 
 export async function getUser(id) {
-  const response = await fetch(`${API_BASE_URL}/users/${id}`);
-  if (!response.ok) {
-    throw new Error("Impossible de récupérer l'utilisateur.");
-  }
-  const data = await response.json();
+  const data = await apiRequest(`/users/${id}`);
   return mapUserFromBackend(data);
 }
 
 export async function createUser(userData) {
   const body = mapUserToBackend(userData);
-  const response = await fetch(`${API_BASE_URL}/users`, {
+  const data = await apiRequest("/users", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(body),
   });
-  if (!response.ok) {
-    throw new Error("Impossible de créer l'utilisateur.");
-  }
-  const data = await response.json();
-  return mapUserFromBackend(data);
+  return mapUserFromBackend(data.user);
 }
 
 export async function updateUser(id, userData) {
   const body = mapUserToBackend(userData);
-  const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+  const data = await apiRequest(`/users/${id}`, {
+    method: "PATCH",
     body: JSON.stringify(body),
   });
-  if (!response.ok) {
-    throw new Error("Impossible de mettre à jour l'utilisateur.");
-  }
-  const data = await response.json();
-  return mapUserFromBackend(data);
+  return mapUserFromBackend(data.user);
 }
 
 export async function deleteUser(id) {
-  const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+  return apiRequest(`/users/${id}`, {
     method: "DELETE",
   });
-  if (!response.ok) {
-    throw new Error("Impossible de supprimer l'utilisateur.");
-  }
-  const data = await response.json();
-  return mapUserFromBackend(data);
+}
+
+export async function getAssignableUsers() {
+  const data = await apiRequest("/users/assignable");
+  return data.map(mapUserFromBackend);
 }
 
 export async function usersHealth() {
-  const response = await fetch(`${API_BASE_URL}/users/health`);
-  return response.json();
+  return apiRequest("/users/health");
 }

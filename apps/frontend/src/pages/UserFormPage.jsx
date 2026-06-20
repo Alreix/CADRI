@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import { AuthContext } from "../contexts/AuthContext";
 import { getUser, createUser, updateUser, deleteUser } from "../api/usersApi";
@@ -13,7 +13,9 @@ function DeleteConfirmModal({ onConfirm, onCancel }) {
       <div className="confirm-modal">
         <div className="confirm-modal-header">
           <span className="confirm-modal-title">Supprimer l'utilisateur</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">✕</button>
+          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
+            <X size={18} />
+          </button>
         </div>
         <div className="confirm-modal-body">
           Êtes-vous sûr de vouloir supprimer cet utilisateur ?
@@ -69,7 +71,7 @@ function UserFormPage({ mode = "create" }) {
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setRoleOptionsSource(
-            data.map((role) => ({ value: role, label: role.charAt(0).toUpperCase() + role.slice(1) }))
+            data.map((role) => ({ value: role.value, label: role.label }))
           );
         }
       })
@@ -79,7 +81,7 @@ function UserFormPage({ mode = "create" }) {
       getUser(id).then((data) => {
         setForm({
           role: data.role || "",
-          service: data.service || "",
+          service: data.serviceId || "",
           firstName: data.firstName || "",
           lastName: data.lastName || "",
           email: data.email || "",
@@ -111,6 +113,9 @@ function UserFormPage({ mode = "create" }) {
   const roleOptions = isAdmin
     ? roleOptionsSource
     : roleOptionsSource.filter((role) => role.value !== "admin");
+  const selectedServiceLabel = (
+    serviceOptions.find((service) => service.id === form.service)?.label || form.service
+  );
 
   const titles = {
     create: isManager ? "Créer un nouvel agent" : "Créer un nouvel utilisateur",
@@ -180,7 +185,7 @@ function UserFormPage({ mode = "create" }) {
                   <input
                     id="service"
                     className="profile-field-input"
-                    value={form.service}
+                    value={selectedServiceLabel}
                     readOnly
                   />
                 ) : (
@@ -193,7 +198,7 @@ function UserFormPage({ mode = "create" }) {
                   >
                     <option value="" />
                     {serviceOptions.map((service) => (
-                      <option key={service} value={service}>{service}</option>
+                      <option key={service.id} value={service.id}>{service.label}</option>
                     ))}
                   </select>
                 )}
