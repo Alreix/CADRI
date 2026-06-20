@@ -2,17 +2,17 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import ErrorPage from '../src/pages/ErrorPage';
-import ProtectedRoute from '../src/components/ProtectedRoute';
+import ProtectedRoute from '../src/components/common/ProtectedRoute';
 import { AuthContext } from '../src/contexts/AuthContext';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-const DummyPage = () => <div>Protected page</div>;
+const DummyPage = () => <div>Page protégée</div>;
 
 const renderProtected = ({ isAuthenticated = false, role = 'agent', requiredRole = null } = {}) =>
   render(
-    <AuthContext.Provider value={{ user: isAuthenticated ? { role } : null }}>
+    <AuthContext.Provider value={{ user: isAuthenticated ? { role } : null, loading: false }}>
       <MemoryRouter initialEntries={['/protected']}>
         <Routes>
           <Route
@@ -23,10 +23,7 @@ const renderProtected = ({ isAuthenticated = false, role = 'agent', requiredRole
               </ProtectedRoute>
             }
           />
-          <Route path="/login" element={<div>Login page</div>} />
-          <Route path="/403"   element={<ErrorPage code={403} />} />
-          <Route path="/404"   element={<ErrorPage code={404} />} />
-          <Route path="*"      element={<ErrorPage code={404} />} />
+          <Route path="/login" element={<div>Page de connexion</div>} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>
@@ -36,72 +33,76 @@ const renderProtected = ({ isAuthenticated = false, role = 'agent', requiredRole
 // ErrorPage
 // ---------------------------------------------------------------------------
 describe('ErrorPage', () => {
-  test('renders 404 code and a descriptive message', () => {
-    render(<MemoryRouter><ErrorPage code={404} /></MemoryRouter>);
-    expect(screen.getByText(/404/)).toBeInTheDocument();
-    expect(screen.getByText(/page not found/i)).toBeInTheDocument();
+  test('affiche un message "page introuvable" par défaut (404)', () => {
+    render(<MemoryRouter><ErrorPage /></MemoryRouter>);
+    expect(screen.getByText('404')).toBeInTheDocument();
+    expect(screen.getByText(/cette page n'existe pas/i)).toBeInTheDocument();
   });
 
-  test('renders 403 code and a descriptive message', () => {
+  test('affiche un message "accès refusé" quand la prop code vaut 403', () => {
     render(<MemoryRouter><ErrorPage code={403} /></MemoryRouter>);
-    expect(screen.getByText(/403/)).toBeInTheDocument();
-    expect(screen.getByText(/access denied|forbidden/i)).toBeInTheDocument();
+    expect(screen.getByText('403')).toBeInTheDocument();
+    expect(screen.getByText('Accès refusé')).toBeInTheDocument();
   });
 
-  test('renders a back button pointing to the Dashboard or previous page', () => {
-    render(<MemoryRouter><ErrorPage code={404} /></MemoryRouter>);
-    expect(
-      screen.queryByRole('link',   { name: /back|dashboard|home/i }) ||
-      screen.queryByRole('button', { name: /back|dashboard|home/i })
-    ).toBeInTheDocument();
+  test('affiche un lien de retour à l\'accueil', () => {
+    render(<MemoryRouter><ErrorPage /></MemoryRouter>);
+    expect(screen.getByRole('link', { name: /retour à l'accueil/i })).toBeInTheDocument();
   });
 });
 
 // ---------------------------------------------------------------------------
 // ProtectedRoute — authentication
 // ---------------------------------------------------------------------------
-describe('ProtectedRoute — authentication', () => {
-  test('redirects to /login when the user is not authenticated', () => {
+describe('ProtectedRoute — authentification', () => {
+  test('redirige vers /login quand l\'utilisateur n\'est pas authentifié', () => {
     renderProtected({ isAuthenticated: false });
-    expect(screen.getByText(/login page/i)).toBeInTheDocument();
-    expect(screen.queryByText(/protected page/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/page de connexion/i)).toBeInTheDocument();
+    expect(screen.queryByText(/page protégée/i)).not.toBeInTheDocument();
   });
 
-  test('renders the page when the user is authenticated', () => {
+  test('affiche la page quand l\'utilisateur est authentifié', () => {
     renderProtected({ isAuthenticated: true });
-    expect(screen.getByText(/protected page/i)).toBeInTheDocument();
+    expect(screen.getByText(/page protégée/i)).toBeInTheDocument();
   });
 });
 
 // ---------------------------------------------------------------------------
 // ProtectedRoute — role-based access
 // ---------------------------------------------------------------------------
-describe('ProtectedRoute — role-based access', () => {
-  test('blocks access and redirects when the role is insufficient', () => {
+describe('ProtectedRoute — accès par rôle', () => {
+  test('bloque l\'accès et affiche "Accès refusé" si le rôle est insuffisant', () => {
     renderProtected({ isAuthenticated: true, role: 'agent', requiredRole: 'admin' });
-    expect(screen.queryByText(/protected page/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/page protégée/i)).not.toBeInTheDocument();
+    expect(screen.getByText('403')).toBeInTheDocument();
+    expect(screen.getByText('Accès refusé')).toBeInTheDocument();
   });
 
-  test('grants access when the role matches the requirement', () => {
+  test('autorise l\'accès quand le rôle correspond exactement', () => {
     renderProtected({ isAuthenticated: true, role: 'admin', requiredRole: 'admin' });
-    expect(screen.getByText(/protected page/i)).toBeInTheDocument();
+    expect(screen.getByText(/page protégée/i)).toBeInTheDocument();
+  });
+
+  test('autorise l\'accès quand le rôle de l\'utilisateur est supérieur au rôle requis', () => {
+    renderProtected({ isAuthenticated: true, role: 'admin', requiredRole: 'agent' });
+    expect(screen.getByText(/page protégée/i)).toBeInTheDocument();
   });
 });
 
 // ---------------------------------------------------------------------------
 // Unknown routes
 // ---------------------------------------------------------------------------
-describe('Unknown routes', () => {
-  test('an unknown route renders the 404 ErrorPage', () => {
+describe('Routes inconnues', () => {
+  test('une route inconnue affiche la page 404', () => {
     render(
-      <AuthContext.Provider value={{ user: { role: 'agent' } }}>
+      <AuthContext.Provider value={{ user: { role: 'agent' }, loading: false }}>
         <MemoryRouter initialEntries={['/this-route-does-not-exist']}>
           <Routes>
-            <Route path="*" element={<ErrorPage code={404} />} />
+            <Route path="*" element={<ErrorPage />} />
           </Routes>
         </MemoryRouter>
       </AuthContext.Provider>
     );
-    expect(screen.getByText(/404/)).toBeInTheDocument();
+    expect(screen.getByText('404')).toBeInTheDocument();
   });
 });
