@@ -322,6 +322,34 @@
   background-color: var(--auth-btn-hover);
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-field .auth-input,
+.password-field .profile-field-input {
+  padding-right: 62px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 60px;
+  transform: translateY(-50%);
+
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle-with-info {
+  right: 35px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .auth-body {
