@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-export default function PasswordInput(props) {
+export default function PasswordInput({ rightIcon, ...props }) {
     const [visible, setVisible] = useState(false);
 
     return (
