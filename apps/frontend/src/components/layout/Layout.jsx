@@ -2,23 +2,23 @@ import { useState, useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { AuthContext } from "../../contexts/AuthContext";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Home, User, ClipboardList, UserPlus, Users, LogOut } from "lucide-react";
 import logo from "../../assets/logo.png";
 import "../../styles/Layout.css";
 
 
 const nav_items = [
-  { to: "/", label: "Accueil", end: true },
-  { to: "/profile", label: "Profil" },
+  { to: "/", label: "Accueil", icon: Home, end: true },
+  { to: "/profile", label: "Profil", icon: User },
 ];
 
 const manager_items = [
-  { to: "/missions/new", label: "Création de mission", end: true },
-  { to: "/users/new", label: "Création d'utilisateur", end: true },
+  { to: "/missions/new", label: "Création de mission", icon: ClipboardList, end: true },
+  { to: "/users/new", label: "Création d'utilisateur", icon: UserPlus, end: true },
 ];
 
 const admin_items = [
-  { to: "/users", label: "Liste des utilisateurs", end: true },
+  { to: "/users", label: "Liste des utilisateurs", icon: Users, end: true },
 ];
 
 function LogoutModal({ onConfirm, onCancel }) {
@@ -84,7 +84,7 @@ function Layout({ children }) {
         </span>
 
         <nav className="intranet-nav" aria-label="Navigation principale">
-          {nav_items.map(({ to, label, end }) => (
+          {nav_items.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -93,11 +93,12 @@ function Layout({ children }) {
                 "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
               }
             >
+              <Icon size={16} aria-hidden="true" />
               {label}
             </NavLink>
           ))}
 
-          {isManager && manager_items.map(({ to, label, end }) => (
+          {isManager && manager_items.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -106,11 +107,12 @@ function Layout({ children }) {
                 "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
               }
             >
+              <Icon size={16} aria-hidden="true" />
               {label}
             </NavLink>
           ))}
 
-          {isAdmin && admin_items.map(({ to, label, end }) => (
+          {isAdmin && admin_items.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -119,6 +121,7 @@ function Layout({ children }) {
                 "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
               }
             >
+              <Icon size={16} aria-hidden="true" />
               {label}
             </NavLink>
           ))}
@@ -127,6 +130,7 @@ function Layout({ children }) {
             className="intranet-nav-link intranet-logout"
             onClick={() => setLogoutOpen(true)}
           >
+            <LogOut size={16} aria-hidden="true" />
             Déconnexion
           </button>
         </nav>
