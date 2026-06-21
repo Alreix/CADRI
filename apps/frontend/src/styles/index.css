@@ -358,9 +358,9 @@ a:hover {
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #ffffff;
-  background-color: #1e3a5f;
-  border: none;
+  color: #1e3a5f;
+  background-color: #ffffff;
+  border: 1px solid #1e3a5f;
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
@@ -369,7 +369,7 @@ a:hover {
 }
 
 .filter-btn:hover {
-  background-color: #162d4a;
+  background-color: #ebf0ff;
 }
 
 /* --- Filter panel --- */
