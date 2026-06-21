@@ -168,7 +168,6 @@ function ProfilePage() {
                 <button
                   className="profile-btn-cancel"
                   onClick={() => setShowLogout(true)}
-                  aria-label="Log out"
                 >
                   Déconnexion
                 </button>
@@ -201,7 +200,6 @@ function ProfilePage() {
                     value={form.firstName}
                     onChange={(event) => setForm((prevForm) => ({ ...prevForm, firstName: event.target.value }))}
                     required
-                    aria-label="first name"
                   />
                 </div>
 
@@ -215,7 +213,6 @@ function ProfilePage() {
                     value={form.lastName}
                     onChange={(event) => setForm((prevForm) => ({ ...prevForm, lastName: event.target.value }))}
                     required
-                    aria-label="last name"
                   />
                 </div>
 
