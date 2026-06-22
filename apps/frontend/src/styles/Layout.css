@@ -3,10 +3,10 @@
    ============================================================================= */
 
 :root {
-  --intranet-header-bg:      #1e3a5f;
-  --intranet-nav-active-bg:  #40916c;
-  --intranet-sidebar-bg:     #1e3a5f;
-  --intranet-sidebar-active: #2d6a4f;
+  --intranet-header-bg:      #234e70;
+  --intranet-nav-active-bg:  #6fa58a;
+  --intranet-sidebar-bg:     #234e70;
+  --intranet-sidebar-active: #6fa58a;
 }
 
 /* ── Shell ── */
@@ -14,7 +14,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #e8edf2;
+  background-color: #e9eef2;
 }
 
 /* ── Header ── */
@@ -74,13 +74,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 16px;
+  padding: 10px 16px;
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 500;
   color: #cdd8e3;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 8px;
   border: none;
   background: none;
   cursor: pointer;
@@ -338,7 +338,7 @@
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #1e3a5f;
+  color: #234e70;
   cursor: pointer;
   padding: 8px 4px;
 }
@@ -348,7 +348,7 @@
 }
 
 .logout-modal-confirm {
-  background-color: #1e3a5f;
+  background-color: #234e70;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -361,5 +361,5 @@
 }
 
 .logout-modal-confirm:hover {
-  background-color: #162d4a;
+  background-color: #193c57;
 }
