@@ -9,13 +9,19 @@
 }
 
 .error-code {
-  display: block;
-  font-size: 5rem;
-  font-weight: 800;
-  color: #1a56db;
-  line-height: 1;
-  margin-bottom: 12px;
-  letter-spacing: -2px;
+  /* Not shown in the mockups (desktop or mobile): only the uppercase
+     "ERREUR 404 — PAGE INTROUVABLE" label and the title are visible.
+     Kept in the DOM (visually hidden) so it stays available to assistive
+     technology and to any test/automation relying on it. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .error-label {
@@ -49,7 +55,7 @@
   font-size: 1rem;
   font-weight: 500;
   color: #ffffff;
-  background-color: #1e3a5f;
+  background-color: #234e70;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -59,16 +65,12 @@
 }
 
 .error-btn:hover {
-  background-color: #162d4a;
+  background-color: #193c57;
   text-decoration: none;
 }
 
 @media (max-width: 768px) {
   .error-card {
     padding: 32px 20px 28px;
-  }
-
-  .error-code {
-    font-size: 4rem;
   }
 }
