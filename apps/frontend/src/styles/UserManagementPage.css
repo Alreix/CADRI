@@ -18,7 +18,7 @@
   font-weight: 600;
   color: #52606d;
   padding: 14px 20px;
-  background: #f9fafb;
+  background: #e9eef2;
   border-bottom: 1px solid #e4e7eb;
 }
 
@@ -38,23 +38,25 @@
   border-radius: 4px;
   font-size: 0.78rem;
   font-weight: 500;
-  border: 1px solid #d1d9e0;
-  color: #1a2332;
+  border: 1px solid transparent;
+  color: #1f2933;
+  background: #e9eef2;
 }
 
 .role-badge--admin {
-  border-color: #fca5a5;
-  color: #e02424;
-  background: #fde8e8;
+  border-color: #e5748a;
+  color: #d4183d;
+  background: #f6d1d8;
 }
 
 .role-badge--manager {
-  border-color: #d1d9e0;
-  color: #1a2332;
+  border-color: #aebdc9;
+  color: #234e70;
+  background: #d3dce2;
 }
 
 .table-action-link {
-  color: #1e3a5f;
+  color: #234e70;
   font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
