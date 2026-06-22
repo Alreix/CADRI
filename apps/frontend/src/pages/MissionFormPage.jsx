@@ -9,20 +9,12 @@ import {
   createMission,
   updateMission,
   deleteMission,
-  updateMissionStatus,
   updateMissionActualDuration,
   addMissionRemark,
 } from "../api/missionsApi";
 import { getAssignableUsers } from "../api/usersApi";
 import "../styles/MissionFormPage.css";
 import "../styles/ConfirmModals.css";
-
-const statusOptions = [
-  { value: "to_do", label: "À faire" },
-  { value: "in_progress", label: "En cours" },
-  { value: "remark_pending_validation", label: "En attente de validation" },
-  { value: "completed", label: "Terminée" },
-];
 
 const priorityOptions = [
   { value: "low", label: "Basse" },
@@ -190,9 +182,6 @@ function MissionFormPage({ mode = "create" }) {
       if (isEdit) {
         if (!isAgent) {
           await updateMission(id, form);
-        }
-        if (form.status && form.status !== initialForm.status) {
-          await updateMissionStatus(id, form.status);
         }
         if (
           form.actualDuration !== "" &&
@@ -373,38 +362,6 @@ function MissionFormPage({ mode = "create" }) {
                 />
               </div>
             </div>
-
-            {/* Statut — edit mode only. */}
-            {isEdit && (
-              <div className="mission-field">
-                <label className="mission-field-label" htmlFor="status">
-                  Statut<span className="mission-field-required">*</span>
-                </label>
-                {initialForm.status === "to_do" ? (
-                  <select
-                    className="mission-field-select"
-                    id="status"
-                    name="status"
-                    value={form.status}
-                    onChange={handleChange}
-                    required
-                  >
-                    {statusOptions
-                      .filter((option) => ["to_do", "in_progress"].includes(option.value))
-                      .map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                  </select>
-                ) : (
-                  <input
-                    className="mission-field-input"
-                    id="status"
-                    value={statusOptions.find((option) => option.value === form.status)?.label || form.status}
-                    readOnly
-                  />
-                )}
-              </div>
-            )}
 
             {/* Localisation */}
             <div className="mission-field">
