@@ -300,7 +300,25 @@ def test_mission_list_rejects_invalid_has_remark_value(client, admin_token):
     assert response.status_code == 400
 
 
-def test_agent_cannot_validate_remark_and_manager_cannot_add_remark(
+def test_admin_can_update_mission_status_to_in_progress(
+    client,
+    admin_token,
+    roles_services,
+    agent_user,
+):
+    mission = create_api_mission(client, admin_token, roles_services, [agent_user.id])
+
+    response = client.patch(
+        f"/missions/{mission['id']}/status",
+        headers=auth_headers(admin_token),
+        json={"status": "in_progress"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["mission"]["status"] == "in_progress"
+
+
+def test_admin_cannot_add_remark_and_agent_cannot_validate_remark(
     client,
     admin_token,
     agent_token,
@@ -309,17 +327,17 @@ def test_agent_cannot_validate_remark_and_manager_cannot_add_remark(
 ):
     mission = create_api_mission(client, admin_token, roles_services, [agent_user.id])
 
-    manager_remark_response = client.post(
+    admin_remark_response = client.post(
         f"/missions/{mission['id']}/remark",
         headers=auth_headers(admin_token),
-        json={"remark": "Manager should not add this remark."},
+        json={"remark": "Admin should not add this remark."},
     )
-    assert manager_remark_response.status_code == 403
+    assert admin_remark_response.status_code == 403
 
     agent_remark_response = client.post(
         f"/missions/{mission['id']}/remark",
         headers=auth_headers(agent_token),
-        json={"remark": "Needs manager validation."},
+        json={"remark": "Needs validation."},
     )
     assert agent_remark_response.status_code == 200
 
@@ -328,6 +346,48 @@ def test_agent_cannot_validate_remark_and_manager_cannot_add_remark(
         headers=auth_headers(agent_token),
     )
     assert agent_validate_response.status_code == 403
+
+
+def test_responsable_can_add_remark_only_when_assigned(
+    client,
+    admin_token,
+    responsable_token,
+    roles_services,
+    agent_user,
+    responsable_user,
+):
+    unassigned_mission = create_api_mission(
+        client,
+        admin_token,
+        roles_services,
+        [agent_user.id],
+    )
+
+    unassigned_response = client.post(
+        f"/missions/{unassigned_mission['id']}/remark",
+        headers=auth_headers(responsable_token),
+        json={"remark": "Responsable is not assigned."},
+    )
+    assert unassigned_response.status_code == 403
+
+    assigned_mission = create_api_mission(
+        client,
+        admin_token,
+        roles_services,
+        [responsable_user.id],
+    )
+
+    assigned_response = client.post(
+        f"/missions/{assigned_mission['id']}/remark",
+        headers=auth_headers(responsable_token),
+        json={"remark": "Responsable assigned remark."},
+    )
+
+    assert assigned_response.status_code == 200
+    data = assigned_response.get_json()["mission"]
+    assert data["remark"] == "Responsable assigned remark."
+    assert data["remark_added_by"] == str(responsable_user.id)
+    assert data["status"] == "remark_pending_validation"
 
 
 def test_validate_mission_requires_remark_and_actual_duration(
