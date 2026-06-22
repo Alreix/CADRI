@@ -147,6 +147,40 @@ def test_agent_adds_remark_and_mission_waits_for_validation(
     assert updated.remark_added_by == agent.id
 
 
+def test_assigned_responsable_can_add_remark_and_mission_waits_for_validation(
+    admin_user,
+    responsable_user,
+    roles_services,
+):
+    admin = get_user(admin_user)
+    responsable = get_user(responsable_user)
+    mission = create_service_mission(admin, roles_services, responsable_user)
+
+    updated = MissionService.add_remark(
+        responsable,
+        mission.id,
+        "Responsable on site remark",
+    )
+
+    assert updated.remark == "Responsable on site remark"
+    assert updated.status == "remark_pending_validation"
+    assert updated.remark_added_by == responsable.id
+
+
+def test_unassigned_responsable_cannot_add_remark(
+    admin_user,
+    agent_user,
+    responsable_user,
+    roles_services,
+):
+    admin = get_user(admin_user)
+    responsable = get_user(responsable_user)
+    mission = create_service_mission(admin, roles_services, agent_user)
+
+    with pytest.raises(AuthorizationError):
+        MissionService.add_remark(responsable, mission.id, "Unassigned remark")
+
+
 def test_agent_cannot_add_second_remark(admin_user, agent_user, roles_services):
     admin = get_user(admin_user)
     agent = get_user(agent_user)

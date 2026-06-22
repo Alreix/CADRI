@@ -833,11 +833,19 @@ STATUS=$(request -X PATCH "$BASE_URL/missions/$ACTION_MISSION_ID/status" \
     -d '{"status":"in_progress"}')
 check "PATCH /missions/<id>/status as assigned agent returns 200" 200 "$STATUS"
 
-STATUS=$(request -X PATCH "$BASE_URL/missions/$ACTION_MISSION_ID/status" \
+ADMIN_STATUS_PAYLOAD=$(make_mission_payload "Curl admin status mission $RUN_ID" "medium" "$GREEN_SERVICE_ID" "$AGENT_ID")
+STATUS=$(request -X POST "$BASE_URL/missions" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$ADMIN_STATUS_PAYLOAD")
+check "POST /missions creates admin status mission returns 201" 201 "$STATUS"
+ADMIN_STATUS_MISSION_ID=$(json_get "mission.id")
+
+STATUS=$(request -X PATCH "$BASE_URL/missions/$ADMIN_STATUS_MISSION_ID/status" \
     -H "Authorization: Bearer $ADMIN_TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"status":"in_progress"}')
-check "PATCH /missions/<id>/status as admin in_progress returns 403" 403 "$STATUS"
+check "PATCH /missions/<id>/status as admin returns 200" 200 "$STATUS"
 
 STATUS=$(request -X PATCH "$BASE_URL/missions/$ACTION_MISSION_ID/status" \
     -H "Authorization: Bearer $AGENT_TOKEN" \
@@ -892,13 +900,33 @@ check "PATCH /missions/<id>/actual-duration before remark returns 200" 200 "$STA
 STATUS=$(request -X POST "$BASE_URL/missions/$REMARK_MISSION_ID/remark" \
     -H "Authorization: Bearer $ADMIN_TOKEN" \
     -H "Content-Type: application/json" \
-    -d '{"remark":"Manager should not add remark"}')
+    -d '{"remark":"Admin should not add remark"}')
 check "POST /missions/<id>/remark as admin returns 403" 403 "$STATUS"
+
+STATUS=$(request -X POST "$BASE_URL/missions/$REMARK_MISSION_ID/remark" \
+    -H "Authorization: Bearer $RESPONSABLE_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"remark":"Unassigned responsable should not add remark"}')
+check "POST /missions/<id>/remark as unassigned responsable returns 403" 403 "$STATUS"
+
+RESP_REMARK_PAYLOAD=$(make_mission_payload "Curl responsable remark mission $RUN_ID" "high" "$GREEN_SERVICE_ID" "$RESPONSABLE_ID")
+STATUS=$(request -X POST "$BASE_URL/missions" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$RESP_REMARK_PAYLOAD")
+check "POST /missions creates responsable remark mission returns 201" 201 "$STATUS"
+RESP_REMARK_MISSION_ID=$(json_get "mission.id")
+
+STATUS=$(request -X POST "$BASE_URL/missions/$RESP_REMARK_MISSION_ID/remark" \
+    -H "Authorization: Bearer $RESPONSABLE_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"remark":"Assigned responsable remark"}')
+check "POST /missions/<id>/remark as assigned responsable returns 200" 200 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/missions/$REMARK_MISSION_ID/remark" \
     -H "Authorization: Bearer $AGENT_TOKEN" \
     -H "Content-Type: application/json" \
-    -d '{"remark":"Need validation from manager"}')
+    -d '{"remark":"Need validation"}')
 check "POST /missions/<id>/remark as assigned agent returns 200" 200 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/missions/$REMARK_MISSION_ID/remark" \
