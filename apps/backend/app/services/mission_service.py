@@ -229,12 +229,16 @@ class MissionService:
 
     @staticmethod
     def add_remark(current_user, mission_id, remark: str) -> Mission:
-        """Add an agent remark and apply business effects."""
-        if current_user.role.name != AGENT_ROLE:
-            raise AuthorizationError("Only an agent can add a remark.")
+        """Add an assigned agent or responsable remark and apply business effects."""
+        if current_user.role.name not in (AGENT_ROLE, RESPONSABLE_ROLE):
+            raise AuthorizationError(
+                "Only an assigned agent or responsable can add a remark."
+            )
 
         mission = MissionService.get_mission_details(mission_id)
-        MissionService._require_agent_assignment_if_agent(current_user, mission)
+
+        if not MissionService._is_user_assigned_to_mission(current_user, mission):
+            raise AuthorizationError("Only assigned users can add a remark.")
 
         if mission.remark:
             raise ConflictError("A remark already exists for this mission.")
