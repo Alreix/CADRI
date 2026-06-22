@@ -8,7 +8,11 @@ function StatusBadge({ priority, status, type }) {
       {priority === "Urgente" && (
         <span className="tag tag--urgent">Urgente</span>
       )}
-      {status && <span className="tag">{status}</span>}
+      {status && (
+        <span className={`tag${status === "En cours" ? " tag--in-progress" : ""}`}>
+          {status}
+        </span>
+      )}
     </>
   );
 }
