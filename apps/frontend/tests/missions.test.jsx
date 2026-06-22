@@ -210,10 +210,10 @@ describe('MissionFormPage — création', () => {
 // MissionFormPage — edit (role-based)
 // ---------------------------------------------------------------------------
 describe('MissionFormPage — édition', () => {
-  test('le statut est affiché et modifiable pour un responsable', async () => {
+  test('le champ statut n\'est plus présent dans le formulaire (géré depuis la fiche mission)', async () => {
     renderForm('responsable', 'edit');
     await waitFor(() => screen.getByLabelText(/^titre/i));
-    expect(screen.getByLabelText(/^statut/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^statut/i)).not.toBeInTheDocument();
   });
 
   test('le champ "Durée réelle" est éditable pour un responsable, quelle que soit l\'assignation', async () => {
