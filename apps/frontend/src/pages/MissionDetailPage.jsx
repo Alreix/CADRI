@@ -126,7 +126,13 @@ function MissionDetailPage() {
               <span className="mission-badge mission-badge--urgente">Urgente</span>
             )}
             {mission.status && (
-              <span className="mission-badge mission-badge--status">{mission.statusLabel}</span>
+              <span
+                className={`mission-badge mission-badge--status${
+                  mission.statusLabel === "En cours" ? " mission-badge--in-progress" : ""
+                }`}
+              >
+                {mission.statusLabel}
+              </span>
             )}
           </div>
 
