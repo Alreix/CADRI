@@ -159,6 +159,7 @@
 
   .mission-detail-actions .profile-btn-primary,
   .mission-btn-validate {
+    flex: 1;
     width: 100%;
     justify-content: center;
   }

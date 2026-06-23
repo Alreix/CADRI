@@ -354,7 +354,6 @@
 @media (max-width: 768px) {
   .auth-body {
     padding: 24px 16px;
-    align-items: flex-start;
   }
 
   .auth-card {

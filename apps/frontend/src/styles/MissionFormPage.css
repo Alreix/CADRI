@@ -240,4 +240,8 @@
     width: 100%;
     justify-content: center;
   }
+
+  .mission-form-actions--center {
+    justify-content: center;
+  }
 }
