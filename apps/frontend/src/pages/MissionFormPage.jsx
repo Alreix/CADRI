@@ -433,6 +433,7 @@ function MissionFormPage({ mode = "create" }) {
                   onChange={handleChange}
                   disabled={lockMissionFields}
                   required={!isAgent}
+                  min={form.startDate || undefined}
                 />
               </div>
             </div>
