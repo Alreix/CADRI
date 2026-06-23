@@ -74,9 +74,15 @@
   flex-shrink: 0;
 }
 
-.filter-btn,
-.pagination-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header .profile-btn-primary {
+    align-self: stretch;
+    justify-content: center;
+  }
 }

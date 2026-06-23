@@ -116,12 +116,6 @@
   color: #234e70;
 }
 
-.filter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .search-input-icon {
   width: 18px;
   height: 18px;
