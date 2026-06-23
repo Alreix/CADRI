@@ -1,4 +1,4 @@
-
+import "../../styles/UserFilters.css";
 
 function UserFilters({ filters, services, onChange }) {
   return (
