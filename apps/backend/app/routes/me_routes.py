@@ -31,6 +31,8 @@ def get_json_payload():
 
 @me_ns.route("/health")
 class MeHealthResource(Resource):
+    """Expose a public health check for the current-user namespace."""
+
     def get(self):
         """Return the health status of the me namespace."""
         return {"message": "Me routes working"}, 200
@@ -38,6 +40,8 @@ class MeHealthResource(Resource):
 
 @me_ns.route("")
 class MeResource(Resource):
+    """Read and update the authenticated user's own profile."""
+
     @jwt_required()
     def get(self):
         """Return the current user's profile."""

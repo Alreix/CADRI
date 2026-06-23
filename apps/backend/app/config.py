@@ -3,6 +3,8 @@ from datetime import timedelta
 
 
 class BaseConfig:
+    """Shared configuration used by every CADRI runtime environment."""
+
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret-key")
 
@@ -43,6 +45,8 @@ class BaseConfig:
 
 
 class DevelopmentConfig(BaseConfig):
+    """Configuration used when running the application locally."""
+
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",
@@ -51,6 +55,8 @@ class DevelopmentConfig(BaseConfig):
 
 
 class TestingConfig(BaseConfig):
+    """Configuration used by automated tests."""
+
     TESTING = True
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.getenv(
@@ -60,11 +66,14 @@ class TestingConfig(BaseConfig):
 
 
 class ProductionConfig(BaseConfig):
+    """Configuration used by deployed production instances."""
+
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
 
 
 def get_config():
+    """Return the configuration class matching the FLASK_ENV value."""
     env = os.getenv("FLASK_ENV", "development")
 
     config_map = {

@@ -7,6 +7,7 @@ EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 def validate_email(email):
+    """Normalize and validate an email address submitted by a client."""
     if not email or not isinstance(email, str):
         raise ValidationError("Email is required.")
 
@@ -19,6 +20,7 @@ def validate_email(email):
 
 
 def validate_password(password):
+    """Validate the minimum password policy used by account flows."""
     if not password or not isinstance(password, str):
         raise ValidationError("Password is required.")
 

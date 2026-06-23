@@ -14,9 +14,12 @@ def require_roles(*allowed_roles: str) -> Callable[[RouteHandler], RouteHandler]
     """Restrict access to authenticated users whose role is explicitly allowed."""
 
     def decorator(function: RouteHandler) -> RouteHandler:
+        """Wrap a route handler with JWT and role validation."""
+
         @wraps(function)
         @jwt_required()
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Validate the current user before executing the route handler."""
             user_id = get_jwt_identity()
             current_user = UserRepository.get_by_id(user_id)
 

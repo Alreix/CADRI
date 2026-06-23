@@ -98,6 +98,8 @@ def build_clear_refresh_cookie_header():
 
 @auth_ns.route("/health")
 class AuthHealthResource(Resource):
+    """Expose a public health check for the authentication namespace."""
+
     def get(self):
         """Return a lightweight auth health response."""
         return {"message": "Auth routes working"}, 200
@@ -105,6 +107,8 @@ class AuthHealthResource(Resource):
 
 @auth_ns.route("/login")
 class LoginResource(Resource):
+    """Authenticate users and issue their session tokens."""
+
     @auth_ns.expect(login_model, validate=True)
     def post(self):
         """Authenticate a user and set the refresh cookie."""
@@ -129,6 +133,8 @@ class LoginResource(Resource):
 
 @auth_ns.route("/logout")
 class LogoutResource(Resource):
+    """Terminate the current refresh-token based session."""
+
     def post(self):
         """Revoke the refresh token and clear the cookie."""
         try:
@@ -143,6 +149,8 @@ class LogoutResource(Resource):
 
 @auth_ns.route("/refresh")
 class RefreshSessionResource(Resource):
+    """Refresh an authenticated session using the refresh token cookie."""
+
     def post(self):
         """Rotate the refresh token and return a new session payload."""
         try:
@@ -162,6 +170,8 @@ class RefreshSessionResource(Resource):
 
 @auth_ns.route("/activate-account")
 class ActivateAccountResource(Resource):
+    """Activate newly created accounts from emailed activation links."""
+
     @auth_ns.expect(activate_account_model, validate=True)
     def post(self):
         """Activate a new account from a token and password."""
@@ -179,6 +189,8 @@ class ActivateAccountResource(Resource):
 
 @auth_ns.route("/forgot-password")
 class ForgotPasswordResource(Resource):
+    """Start the password reset flow for an active account."""
+
     @auth_ns.expect(forgot_password_model, validate=True)
     def post(self):
         """Start the password reset flow for the given email."""
@@ -193,6 +205,8 @@ class ForgotPasswordResource(Resource):
 
 @auth_ns.route("/reset-password")
 class ResetPasswordResource(Resource):
+    """Complete password reset requests from emailed reset links."""
+
     @auth_ns.expect(reset_password_model, validate=True)
     def post(self):
         """Reset a password using a reset token."""
@@ -210,6 +224,8 @@ class ResetPasswordResource(Resource):
 
 @auth_ns.route("/change-password")
 class ChangePasswordResource(Resource):
+    """Allow an authenticated user to change their current password."""
+
     @jwt_required()
     @auth_ns.expect(change_password_model, validate=True)
     def patch(self):

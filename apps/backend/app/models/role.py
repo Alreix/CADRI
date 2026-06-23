@@ -19,4 +19,5 @@ class Role(BaseModel):
     users = db.relationship("User", back_populates="role", lazy=True)
 
     def __repr__(self) -> str:
+        """Return a compact debug representation for the role."""
         return f"<Role {self.name}>"

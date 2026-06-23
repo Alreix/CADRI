@@ -21,4 +21,5 @@ class Service(BaseModel):
     users = db.relationship("User", back_populates="service", lazy=True)
 
     def __repr__(self) -> str:
+        """Return a compact debug representation for the service."""
         return f"<Service {self.name}>"

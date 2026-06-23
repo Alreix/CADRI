@@ -29,11 +29,13 @@ class MissionService:
 
     @staticmethod
     def _require_admin_or_responsable(current_user) -> None:
+        """Ensure the current user can manage mission definitions."""
         if current_user.role.name not in (ADMIN_ROLE, RESPONSABLE_ROLE):
             raise AuthorizationError("You are not allowed to manage missions.")
 
     @staticmethod
     def _require_agent_or_manager(current_user) -> None:
+        """Ensure the current user can perform field-level mission actions."""
         if current_user.role.name not in (AGENT_ROLE, RESPONSABLE_ROLE, ADMIN_ROLE):
             raise AuthorizationError("You are not allowed to access this mission action.")
         
@@ -56,16 +58,19 @@ class MissionService:
 
     @staticmethod
     def _validate_dates(start_date, end_date) -> None:
+        """Ensure the mission end date is not before the start date."""
         if end_date < start_date:
             raise ValidationError("End date must be greater than or equal to start date.")
 
     @staticmethod
     def _validate_services(service_ids: list[str]) -> None:
+        """Ensure every mission is attached to at least one service."""
         if not service_ids:
             raise ValidationError("At least one service must be linked to the mission.")
 
     @staticmethod
     def _validate_assignable_users(user_ids: list[str]) -> None:
+        """Ensure assigned users exist, are active, and have assignable roles."""
         for user_id in user_ids:
             user = UserRepository.get_by_id(user_id)
             if not user:
@@ -250,6 +255,7 @@ class MissionService:
     
     @staticmethod
     def _validate_estimated_duration(estimated_duration) -> None:
+        """Ensure the planned mission duration is at least one hour."""
         if estimated_duration < 1:
             raise ValidationError("Estimated duration must be greater than or equal to 1.")
 

@@ -29,14 +29,17 @@ class User(BaseModel):
     service = db.relationship("Service", back_populates="users")
 
     def set_password(self, password: str) -> None:
+        """Hash and store a new password for the user."""
         self.password_hash = hash_password(password)
 
     def check_password(self, password: str) -> bool:
+        """Return True when the provided password matches the stored hash."""
         if not self.password_hash:
             return False
         return check_password(password, self.password_hash)
 
     def activate_account(self) -> None:
+        """Mark the user account as active."""
         self.is_active = True
 
     def update_profile(
@@ -45,6 +48,7 @@ class User(BaseModel):
         last_name: str | None = None,
         email: str | None = None,
     ) -> None:
+        """Update profile fields that were explicitly provided."""
         if first_name is not None:
             self.first_name = first_name
         if last_name is not None:
@@ -53,6 +57,7 @@ class User(BaseModel):
             self.email = email
 
     def to_dict(self, include_timestamps: bool = False) -> dict:
+        """Serialize the user with role and service data for API responses."""
         data = {
             "id": str(self.id) if self.id else None,
             "first_name": self.first_name,
@@ -87,4 +92,5 @@ class User(BaseModel):
         return data
 
     def __repr__(self) -> str:
+        """Return a compact debug representation for logs and shells."""
         return f"<User {self.email}>"

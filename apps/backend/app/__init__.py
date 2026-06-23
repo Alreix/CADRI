@@ -6,6 +6,11 @@ from app.extensions import bcrypt, cors, db, jwt, migrate
 
 
 def create_app():
+    """Create and configure the Flask application instance.
+
+    The factory loads the environment-specific configuration, initializes
+    extensions, and registers all API namespaces before returning the app.
+    """
     app = Flask(__name__)
     app.config.from_object(get_config())
 
@@ -16,6 +21,7 @@ def create_app():
 
 
 def configure_extensions(app):
+    """Attach shared Flask extensions to the application."""
     db.init_app(app)
     migrate.init_app(app, db)
 
@@ -30,6 +36,7 @@ def configure_extensions(app):
 
 
 def configure_routes(app):
+    """Register every RESTX namespace on the API root."""
     api = Api(app, title="CADRI API", version="1.0", doc="/docs")
 
     from app.routes.auth_routes import auth_ns

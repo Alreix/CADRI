@@ -64,4 +64,5 @@ class AccountActivationToken(BaseModel):
         self.used_at = datetime.now(timezone.utc)
 
     def __repr__(self) -> str:
+        """Return a compact debug representation without exposing token data."""
         return f"<AccountActivationToken user_id={self.user_id}>"

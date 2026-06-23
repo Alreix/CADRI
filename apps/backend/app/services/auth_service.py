@@ -45,6 +45,11 @@ class AuthService:
     """
     @staticmethod
     def login(email, password):
+        """Authenticate a user and create a fresh access/refresh token pair.
+
+        The login flow normalizes the email, validates account activation, and
+        revokes previous refresh tokens so a new login replaces older sessions.
+        """
         email = validate_email(email)
 
         user = UserRepository.get_by_email(email)
@@ -92,6 +97,7 @@ class AuthService:
 
     @staticmethod
     def logout(raw_refresh_token):
+        """Revoke the current refresh token when a user logs out."""
         if not raw_refresh_token:
             raise AuthenticationError("Refresh token is required.")
 
@@ -109,6 +115,7 @@ class AuthService:
 
     @staticmethod
     def refresh_session(raw_refresh_token):
+        """Rotate a valid refresh token and issue a new access token."""
         if not raw_refresh_token:
             raise AuthenticationError("Refresh token is required.")
 
@@ -143,6 +150,7 @@ class AuthService:
 
     @staticmethod
     def activate_account(raw_token, password):
+        """Activate an account from an emailed token and initialize its password."""
         if not raw_token:
             raise ValidationError("Activation token is required.")
 
@@ -173,6 +181,11 @@ class AuthService:
 
     @staticmethod
     def request_password_reset(email):
+        """Create and email a password reset token when the account is eligible.
+
+        The response is intentionally generic so callers cannot infer whether
+        an email address belongs to an active CADRI account.
+        """
         email = validate_email(email)
 
         user = UserRepository.get_by_email(email)
@@ -196,6 +209,7 @@ class AuthService:
 
     @staticmethod
     def reset_password(raw_token, password):
+        """Reset a user's password after validating a one-time reset token."""
         if not raw_token:
             raise ValidationError("Reset token is required.")
 
@@ -246,6 +260,7 @@ class AuthService:
 
     @staticmethod
     def send_activation_email_for_user(user):
+        """Invalidate older activation tokens and send a new activation email."""
         AccountActivationTokenRepository.invalidate_unused_tokens_for_user(user.id)
 
         token, raw_token = AccountActivationToken.create_for_user(

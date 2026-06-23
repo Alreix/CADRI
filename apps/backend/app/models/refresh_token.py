@@ -44,12 +44,15 @@ class RefreshToken(BaseModel):
         return token, raw_token
 
     def is_expired(self) -> bool:
+        """Return True when the token is past its expiration timestamp."""
         return datetime.now(timezone.utc) > self.expires_at
 
     def is_revoked(self) -> bool:
+        """Return True when the token was explicitly revoked."""
         return self.revoked_at is not None
 
     def is_replaced(self) -> bool:
+        """Return True when this token was rotated into a newer token."""
         return self.replaced_by_token_hash is not None
 
     def is_valid(self) -> bool:
@@ -58,6 +61,7 @@ class RefreshToken(BaseModel):
         return not self.is_expired() and not self.is_revoked() and not self.is_replaced()
 
     def verify_token(self, raw_token: str) -> bool:
+        """Verify whether the provided raw token matches this record."""
         return self.token_hash == hash_token(raw_token)
 
     def revoke(self) -> None:
@@ -77,4 +81,5 @@ class RefreshToken(BaseModel):
         self.revoke()
 
     def __repr__(self) -> str:
+        """Return a compact debug representation without exposing token data."""
         return f"<RefreshToken user_id={self.user_id}>"
