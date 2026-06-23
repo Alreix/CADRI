@@ -28,7 +28,7 @@
   line-height: 1;
 }
 
-.stat-card-value--urgent { color: #e02424; }
+.stat-card-value--urgent { color: #d4183d; }
 
 .stat-card-icon {
   width: 48px;
@@ -40,8 +40,8 @@
   flex-shrink: 0;
 }
 
-.stat-card-icon--blue { background-color: #ebf0ff; color: #1e3a5f; }
-.stat-card-icon--red  { background-color: #fde8e8; color: #e02424; }
+.stat-card-icon--blue { background-color: #ebf0ff; color: #234e70; }
+.stat-card-icon--red  { background-color: #f6d1d8; color: #d4183d; }
 
 .mission-list {
   display: flex;
@@ -93,15 +93,15 @@
   border-radius: 4px;
   font-size: 0.78rem;
   font-weight: 500;
-  border: 1px solid #d1d9e0;
-  color: #1a2332;
-  background: #ffffff;
+  border: 1px solid transparent;
+  color: #1f2933;
+  background: #e9eef2;
 }
 
 .tag--urgent {
-  background: #fde8e8;
-  border-color: #fca5a5;
-  color: #e02424;
+  background: #f6d1d8;
+  border-color: #e5748a;
+  color: #d4183d;
 }
 
 .tag--validation {
@@ -110,10 +110,10 @@
   color: #92400e;
 }
 
-.filter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+.tag--in-progress {
+  background: #d3dce2;
+  border-color: #aebdc9;
+  color: #234e70;
 }
 
 .search-input-icon {

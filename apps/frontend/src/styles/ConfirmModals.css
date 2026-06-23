@@ -7,7 +7,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: #ffffff;
-  background-color: #1e3a5f;
+  background-color: #234e70;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -16,7 +16,7 @@
 }
 
 .profile-btn-primary:hover {
-  background-color: #162d4a;
+  background-color: #193c57;
 }
 
 .profile-btn-danger {
@@ -28,7 +28,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: #ffffff;
-  background-color: #dc2626;
+  background-color: #d4183d;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -36,7 +36,7 @@
 }
 
 .profile-btn-danger:hover {
-  background-color: #b91c1c;
+  background-color: #bd1432;
 }
 
 .profile-btn-cancel {
@@ -45,7 +45,7 @@
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #1e3a5f;
+  color: #234e70;
   cursor: pointer;
   padding: 10px 4px;
 }
@@ -117,7 +117,7 @@
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #1e3a5f;
+  color: #234e70;
   cursor: pointer;
   padding: 8px 4px;
 }
@@ -127,7 +127,7 @@
 }
 
 .confirm-modal-confirm-danger {
-  background-color: #dc2626;
+  background-color: #d4183d;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -140,7 +140,7 @@
 }
 
 .confirm-modal-confirm-danger:hover {
-  background-color: #b91c1c;
+  background-color: #bd1432;
 }
 
 .pwd-req-list {
@@ -160,6 +160,6 @@
 }
 
 .pwd-req-check {
-  color: #2d6a4f;
+  color: #6fa58a;
   flex-shrink: 0;
 }

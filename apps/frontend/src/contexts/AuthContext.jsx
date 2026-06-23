@@ -10,8 +10,8 @@ import { logout as logoutApi } from "../api/authApi";
 export const AuthContext = createContext({
   user: null,
   loading: true,
-  login: () => {},
-  logout: () => {},
+  login: () => { },
+  logout: () => { },
 });
 
 const storage_key = "cadri_user";
@@ -51,6 +51,40 @@ function AuthProvider({ children }) {
           setUser(storedUser);
           setLoading(false);
         }
+
+        try {
+          const profile = await apiRequest("/me");
+          const normalizedUser = normalizeUser(profile);
+
+          if (isMounted) {
+            setUser(normalizedUser);
+            localStorage.setItem(storage_key, JSON.stringify(normalizedUser));
+          }
+        } catch {
+          if (isMounted) {
+            setUser(null);
+          }
+          localStorage.removeItem(storage_key);
+          clearAccessToken();
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
+        }
+
+        apiRequest("/me")
+          .then((profile) => {
+            if (isMounted) {
+              setUser(normalizeUser(profile));
+              localStorage.setItem(storage_key, JSON.stringify(normalizeUser(profile)));
+            }
+          })
+          .catch(() => {
+            if (isMounted) setUser(null);
+            localStorage.removeItem(storage_key);
+            clearAccessToken();
+          });
+
         return;
       }
 

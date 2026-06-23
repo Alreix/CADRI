@@ -72,7 +72,7 @@ function UserManagementPage() {
           />
         </div>
         <button
-          className="filter-btn"
+          className={`filter-btn${showFilters ? " filter-btn--active" : ""}`}
           onClick={() => setShowFilters((toggleFilters) => !toggleFilters)}
           aria-expanded={showFilters}
         >

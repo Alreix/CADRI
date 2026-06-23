@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import StatusBadge from "./StatusBadge";
+import { formatDateFR } from "../../api/missionsApi";
 
 
 function MissionList({ missions }) {
@@ -30,7 +31,7 @@ function MissionList({ missions }) {
               )}
             </div>
             <p className="mission-card-dates">
-              {mission.startDate} - {mission.endDate}
+              {formatDateFR(mission.startDate)} - {formatDateFR(mission.endDate)}
             </p>
           </div>
           <Link to={`/missions/${mission.id}`} className="btn-view">

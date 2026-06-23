@@ -26,7 +26,6 @@ function DeleteConfirmModal({ onConfirm, onCancel }) {
           <button
             className="confirm-modal-confirm-danger"
             onClick={onConfirm}
-            aria-label="confirm"
           >
             Oui, supprimer
           </button>
@@ -56,6 +55,7 @@ function UserFormPage({ mode = "create" }) {
     lastName: "",
     email: "",
   });
+  const [loadedRoleLabel, setLoadedRoleLabel] = useState("");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -86,6 +86,7 @@ function UserFormPage({ mode = "create" }) {
           lastName: data.lastName || "",
           email: data.email || "",
         });
+        setLoadedRoleLabel(data.roleLabel || "");
       });
     }
   }, [mode, id]);
@@ -116,6 +117,10 @@ function UserFormPage({ mode = "create" }) {
   const selectedServiceLabel = (
     serviceOptions.find((service) => service.id === form.service)?.label || form.service
   );
+  const selectedRoleLabel =
+    loadedRoleLabel ||
+    roleOptionsSource.find((role) => role.value === form.role)?.label ||
+    form.role;
 
   const titles = {
     create: isManager ? "Créer un nouvel agent" : "Créer un nouvel utilisateur",
@@ -154,10 +159,9 @@ function UserFormPage({ mode = "create" }) {
                   <input
                     id="role"
                     className="profile-field-input"
-                    value={form.role}
+                    value={selectedRoleLabel}
                     readOnly
                     placeholder={isManager ? "Agent" : ""}
-                    aria-label="role"
                   />
                 ) : (
                   <select
@@ -166,7 +170,6 @@ function UserFormPage({ mode = "create" }) {
                     value={form.role}
                     onChange={(event) => setForm((formData) => ({ ...formData, role: event.target.value }))}
                     required
-                    aria-label="role"
                   >
                     <option value="" />
                     {roleOptions.map((roleOption) => (
@@ -217,7 +220,6 @@ function UserFormPage({ mode = "create" }) {
                   readOnly={isReadOnly}
                   required={!isReadOnly}
                   placeholder={isReadOnly ? "" : "Jean"}
-                  aria-label="first name"
                 />
               </div>
 
@@ -234,7 +236,6 @@ function UserFormPage({ mode = "create" }) {
                   readOnly={isReadOnly}
                   required={!isReadOnly}
                   placeholder={isReadOnly ? "" : "Dupont"}
-                  aria-label="last name"
                 />
               </div>
 
@@ -292,7 +293,6 @@ function UserFormPage({ mode = "create" }) {
                   type="button"
                   className="profile-btn-danger"
                   onClick={() => setShowDeleteModal(true)}
-                  aria-label="delete"
                 >
                   <Trash2 size={16} />
                   Supprimer l'utilisateur

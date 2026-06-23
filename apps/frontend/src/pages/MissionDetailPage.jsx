@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import { AuthContext } from "../contexts/AuthContext";
+import { formatDateFR } from "../api/missionsApi";
 import "../styles/MissionDetailPage.css";
 import {
   getMission,
@@ -126,7 +127,13 @@ function MissionDetailPage() {
               <span className="mission-badge mission-badge--urgente">Urgente</span>
             )}
             {mission.status && (
-              <span className="mission-badge mission-badge--status">{mission.statusLabel}</span>
+              <span
+                className={`mission-badge mission-badge--status${
+                  mission.statusLabel === "En cours" ? " mission-badge--in-progress" : ""
+                }`}
+              >
+                {mission.statusLabel}
+              </span>
             )}
           </div>
 
@@ -161,12 +168,12 @@ function MissionDetailPage() {
 
             <div className="mission-detail-item">
               <span className="mission-detail-label">Date de début</span>
-              <span className="mission-detail-value">{mission.startDate}</span>
+              <span className="mission-detail-value">{formatDateFR(mission.startDate)}</span>
             </div>
 
             <div className="mission-detail-item">
               <span className="mission-detail-label">Date de fin</span>
-              <span className="mission-detail-value">{mission.endDate}</span>
+              <span className="mission-detail-value">{formatDateFR(mission.endDate)}</span>
             </div>
 
             <div className="mission-detail-item">

@@ -49,6 +49,7 @@ async function refreshAccessToken() {
         const data = await parseResponse(response);
 
         if (!response.ok || !data?.access_token) {
+          localStorage.removeItem("cadri_user");
           clearAccessToken();
           return null;
         }
@@ -86,10 +87,15 @@ export async function apiRequest(path, options = {}, retryOnUnauthorized = true)
   }
 
   if (!response.ok) {
-    const error = new Error(data?.message || data?.error || "API request failed.");
-    error.status = response.status;
-    throw error;
-  }
+    if (response.status === 401) {
+      localStorage.removeItem("cadri_user");
+      clearAccessToken();
+    }
 
-  return data;
-}
+      const error = new Error(data?.message || data?.error || "API request failed.");
+      error.status = response.status;
+      throw error;
+    }
+
+    return data;
+  }

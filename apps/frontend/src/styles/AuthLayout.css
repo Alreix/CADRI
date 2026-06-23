@@ -1,9 +1,9 @@
 :root {
-  --auth-header-bg:   #1e3a5f;
-  --auth-btn-bg:      #1e3a5f;
-  --auth-btn-hover:   #162d4a;
-  --auth-link-color:  #1e3a5f;
-  --auth-required:    #dc2626;
+  --auth-header-bg:   #234e70;
+  --auth-btn-bg:      #234e70;
+  --auth-btn-hover:   #193c57;
+  --auth-link-color:  #234e70;
+  --auth-required:    #d4183d;
   --auth-card-radius: 12px;
 }
 
@@ -12,7 +12,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #e8edf2;
+  background-color: #e9eef2;
 }
 
 /* ── Header ── */
@@ -106,7 +106,7 @@
 .auth-input:focus {
   outline: none;
   border-color: var(--auth-link-color);
-  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12);
+  box-shadow: 0 0 0 3px rgba(35, 78, 112, 0.12);
 }
 
 /* Input with icon on the right (password info icon) */
@@ -192,7 +192,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background-color: #e8edf2;
+  background-color: #e9eef2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -354,7 +354,6 @@
 @media (max-width: 768px) {
   .auth-body {
     padding: 24px 16px;
-    align-items: flex-start;
   }
 
   .auth-card {

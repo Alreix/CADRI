@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getPriorities, getStatuses } from "../../api/metadataApi";
+import "../../styles/MissionFilters.css";
 
 
 function MissionFilters({ filters, onChange }) {

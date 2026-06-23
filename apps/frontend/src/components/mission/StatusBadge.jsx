@@ -1,19 +1,20 @@
-
-
 function StatusBadge({ priority, status, type }) {
   if (type === "validation") {
     return <span className="tag tag--validation">Nécessite validation</span>;
   }
 
-  if (priority === "high") {
-    return <span className="tag tag--urgent">Urgente</span>;
-  }
-
-  if (status) {
-    return <span className="tag">{status}</span>;
-  }
-
-  return null;
+  return (
+    <>
+      {priority === "Urgente" && (
+        <span className="tag tag--urgent">Urgente</span>
+      )}
+      {status && (
+        <span className={`tag${status === "En cours" ? " tag--in-progress" : ""}`}>
+          {status}
+        </span>
+      )}
+    </>
+  );
 }
 
 export default StatusBadge;
