@@ -43,8 +43,9 @@
 }
 
 .intranet-logo-image {
-  height: 36px;
-  width: auto;
+  height: 70px;
+  width: 70px;
+  object-fit: contain;
   display: block;
   flex-shrink: 0;
 }
@@ -191,6 +192,16 @@
   font-size: 1.125rem;
   font-weight: 700;
   color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-logo-image {
+  height: 70px;
+  width: 70px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .sidebar-nav {
