@@ -18,6 +18,12 @@ function toDateInputValue(value) {
   return value.slice(0, 10);
 }
 
+export function formatDateFR(value) {
+  if (!value) return "";
+  const [year, month, day] = value.slice(0, 10).split("-");
+  return `${day}/${month}/${year}`;
+}
+
 function mapMissionFromBackend(mission) {
   if (!mission) return mission;
 
