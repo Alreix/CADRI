@@ -149,33 +149,68 @@ Backend services enforce the final authorization rules. The frontend improves us
 
 ```mermaid
 flowchart TD
-    U[User] --> FE[React / Vite Frontend]
-    FE --> AR[AuthContext + ProtectedRoute]
-    FE --> API[Frontend API Layer]
+        U([Utilisateur]) --> B[Browser]
 
-    API --> AUTH[/auth API/]
-    API --> ME[/me API/]
-    API --> USERS[/users API/]
-    API --> META[/metadata API/]
-    API --> MISSIONS[/missions API/]
+    subgraph DC[Docker Compose — CADRI local stack]
+        direction TB
 
-    AUTH --> BACK[Flask RESTX Backend]
-    ME --> BACK
-    USERS --> BACK
-    META --> BACK
-    MISSIONS --> BACK
+        subgraph FE[Frontend container — React / Vite :5173]
+            direction TB
+            R[App Router]
+            AC[AuthContext]
+            PR[ProtectedRoute]
+            P[Pages and reusable components]
+            API[API client and API modules]
 
-    BACK --> ROUTES[Routes]
-    ROUTES --> FACADES[Facades]
-    FACADES --> SERVICES[Services]
-    SERVICES --> REPOS[Repositories]
-    REPOS --> MODELS[SQLAlchemy Models]
-    MODELS --> DB[(PostgreSQL)]
+            R --> PR
+            AC --> PR
+            R --> P
+            PR --> P
+            P --> API
+        end
 
-    SERVICES --> MAIL[Email Service]
-    MAIL --> MP[Mailpit]
+        subgraph BE[Backend container — Flask / Flask-RESTX :5000]
+            direction TB
+            NS[REST API namespaces\n/auth · /me · /users · /metadata · /missions]
+            RT[Routes\nHTTP contract and request parsing]
+            FC[Facades\nOrchestration]
+            SV[Services\nBusiness rules, RBAC and workflow]
+            RP[Repositories\nPersistence access]
+            MD[SQLAlchemy models]
+            SW[Swagger UI\n/docs]
 
-    BACK --> SWAGGER[Swagger /docs]
+            NS --> RT --> FC --> SV --> RP --> MD
+            NS -.->|Exposes| SW
+        end
+
+        subgraph DATA[PostgreSQL container :5432]
+            DB[(CADRI database)]
+        end
+
+        subgraph MAIL[Mailpit container]
+            MP[SMTP :1025\nWeb UI :8025]
+        end
+    end
+
+    B -->|UI · localhost:5173| R
+    API -->|REST HTTP / JSON\nAccess token + refresh cookie\nlocalhost:5000| NS
+    MD -->|SQLAlchemy / PostgreSQL| DB
+    SV -->|SMTP :1025| MP
+
+    B -.->|Interactive API documentation\nlocalhost:5000/docs| SW
+    B -.->|Local email inbox\nlocalhost:8025| MP
+
+    classDef user fill:#EAF2FF,stroke:#3B82F6,color:#0F172A,stroke-width:1.5px;
+    classDef frontend fill:#ECFDF5,stroke:#10B981,color:#064E3B,stroke-width:1.5px;
+    classDef backend fill:#FFF7ED,stroke:#F97316,color:#7C2D12,stroke-width:1.5px;
+    classDef data fill:#F5F3FF,stroke:#8B5CF6,color:#4C1D95,stroke-width:1.5px;
+    classDef external fill:#FEF2F2,stroke:#EF4444,color:#7F1D1D,stroke-width:1.5px;
+
+    class U,B user;
+    class R,AC,PR,P,API frontend;
+    class NS,RT,FC,SV,RP,MD,SW backend;
+    class DB data;
+    class MP external;
 ```
 
 ### Backend Layering
@@ -206,32 +241,32 @@ The frontend is organized around:
 
 ```mermaid
 erDiagram
-    ROLES ||--o{ USERS : has
-    SERVICES ||--o{ USERS : belongs_to
+        ROLES ||--o{ USERS : assigns
+    SERVICES ||--o{ USERS : groups
 
     USERS ||--o{ ACCOUNT_ACTIVATION_TOKENS : owns
     USERS ||--o{ PASSWORD_RESET_TOKENS : owns
     USERS ||--o{ REFRESH_TOKENS : owns
 
     USERS ||--o{ MISSIONS : creates
-    USERS ||--o{ MISSIONS : adds_remark
-    USERS ||--o{ MISSIONS : validates
+    USERS o|--o{ MISSIONS : adds_remark
+    USERS o|--o{ MISSIONS : validates
 
     MISSIONS ||--o{ MISSION_ASSIGNMENTS : has
-    USERS ||--o{ MISSION_ASSIGNMENTS : assigned_to
+    USERS ||--o{ MISSION_ASSIGNMENTS : receives
 
     MISSIONS ||--o{ MISSION_SERVICE_LINKS : has
-    SERVICES ||--o{ MISSION_SERVICE_LINKS : linked_to
+    SERVICES ||--o{ MISSION_SERVICE_LINKS : links
 
     ROLES {
         uuid id PK
-        string name
+        string name UK
         string label
     }
 
     SERVICES {
         uuid id PK
-        string name
+        string name UK
         string label
     }
 
@@ -275,6 +310,7 @@ erDiagram
         uuid id PK
         uuid mission_id FK
         uuid user_id FK
+        datetime assigned_at
     }
 
     MISSION_SERVICE_LINKS {
@@ -286,7 +322,7 @@ erDiagram
     ACCOUNT_ACTIVATION_TOKENS {
         uuid id PK
         uuid user_id FK
-        string token_hash
+        string token_hash UK
         datetime expires_at
         datetime used_at
     }
@@ -294,7 +330,7 @@ erDiagram
     PASSWORD_RESET_TOKENS {
         uuid id PK
         uuid user_id FK
-        string token_hash
+        string token_hash UK
         datetime expires_at
         datetime used_at
     }
@@ -302,23 +338,47 @@ erDiagram
     REFRESH_TOKENS {
         uuid id PK
         uuid user_id FK
-        string token_hash
+        string token_hash UK
         datetime expires_at
         datetime revoked_at
-        uuid replaced_by_token_id
+        string replaced_by_token_hash
     }
+
+    %% All entities inherit created_at and updated_at from BaseModel.
+    %% MissionAssignment has a unique constraint on mission_id + user_id.
+    %% MissionServiceLink has a unique constraint on mission_id + service_id.
 ```
 
 ## Mission Lifecycle
 
 ```mermaid
 stateDiagram-v2
-    [*] --> to_do: Mission created
-    to_do --> in_progress: Start mission
-    in_progress --> completed: Complete without remark + actual duration
-    in_progress --> remark_pending_validation: Add remark
-    remark_pending_validation --> completed: Validate remark + actual duration
-    completed --> [*]
+      direction TB
+  classDef pending fill:#FEF3C7,stroke:#D97706,color:#78350F,stroke-width:1.5px;
+  classDef Aqua stroke-width:1px,stroke-dasharray:none,stroke:#46EDC8,fill:#DEFFF8,color:#378E7A;
+  classDef Sky stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C;
+  classDef Peach stroke-width:1px,stroke-dasharray:none,stroke:#FBB35A,fill:#FFEFDB,color:#8F632D;
+  classDef done fill:#DCFCE7,stroke:#16A34A,color:#14532D,stroke-width:1.5px;
+  [*] --> to_do:Create mission
+  to_do --> in_progress:Start missionAssigned agent or responsable
+  in_progress --> completed:Complete without remark Assigned agent or responsable. Actual duration required
+  in_progress --> remark_pending_validation:Add remark -- Assigned agent or responsable
+  remark_pending_validation --> completed:Validate remark -- Admin or responsable. Actual duration required
+  completed --> [*]
+  note right of in_progress 
+  Field actions require:
+        - an authorized role
+        - assignment to the mission
+        - a valid current state
+  end note
+  note right of remark_pending_validation 
+  A mission with a remark
+        cannot be completed directly.
+  end note
+  class to_do Aqua
+  class in_progress Sky
+  class remark_pending_validation Peach
+  class completed done
 ```
 
 Important rules:
@@ -342,7 +402,6 @@ Generated folders such as `node_modules`, `.venv`, `dist`, `__pycache__`, and py
     ├── backend
     │   ├── .env.example
     │   ├── Dockerfile
-    │   ├── README.md
     │   ├── cadri_curl_full_test_suite.sh
     │   ├── requirements.txt
     │   ├── run.py
@@ -949,3 +1008,7 @@ docker compose down -v
 ## License
 
 This repository contains the CADRI MVP application.
+
+## Authors
+
+Morgane Abbattista and Nicolas Dasilva
