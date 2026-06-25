@@ -37,9 +37,10 @@ function DashboardPage() {
       perPage: 10,
     }).then((data) => {
       setMissions(data);
+      const activeMissions = data.filter((mission) => mission.status !== "completed");
       setStats({
-        inProgressCount: data.filter((mission) => mission.status === "in_progress").length,
-        urgentCount: data.filter((mission) => mission.priority === "high").length,
+        inProgressCount: activeMissions.filter((mission) => mission.status === "in_progress").length,
+        urgentCount: activeMissions.filter((mission) => mission.priority === "high").length,
       });
     });
   }, [filters.myMissions]);
@@ -52,11 +53,29 @@ function DashboardPage() {
   const filtered = missions.filter((mission) => {
     if (search && !mission.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (filters.statuses.length && !filters.statuses.includes(mission.status)) return false;
-    if (filters.myMissions && !mission.assignedUsers?.includes(user?.id)) return false;
+    if (!filters.statuses.length && mission.status === "completed") return false;
+    if (
+      filters.myMissions &&
+      !mission.assignedUsers?.some((assignedUserId) => String(assignedUserId) === String(user?.id))
+    ) return false;
     if (filters.priority && mission.priority !== filters.priority) return false;
     if (filters.startDate && mission.startDate < filters.startDate) return false;
     if (filters.endDate && mission.endDate > filters.endDate) return false;
     return true;
+  }).sort((currentMission, nextMission) => {
+    const currentPriorityOrder = currentMission.priority === "high" ? 0 : 1;
+    const nextPriorityOrder = nextMission.priority === "high" ? 0 : 1;
+
+    if (currentPriorityOrder !== nextPriorityOrder) {
+      return currentPriorityOrder - nextPriorityOrder;
+    }
+
+    const currentDate = currentMission.startDate || currentMission.endDate || "";
+    const nextDate = nextMission.startDate || nextMission.endDate || "";
+    const dateOrder = currentDate.localeCompare(nextDate);
+
+    if (dateOrder !== 0) return dateOrder;
+    return currentMission.title.localeCompare(nextMission.title);
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / items_per_page));

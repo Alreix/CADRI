@@ -87,7 +87,9 @@ function MissionFormPage({ mode = "create" }) {
   const { user: currentUser } = useContext(AuthContext);
 
   const isAgent = currentUser?.role === "agent";
-  const isManager = currentUser?.role === "responsable" || currentUser?.role === "admin";
+  const isResponsable = currentUser?.role === "responsable";
+  const isAdmin = currentUser?.role === "admin";
+  const isManager = isResponsable || isAdmin;
   const isEdit = mode === "edit";
 
   const [form, setForm] = useState(emptyForm);
@@ -251,10 +253,8 @@ function MissionFormPage({ mode = "create" }) {
         String(assignedUserId) === String(currentUser?.id)
     );
 
-  // The backend only restricts actual-duration/remark updates by assignment
-  // for agents; a manager/admin can always edit these fields regardless of
-  // assignment (MissionService._require_agent_assignment_if_agent only
-  // applies to the agent role).
+  // Actual duration follows the manager/agent workflow, while remarks are
+  // limited by the backend to an assigned agent or assigned responsable.
   const canAgentUpdateTracking =
     isAgentEdit &&
     isAssignedToMission &&
@@ -269,19 +269,13 @@ function MissionFormPage({ mode = "create" }) {
     loadedMission?.status === "in_progress" &&
     !loadedMission?.remark;
 
-  const isAssignedToMissionAsManager =
-    isManager &&
-    (loadedMission?.assignedUsers || []).some(
-      (assignedUserId) =>
-        String(assignedUserId) === String(currentUser?.id)
-    );
-
-  const canManagerAddRemark =
-    isAssignedToMissionAsManager &&
+  const canAssignedResponsableAddRemark =
+    isResponsable &&
+    isAssignedToMission &&
     loadedMission?.status === "in_progress" &&
     !loadedMission?.remark;
 
-  const canAddRemark = canAgentAddRemark || canManagerAddRemark;
+  const canAddRemark = canAgentAddRemark || canAssignedResponsableAddRemark;
 
   if (loading) return null;
 
