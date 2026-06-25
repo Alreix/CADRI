@@ -158,8 +158,11 @@ def seed_demo_missions():
 
     green_spaces = Service.query.filter_by(name="green_spaces").first()
     roads = Service.query.filter_by(name="roads").first()
+    buildings = Service.query.filter_by(name="buildings").first()
+    cleanliness = Service.query.filter_by(name="cleanliness").first()
+    events = Service.query.filter_by(name="events").first()
 
-    if not all([admin, responsable, agent, green_spaces, roads]):
+    if not all([admin, responsable, agent, green_spaces, roads, buildings, cleanliness, events]):
         return
 
     now = datetime.now(timezone.utc)
@@ -198,7 +201,7 @@ def seed_demo_missions():
             "required_equipment": "Taille-haies, broyeur, équipements de protection",
             "signage_required": False,
             "service_ids": [green_spaces.id],
-            "assigned_user_ids": [responsable.id],
+            "assigned_user_ids": [responsable.id, agent.id],
         },
         {
             "title": "Ramassage des branches square des Écoles",
@@ -217,6 +220,132 @@ def seed_demo_missions():
             "signage_required": False,
             "service_ids": [green_spaces.id],
             "assigned_user_ids": [responsable.id],
+        },
+        {
+            "title": "Contrôle affaissement trottoir rue Victor Hugo",
+            "intervention_type": "Inspection de voirie",
+            "location": "Rue Victor Hugo",
+            "description": (
+                "Contrôler l'affaissement du trottoir, sécuriser la zone et "
+                "préparer une intervention de reprise si nécessaire."
+            ),
+            "planned_agents_count": 2,
+            "estimated_duration": 2,
+            "start_date": now + timedelta(days=5),
+            "end_date": now + timedelta(days=5, hours=2),
+            "priority": "high",
+            "required_equipment": "Barrières, bombe de marquage, appareil photo",
+            "signage_required": True,
+            "service_ids": [roads.id],
+            "assigned_user_ids": [responsable.id, agent.id],
+        },
+        {
+            "title": "Désherbage des massifs devant la mairie",
+            "intervention_type": "Entretien espaces verts",
+            "location": "Place de la Mairie",
+            "description": (
+                "Désherber les massifs, retirer les végétaux secs et préparer "
+                "les zones avant la plantation saisonnière."
+            ),
+            "planned_agents_count": 1,
+            "estimated_duration": 3,
+            "start_date": now + timedelta(days=6),
+            "end_date": now + timedelta(days=6, hours=3),
+            "priority": "medium",
+            "required_equipment": "Binette, sacs de collecte, gants",
+            "signage_required": False,
+            "service_ids": [green_spaces.id],
+            "assigned_user_ids": [responsable.id],
+        },
+        {
+            "title": "Remplacement serrure local technique",
+            "intervention_type": "Maintenance bâtiment",
+            "location": "Local technique nord",
+            "description": (
+                "Remplacer la serrure défectueuse du local technique et "
+                "vérifier que les accès restent sécurisés."
+            ),
+            "planned_agents_count": 2,
+            "estimated_duration": 2,
+            "start_date": now + timedelta(days=7),
+            "end_date": now + timedelta(days=7, hours=2),
+            "priority": "medium",
+            "required_equipment": "Nouvelle serrure, tournevis, perceuse",
+            "signage_required": False,
+            "service_ids": [buildings.id],
+            "assigned_user_ids": [responsable.id, agent.id],
+        },
+        {
+            "title": "Nettoyage dépôt sauvage rue du Moulin",
+            "intervention_type": "Nettoyage urbain",
+            "location": "Rue du Moulin",
+            "description": (
+                "Retirer un dépôt sauvage signalé par les habitants et "
+                "nettoyer la zone après enlèvement."
+            ),
+            "planned_agents_count": 2,
+            "estimated_duration": 3,
+            "start_date": now + timedelta(days=8),
+            "end_date": now + timedelta(days=8, hours=3),
+            "priority": "high",
+            "required_equipment": "Camion benne, pinces, gants renforcés",
+            "signage_required": True,
+            "service_ids": [cleanliness.id],
+            "assigned_user_ids": [responsable.id, agent.id],
+        },
+        {
+            "title": "Installation barrières fête du quartier",
+            "intervention_type": "Préparation événementielle",
+            "location": "Place du Marché",
+            "description": (
+                "Installer les barrières de sécurité et organiser les accès "
+                "piétons avant la fête du quartier."
+            ),
+            "planned_agents_count": 2,
+            "estimated_duration": 4,
+            "start_date": now + timedelta(days=9),
+            "end_date": now + timedelta(days=9, hours=4),
+            "priority": "medium",
+            "required_equipment": "Barrières, rubalise, panneaux temporaires",
+            "signage_required": True,
+            "service_ids": [events.id],
+            "assigned_user_ids": [responsable.id],
+        },
+        {
+            "title": "Révision éclairage hall de la mairie",
+            "intervention_type": "Maintenance électrique",
+            "location": "Hall de la mairie",
+            "description": (
+                "Contrôler les luminaires du hall, remplacer les ampoules "
+                "défectueuses et vérifier le bon fonctionnement général."
+            ),
+            "planned_agents_count": 1,
+            "estimated_duration": 2,
+            "start_date": now + timedelta(days=10),
+            "end_date": now + timedelta(days=10, hours=2),
+            "priority": "low",
+            "required_equipment": "Escabeau, ampoules LED, testeur électrique",
+            "signage_required": False,
+            "service_ids": [buildings.id],
+            "assigned_user_ids": [agent.id],
+        },
+        {
+            "title": "Nettoyage caniveaux marché central",
+            "intervention_type": "Entretien voirie et propreté",
+            "location": "Marché central",
+            "description": (
+                "Nettoyer les caniveaux autour du marché central après la "
+                "forte fréquentation du week-end."
+            ),
+            "planned_agents_count": 2,
+            "estimated_duration": 3,
+            "start_date": now + timedelta(days=11),
+            "end_date": now + timedelta(days=11, hours=3),
+            "priority": "medium",
+            "required_equipment": "Balais, pelle, camion de nettoyage",
+            "signage_required": True,
+            "service_ids": [roads.id, cleanliness.id],
+            "assigned_user_ids": [responsable.id, agent.id],
         },
     ]
 
