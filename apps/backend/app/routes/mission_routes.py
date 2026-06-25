@@ -150,7 +150,7 @@ class MissionCollectionResource(Resource):
             total_pages = (total_items + per_page - 1) // per_page
 
             return {
-                "items": [mission.to_dict() for mission in missions],
+                "items": [mission.to_dict(include_relations=True) for mission in missions],
                 "pagination": {
                     "page": page,
                     "per_page": per_page,

@@ -14,7 +14,7 @@ class ServiceRepository:
     def get_all():
         """Return all services ordered alphabetically by technical name."""
 
-        return Service.query.order_by(Service.name.asc()).all()
+        return Service.query.order_by(Service.label.asc()).all()
 
     @staticmethod
     def get_by_id(service_id):
