@@ -163,3 +163,20 @@
   color: #6fa58a;
   flex-shrink: 0;
 }
+
+.confirm-modal-confirm-primary {
+  background-color: #234e70;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.confirm-modal-confirm-primary:hover {
+  background-color: #193c57;
+}
