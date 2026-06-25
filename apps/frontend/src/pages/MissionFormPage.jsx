@@ -62,6 +62,25 @@ function DeleteConfirmModal({ onConfirm, onCancel }) {
   );
 }
 
+function AlertModal({ message, onClose }) {
+  return (
+    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
+      <div className="confirm-modal">
+        <div className="confirm-modal-header">
+          <span className="confirm-modal-title">Attention</span>
+          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="confirm-modal-body">{message}</div>
+        <div className="confirm-modal-footer">
+          <button className="confirm-modal-confirm-danger" onClick={onClose}>OK</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MissionFormPage({ mode = "create" }) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -80,6 +99,7 @@ function MissionFormPage({ mode = "create" }) {
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddUsers, setShowAddUsers] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
 
   const titles = {
     create: "Créer une mission",
@@ -159,9 +179,7 @@ function MissionFormPage({ mode = "create" }) {
     event.preventDefault();
 
     if (isAgentEdit && !canAgentUpdateTracking) {
-      window.alert(
-        "Vous ne pouvez pas modifier cette mission."
-      );
+      setAlertMessage("Vous ne pouvez pas modifier cette mission.");
       return;
     }
 
@@ -170,9 +188,7 @@ function MissionFormPage({ mode = "create" }) {
       (!form.actualDuration ||
         Number(form.actualDuration) <= 0)
     ) {
-      window.alert(
-        "La durée réelle doit être supérieure à 0."
-      );
+      setAlertMessage("La durée réelle doit être supérieure à 0.");
       return;
     }
 
@@ -190,7 +206,7 @@ function MissionFormPage({ mode = "create" }) {
           await updateMissionActualDuration(id, form.actualDuration);
         }
         if (
-          canAgentAddRemark &&
+          canAddRemark &&
           form.remark.trim()
         ) {
           await addMissionRemark(
@@ -253,6 +269,20 @@ function MissionFormPage({ mode = "create" }) {
     loadedMission?.status === "in_progress" &&
     !loadedMission?.remark;
 
+  const isAssignedToMissionAsManager =
+    isManager &&
+    (loadedMission?.assignedUsers || []).some(
+      (assignedUserId) =>
+        String(assignedUserId) === String(currentUser?.id)
+    );
+
+  const canManagerAddRemark =
+    isAssignedToMissionAsManager &&
+    loadedMission?.status === "in_progress" &&
+    !loadedMission?.remark;
+
+  const canAddRemark = canAgentAddRemark || canManagerAddRemark;
+
   if (loading) return null;
 
   const assignedUserDetails = assignableUsers.filter((candidate) =>
@@ -274,6 +304,13 @@ function MissionFormPage({ mode = "create" }) {
           <DeleteConfirmModal
             onConfirm={handleDelete}
             onCancel={() => setShowDeleteModal(false)}
+          />
+        )}
+
+        {alertMessage && (
+          <AlertModal
+            message={alertMessage}
+            onClose={() => setAlertMessage(null)}
           />
         )}
 
@@ -609,7 +646,7 @@ function MissionFormPage({ mode = "create" }) {
                   placeholder="Ajouter une remarque si nécessaire"
                   value={form.remark}
                   onChange={handleChange}
-                  disabled={!canAgentAddRemark}
+                  disabled={!canAddRemark}
                 />
               </div>
             )}

@@ -20,9 +20,6 @@ function MissionList({ missions }) {
             <p className="mission-card-title">{mission.title}</p>
             <div className="mission-card-tags">
               <StatusBadge priority={mission.priorityLabel} status={mission.statusLabel} />
-              {mission.requiresValidation && (
-                <StatusBadge type="validation" />
-              )}
               {mission.interventionType && (
                 <span className="tag">{mission.interventionType}</span>
               )}

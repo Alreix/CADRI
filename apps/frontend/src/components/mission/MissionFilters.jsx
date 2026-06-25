@@ -18,15 +18,17 @@ function MissionFilters({ filters, onChange }) {
   useEffect(() => {
     getStatuses()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setStatuses(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setStatuses(data.filter((s) => s.value !== "remark_pending_validation"));
+        }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     getPriorities()
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) setPriorities(data);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleStatus = (statusToToggle) => {
