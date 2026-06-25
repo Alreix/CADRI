@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import Layout from "../components/layout/Layout";
 import MissionFilters from "../components/mission/MissionFilters";
 import MissionList from "../components/mission/MissionList";
+import { AuthContext } from "../contexts/AuthContext";
 import { getMissions } from "../api/missionsApi";
 import "../styles/DashboardPage.css";
 import {
@@ -21,7 +22,8 @@ const default_filters = {
   endDate: "",
 };
 
-function DashboardPage({ user }) {
+function DashboardPage() {
+  const { user } = useContext(AuthContext);
   const [missions, setMissions] = useState([]);
   const [stats, setStats] = useState({ inProgressCount: 0, urgentCount: 0 });
   const [search, setSearch] = useState("");
@@ -30,38 +32,32 @@ function DashboardPage({ user }) {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    getMissions().then((data) => {
+    getMissions({
+      myMissions: filters.myMissions,
+      perPage: 10,
+    }).then((data) => {
       setMissions(data);
       setStats({
         inProgressCount: data.filter((mission) => mission.status === "in_progress").length,
         urgentCount: data.filter((mission) => mission.priority === "high").length,
       });
     });
-  }, []);
+  }, [filters.myMissions]);
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
     setPage(1);
   };
 
-  const status_order = { in_progress: 0, to_do: 1, completed: 2 };
-
-  const filtered = missions
-    .filter((mission) => {
-      if (search && !mission.title.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filters.statuses.length && !filters.statuses.includes(mission.status)) return false;
-      if (filters.myMissions && !mission.assignedUsers?.map(String).includes(String(user?.id))) return false;
-      if (filters.priority && mission.priority !== filters.priority) return false;
-      if (filters.startDate && mission.startDate < filters.startDate) return false;
-      if (filters.endDate && mission.endDate > filters.endDate) return false;
-      return true;
-    })
-    .sort((currentMission, nextMission) => {
-      const statusDiff =
-        (status_order[currentMission.status] ?? 99) - (status_order[nextMission.status] ?? 99);
-      if (statusDiff !== 0) return statusDiff;
-      return (currentMission.startDate ?? "").localeCompare(nextMission.startDate ?? "");
-    });
+  const filtered = missions.filter((mission) => {
+    if (search && !mission.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filters.statuses.length && !filters.statuses.includes(mission.status)) return false;
+    if (filters.myMissions && !mission.assignedUsers?.includes(user?.id)) return false;
+    if (filters.priority && mission.priority !== filters.priority) return false;
+    if (filters.startDate && mission.startDate < filters.startDate) return false;
+    if (filters.endDate && mission.endDate > filters.endDate) return false;
+    return true;
+  });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / items_per_page));
   const paginated = filtered.slice((page - 1) * items_per_page, page * items_per_page);
