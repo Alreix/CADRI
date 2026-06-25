@@ -6,7 +6,12 @@ the application. Seeds are safe to run multiple times: existing records are
 detected and not duplicated.
 """
 
+from datetime import datetime, timedelta, timezone
+
 from app.extensions import db
+from app.models.mission import Mission
+from app.models.mission_assignment import MissionAssignment
+from app.models.mission_service_link import MissionServiceLink
 from app.models.role import Role
 from app.models.service import Service
 from app.models.user import User
@@ -145,6 +150,107 @@ def seed_test_users():
             db.session.add(user)
 
 
+def seed_demo_missions():
+    """Create demo missions for local development and final project review."""
+    admin = User.query.filter_by(email="admin@cadri.local").first()
+    responsable = User.query.filter_by(email="responsable@cadri.local").first()
+    agent = User.query.filter_by(email="agent@cadri.local").first()
+
+    green_spaces = Service.query.filter_by(name="green_spaces").first()
+    roads = Service.query.filter_by(name="roads").first()
+
+    if not all([admin, responsable, agent, green_spaces, roads]):
+        return
+
+    now = datetime.now(timezone.utc)
+    missions_to_seed = [
+        {
+            "title": "Réparation nid-de-poule avenue des Platanes",
+            "intervention_type": "Réparation de chaussée",
+            "location": "Avenue des Platanes",
+            "description": (
+                "Réparer un nid-de-poule signalé sur la voie principale afin "
+                "de sécuriser la circulation."
+            ),
+            "planned_agents_count": 2,
+            "estimated_duration": 3,
+            "start_date": now + timedelta(days=1),
+            "end_date": now + timedelta(days=1, hours=3),
+            "priority": "high",
+            "required_equipment": "Enrobé à froid, compacteur, cônes de signalisation",
+            "signage_required": True,
+            "service_ids": [roads.id],
+            "assigned_user_ids": [agent.id],
+        },
+        {
+            "title": "Taille des haies du parc municipal",
+            "intervention_type": "Entretien espaces verts",
+            "location": "Parc municipal",
+            "description": (
+                "Tailler les haies autour des cheminements piétons pour "
+                "améliorer la visibilité et l'accès au parc."
+            ),
+            "planned_agents_count": 2,
+            "estimated_duration": 4,
+            "start_date": now + timedelta(days=2),
+            "end_date": now + timedelta(days=2, hours=4),
+            "priority": "medium",
+            "required_equipment": "Taille-haies, broyeur, équipements de protection",
+            "signage_required": False,
+            "service_ids": [green_spaces.id],
+            "assigned_user_ids": [responsable.id],
+        },
+        {
+            "title": "Ramassage des branches square des Écoles",
+            "intervention_type": "Nettoyage espaces verts",
+            "location": "Square des Écoles",
+            "description": (
+                "Ramasser les branches tombées après intempéries et dégager "
+                "les accès piétons du square."
+            ),
+            "planned_agents_count": 1,
+            "estimated_duration": 2,
+            "start_date": now + timedelta(days=4),
+            "end_date": now + timedelta(days=4, hours=2),
+            "priority": "low",
+            "required_equipment": "Gants, râteau, camion benne",
+            "signage_required": False,
+            "service_ids": [green_spaces.id],
+            "assigned_user_ids": [responsable.id],
+        },
+    ]
+
+    for mission_data in missions_to_seed:
+        existing_mission = Mission.query.filter_by(title=mission_data["title"]).first()
+        if existing_mission:
+            continue
+
+        mission = Mission(
+            title=mission_data["title"],
+            intervention_type=mission_data["intervention_type"],
+            location=mission_data["location"],
+            description=mission_data["description"],
+            planned_agents_count=mission_data["planned_agents_count"],
+            estimated_duration=mission_data["estimated_duration"],
+            start_date=mission_data["start_date"],
+            end_date=mission_data["end_date"],
+            priority=mission_data["priority"],
+            required_equipment=mission_data["required_equipment"],
+            signage_required=mission_data["signage_required"],
+            created_by=admin.id,
+        )
+        db.session.add(mission)
+        db.session.flush()
+
+        for service_id in mission_data["service_ids"]:
+            db.session.add(
+                MissionServiceLink(mission_id=mission.id, service_id=service_id)
+            )
+
+        for user_id in mission_data["assigned_user_ids"]:
+            db.session.add(MissionAssignment(mission_id=mission.id, user_id=user_id))
+
+
 def run_seed():
     """Run all seed steps and commit the created records."""
 
@@ -155,4 +261,7 @@ def run_seed():
     seed_test_users()
     db.session.commit()
 
-    print("Initial roles, services, and test users seeded successfully.")
+    seed_demo_missions()
+    db.session.commit()
+
+    print("Initial roles, services, test users, and demo missions seeded successfully.")
