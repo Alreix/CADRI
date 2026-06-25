@@ -116,8 +116,19 @@ export async function completeMission(id) {
   };
 }
 
-export async function getMissions() {
-  const data = await apiRequest("/missions");
+export async function getMissions(filters = {}) {
+  const queryParams = new URLSearchParams();
+
+  if (filters.myMissions) {
+    queryParams.set("my_missions_only", "true");
+  }
+
+  if (filters.perPage) {
+    queryParams.set("per_page", String(filters.perPage));
+  }
+
+  const queryString = queryParams.toString();
+  const data = await apiRequest(`/missions${queryString ? `?${queryString}` : ""}`);
   const missions = Array.isArray(data) ? data : data.items ?? [];
   return missions.map(mapMissionFromBackend);
 }
