@@ -1,0 +1,253 @@
+.profile-page,
+.user-form-page {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* ── Back link ── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: #234e70;
+  text-decoration: none;
+  margin-bottom: 20px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Page title with icon ── */
+.profile-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.profile-title-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #e9eef2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #234e70;
+  flex-shrink: 0;
+}
+
+.profile-title h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2332;
+}
+
+/* ── Card ── */
+.profile-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  padding: 28px 32px;
+}
+
+/* ── Section title inside card ── */
+.profile-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a2332;
+  margin-bottom: 20px;
+}
+
+/* ── Read-only info grid ── */
+.profile-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 32px;
+  margin-bottom: 24px;
+}
+
+.profile-info-grid--full {
+  grid-template-columns: 1fr;
+}
+
+.profile-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-info-label {
+  font-size: 0.8rem;
+  color: #52606d;
+}
+
+.profile-info-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1a2332;
+}
+
+/* ── Divider ── */
+.profile-divider {
+  border: none;
+  border-top: 1px solid #e4e7eb;
+  margin: 24px 0;
+}
+
+/* ── Form grid (2 columns) ── */
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  margin-bottom: 20px;
+}
+
+.profile-form-grid--full {
+  grid-column: 1 / -1;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-field-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a2332;
+}
+
+.profile-field-required {
+  color: #d4183d;
+  margin-left: 1px;
+}
+
+.profile-field-input,
+.profile-field-select {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #1a2332;
+  background: #ffffff;
+  border: 1px solid #d1d9e0;
+  border-radius: 8px;
+  transition: border-color 150ms, box-shadow 150ms;
+  box-sizing: border-box;
+}
+
+.profile-field-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239aa5b4' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+.profile-field-input:focus,
+.profile-field-select:focus {
+  outline: none;
+  border-color: #234e70;
+  box-shadow: 0 0 0 3px rgba(35, 78, 112, 0.1);
+}
+
+.profile-field-input[readonly] {
+  background-color: #f5f7fa;
+  color: #6b7280;
+  cursor: default;
+}
+
+/* Password input with info icon */
+.profile-input-wrapper {
+  position: relative;
+}
+
+.profile-input-wrapper .profile-field-input {
+  padding-right: 40px;
+}
+
+.profile-input-info {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #9aa5b4;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.profile-input-info:hover,
+.profile-input-info:focus {
+  color: #234e70;
+}
+
+.profile-input-info:focus {
+  outline: none;
+}
+
+/* ── Action buttons row ── */
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.profile-actions--spread {
+  justify-content: space-between;
+}
+
+/* ── Note box (used in UserFormPage create) ── */
+.form-note {
+  background: #f1f6f4;
+  border: 1px solid #6fa58a;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 0.875rem;
+  color: #1a2332;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.form-note strong {
+  font-weight: 600;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .profile-card {
+    padding: 20px 16px;
+  }
+
+  .profile-info-grid,
+  .profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-title h1 {
+    font-size: 1.25rem;
+  }
+
+  .profile-actions--spread {
+    flex-wrap: wrap;
+  }
+}

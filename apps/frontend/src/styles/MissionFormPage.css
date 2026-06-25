@@ -1,0 +1,247 @@
+.mission-form-page {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.mission-form-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin-bottom: 24px;
+}
+
+.mission-form-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  padding: 28px 32px;
+}
+
+.mission-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.mission-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  margin-bottom: 20px;
+}
+
+.mission-field-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a2332;
+}
+
+.mission-field-required {
+  color: #d4183d;
+  margin-left: 1px;
+}
+
+.mission-field-input,
+.mission-field-select,
+.mission-field-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #1a2332;
+  background: #ffffff;
+  border: 1px solid #d1d9e0;
+  border-radius: 8px;
+  transition: border-color 150ms, box-shadow 150ms;
+  box-sizing: border-box;
+}
+
+.mission-field-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+.mission-field-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239aa5b4' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+.mission-field-input::placeholder,
+.mission-field-textarea::placeholder {
+  color: #a0aec0;
+}
+
+.mission-field-input:focus,
+.mission-field-select:focus,
+.mission-field-textarea:focus {
+  outline: none;
+  border-color: #234e70;
+  box-shadow: 0 0 0 3px rgba(35, 78, 112, 0.1);
+}
+
+.mission-field-input[readonly],
+.mission-field-input:disabled,
+.mission-field-textarea[readonly],
+.mission-field-select:disabled {
+  background-color: #f5f7fa;
+  color: #6b7280;
+  cursor: default;
+}
+
+/* ── Service checkbox group ── */
+.mission-service-group {
+  border: 1px solid #d1d9e0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mission-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #1a2332;
+  cursor: pointer;
+  user-select: none;
+}
+
+.mission-checkbox-item input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: #234e70;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mission-checkbox-item input[type="checkbox"]:disabled {
+  cursor: default;
+}
+
+/* ── Standalone checkbox (signalisation) ── */
+.mission-checkbox-standalone {
+  margin-bottom: 20px;
+}
+
+/* ── Assigned users table ── */
+.mission-users-table-wrapper {
+  border: 1px solid #e4e7eb;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.mission-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 420px;
+}
+
+.mission-users-table th {
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #52606d;
+  padding: 12px 16px;
+  background: #e9eef2;
+  border-bottom: 1px solid #e4e7eb;
+}
+
+.mission-users-table td {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: #1a2332;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.mission-users-table tr:last-child td {
+  border-bottom: none;
+}
+
+.mission-user-remove {
+  background: none;
+  border: none;
+  color: #d4183d;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px;
+  line-height: 1;
+}
+
+/* ── Add users button ── */
+.mission-add-users-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #234e70;
+  background: #ffffff;
+  border: 1px solid #234e70;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.mission-add-users-btn:hover {
+  background-color: #ebf0ff;
+}
+
+/* ── Divider ── */
+.mission-divider {
+  border: none;
+  border-top: 1px solid #e4e7eb;
+  margin: 24px 0;
+}
+
+/* ── Action buttons row ── */
+.mission-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.mission-form-actions--center {
+  justify-content: center;
+}
+
+.mission-form-actions button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .mission-form-card {
+    padding: 20px 16px;
+  }
+
+  .mission-field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-form-title {
+    font-size: 1.25rem;
+  }
+
+  .mission-form-actions .profile-btn-primary,
+  .mission-form-actions .profile-btn-danger {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mission-form-actions--center {
+    justify-content: center;
+  }
+}
