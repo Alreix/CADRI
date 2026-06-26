@@ -76,13 +76,14 @@ function ResetPasswordPage() {
               required
               autoComplete="new-password"
               rightIcon={
-                <Info
-                  size={18}
-                  className="auth-password-info"
+                <button
+                  type="button"
+                  className="auth-password-info-btn"
                   onClick={() => setShowPasswordHint(true)}
-                  role="button"
-                  tabIndex={0}
-                />
+                  aria-label="Voir les exigences du mot de passe"
+                >
+                  <Info size={16} />
+                </button>
               }
             />
           </div>
@@ -101,13 +102,14 @@ function ResetPasswordPage() {
               required
               autoComplete="new-password"
               rightIcon={
-                <Info
-                  size={18}
-                  className="auth-password-info"
+                <button
+                  type="button"
+                  className="auth-password-info-btn"
                   onClick={() => setShowPasswordHint(true)}
-                  role="button"
-                  tabIndex={0}
-                />
+                  aria-label="Voir les exigences du mot de passe"
+                >
+                  <Info size={16} />
+                </button>
               }
             />
           </div>
