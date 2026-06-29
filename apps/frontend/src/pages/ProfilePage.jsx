@@ -7,6 +7,7 @@ import { changePassword } from "../api/authApi";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordInput from "../components/common/PasswordInput";
 import "../styles/ProfilePage.css";
+import "../styles/ConfirmModals.css";
 
 function LogoutConfirmModal({ onConfirm, onCancel }) {
   return (
@@ -30,6 +31,25 @@ function LogoutConfirmModal({ onConfirm, onCancel }) {
   );
 }
 
+function AlertModal({ message, onClose }) {
+  return (
+    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
+      <div className="confirm-modal">
+        <div className="confirm-modal-header">
+          <span className="confirm-modal-title">Attention</span>
+          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="confirm-modal-body">{message}</div>
+        <div className="confirm-modal-footer">
+          <button className="confirm-modal-confirm-primary" onClick={onClose}>OK</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProfilePage() {
   const { user, logout } = useContext(AuthContext);
 
@@ -37,6 +57,7 @@ function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -76,23 +97,29 @@ function ProfilePage() {
 
     if (wantsPasswordChange) {
       if (form.password !== form.confirmPassword) {
-        window.alert("Les mots de passe ne correspondent pas.");
+        setAlertMessage("Les mots de passe ne correspondent pas.");
         return;
       }
       if (!form.currentPassword) {
-        window.alert("Le mot de passe actuel est obligatoire pour changer le mot de passe.");
+        setAlertMessage("Le mot de passe actuel est obligatoire pour changer le mot de passe.");
         return;
       }
-      await changePassword({
-        currentPassword: form.currentPassword,
-        newPassword: form.password,
-      });
     }
 
-    const updatedProfile = await updateProfile(form);
-    setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
-    clearPasswordFields();
-    setEditing(false);
+    try {
+      if (wantsPasswordChange) {
+        await changePassword({
+          currentPassword: form.currentPassword,
+          newPassword: form.password,
+        });
+      }
+      const updatedProfile = await updateProfile(form);
+      setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
+      clearPasswordFields();
+      setEditing(false);
+    } catch (err) {
+      setAlertMessage(err.message || "Le mot de passe ne respecte pas les critères de sécurité.");
+    }
   };
 
   const handleCancel = () => {
@@ -117,6 +144,11 @@ function ProfilePage() {
           onCancel={() => setShowLogout(false)}
         />
       )}
+
+      {alertMessage && (
+        <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
+      )}
+
       {showPasswordHint && (
         <PasswordRequirementsModal onClose={() => setShowPasswordHint(false)} />
       )}
@@ -332,4 +364,4 @@ function ProfilePage() {
   );
 }
 
-export default ProfilePage;
+  export default ProfilePage;

@@ -131,35 +131,52 @@ describe('ProfilePage — changement de mot de passe', () => {
     });
   });
 
-  test('refuse l\'enregistrement si les nouveaux mots de passe ne correspondent pas', async () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  test("refuse l'enregistrement si les nouveaux mots de passe ne correspondent pas", async () => {
     renderProfile();
     await openEditMode();
 
-    fireEvent.change(screen.getByLabelText(/^nouveau mot de passe/i), { target: { value: 'Azerty123!' } });
-    fireEvent.change(screen.getByLabelText(/confirmer le nouveau mot de passe/i), { target: { value: 'Different123!' } });
-    fireEvent.change(screen.getByLabelText(/mot de passe actuel/i), { target: { value: 'OldPass123!' } });
-    fireEvent.click(screen.getByRole('button', { name: /mettre à jour le profil/i }));
-
-    await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/ne correspondent pas/i));
+    fireEvent.change(screen.getByLabelText(/^nouveau mot de passe/i), {
+      target: { value: "Password123!" },
     });
-    alertSpy.mockRestore();
+
+    fireEvent.change(
+      screen.getByLabelText(/confirmer le nouveau mot de passe/i),
+      {
+        target: { value: "AutrePassword123!" },
+      }
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /mettre à jour le profil/i })
+    );
+
+    expect(
+      await screen.findByText(/les mots de passe ne correspondent pas/i)
+    ).toBeInTheDocument();
   });
 
-  test('refuse le changement de mot de passe si le mot de passe actuel est vide', async () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  test("refuse le changement de mot de passe si le mot de passe actuel est vide", async () => {
     renderProfile();
     await openEditMode();
 
-    fireEvent.change(screen.getByLabelText(/^nouveau mot de passe/i), { target: { value: 'Azerty123!' } });
-    fireEvent.change(screen.getByLabelText(/confirmer le nouveau mot de passe/i), { target: { value: 'Azerty123!' } });
-    fireEvent.click(screen.getByRole('button', { name: /mettre à jour le profil/i }));
-
-    await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/mot de passe actuel est obligatoire/i));
+    fireEvent.change(screen.getByLabelText(/^nouveau mot de passe/i), {
+      target: { value: "Password123!" },
     });
-    alertSpy.mockRestore();
+
+    fireEvent.change(
+      screen.getByLabelText(/confirmer le nouveau mot de passe/i),
+      {
+        target: { value: "Password123!" },
+      }
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /mettre à jour le profil/i })
+    );
+
+    expect(
+      await screen.findByText(/mot de passe actuel est obligatoire/i)
+    ).toBeInTheDocument();
   });
 });
 
