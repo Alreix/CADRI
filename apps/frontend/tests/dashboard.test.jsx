@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { vi } from 'vitest';
+import { expect, vi } from 'vitest';
 
 import DashboardPage from '../src/pages/DashboardPage';
 import { AuthContext } from '../src/contexts/AuthContext';
@@ -72,7 +72,7 @@ describe('DashboardPage — affichage', () => {
     renderAs('agent');
     await waitFor(() => {
       expect(screen.getByText('Réparation éclairage public')).toBeInTheDocument();
-      expect(screen.getByText('Entretien parc municipal')).toBeInTheDocument();
+      expect(screen.getByText('Fuite voirie Avenue des Champs')).toBeInTheDocument();
     });
   });
 
@@ -117,9 +117,10 @@ describe('DashboardPage — filtres', () => {
     renderAs('agent');
     await waitFor(() => screen.getByText('Réparation éclairage public'));
     fireEvent.change(screen.getByPlaceholderText(/rechercher des missions/i), {
-      target: { value: 'parc' },
+      target: { value: 'voirie' },
     });
-    expect(screen.getByText('Entretien parc municipal')).toBeInTheDocument();
+    expect(screen.getByText('Fuite voirie Avenue des Champs')).toBeInTheDocument();
+    expect(screen.queryByText('Entretien parc municipal')).not.toBeInTheDocument();
     expect(screen.queryByText('Réparation éclairage public')).not.toBeInTheDocument();
   });
 
