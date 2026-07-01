@@ -1,3 +1,5 @@
+// "Forgot password" form: requests a reset email, then shows a confirmation
+// screen instead of redirecting (no token is available yet at this stage).
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
@@ -24,6 +26,7 @@ function ForgotPasswordPage() {
     }
   };
 
+  // After a successful request, swap the form for a confirmation message.
   if (submitted) {
     return (
       <AuthLayout>

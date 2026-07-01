@@ -1,3 +1,5 @@
+// Simple reusable error/info modal. Fully controlled by the parent: it has no
+// internal open/close state, the parent shows/hides it by rendering it conditionally.
 import { CircleX, X } from "lucide-react";
 
 function Modal({ title, message, onClose }) {

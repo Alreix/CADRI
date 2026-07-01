@@ -24,6 +24,7 @@ function ErrorPage({ code }) {
     "La page que vous cherchez a peut-être été déplacée, renommée ou supprimée. " +
     "Vérifiez l'adresse ou retournez à l'accueil.";
 
+    // Maps an HTTP status code to the matching title/message displayed to the user.
   const applyStatus = (status) => {
     errorCode = String(status);
     if (status === 403) {
@@ -39,6 +40,8 @@ function ErrorPage({ code }) {
     }
   };
 
+  // Prefer the real router error if one exists (e.g. a loader/action threw),
+  // otherwise fall back to the explicit `code` prop passed by ProtectedRoute.
   if (routeError) {
     if (isRouteErrorResponse(routeError)) {
       applyStatus(routeError.status);

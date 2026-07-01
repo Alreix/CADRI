@@ -1,3 +1,5 @@
+// Filter panel for the user list (UserManagementPage). Same controlled pattern
+// as MissionFilters: state lives in the parent, this component just reports changes.
 import "../../styles/UserFilters.css";
 
 function UserFilters({ filters, services, onChange }) {

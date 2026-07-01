@@ -1,3 +1,6 @@
+// Mission detail/workflow page: displays one mission's full information and
+// the role/status-dependent action buttons (start, complete, validate, edit).
+// This is where the mission lifecycle (see missionsApi.js) becomes visible to the user.
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
@@ -13,6 +16,7 @@ import {
   completeMission,
 } from "../api/missionsApi";
 
+// Simple blocking alert dialog used to surface API errors to the user.
 function AlertModal({ message, onClose }) {
   return (
     <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
@@ -46,12 +50,15 @@ function MissionDetailPage() {
   const [savingAction, setSavingAction] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
 
+  // Load the mission whenever the :id route param changes.
   useEffect(() => {
     getMission(id)
       .then(setMission)
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Re-fetches the mission after an action, so the UI always reflects the
+  // server's current state rather than guessing the new values locally.
   const refreshMission = async () => {
     const updatedMission = await getMission(id);
     setMission(updatedMission);
@@ -70,6 +77,8 @@ function MissionDetailPage() {
   };
 
   const handleCompleteMission = async () => {
+    // Extra client-side guard for a clearer error message; the backend
+    // enforces the same rule regardless.
     if (!hasActualDuration) {
       setAlertMessage("Veuillez renseigner la durée réelle avant de clôturer la mission.");
       return;
@@ -101,6 +110,8 @@ function MissionDetailPage() {
   if (loading) return null;
   if (!mission) return null;
 
+  // Derived permission flags: each action button below is shown only if the
+  // matching flag is true. The backend re-validates all of this independently.
   const priorityIsUrgent = mission.priority === "high";
   const isAssignedToMission = (mission.assignedUsers || []).some(
     (assignedUserId) => String(assignedUserId) === String(user?.id),

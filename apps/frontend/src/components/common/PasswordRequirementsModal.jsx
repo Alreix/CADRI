@@ -1,3 +1,6 @@
+// Static informational modal listing the password policy rules.
+// Purely presentational: it does not validate anything itself, the actual
+// validation rules live on the backend.
 import { X, Check } from "lucide-react";
 
 const PASSWORD_REQUIREMENTS = [

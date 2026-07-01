@@ -1,3 +1,5 @@
+// Login form: authenticates the user, stores the session via AuthContext, then
+// redirects to the dashboard.
 import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
@@ -20,6 +22,7 @@ function LoginPage() {
     setLoading(true);
     try {
       const userData = await loginApi({ email, password });
+      // Store the user/token in the shared auth context (used by ProtectedRoute, Layout, etc.).
       login(userData);
       navigate("/");
     } catch (err) {

@@ -1,3 +1,5 @@
+// Main authenticated-area layout: header with navigation, mobile sidebar, and footer.
+// Wraps every protected page (see Layout usage in the page components).
 import { useState, useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
@@ -6,21 +8,24 @@ import { Menu, X, Home, User, ClipboardList, UserPlus, Users, LogOut } from "luc
 import logo from "../../assets/logo.png";
 import "../../styles/Layout.css";
 
-
+// Navigation links visible to every authenticated user.
 const nav_items = [
   { to: "/", label: "Accueil", icon: Home, end: true },
   { to: "/profile", label: "Profil", icon: User },
 ];
 
+// Extra links only shown to "responsable" and "admin" roles.
 const manager_items = [
   { to: "/missions/new", label: "Création de mission", icon: ClipboardList, end: true },
   { to: "/users/new", label: "Création d'utilisateur", icon: UserPlus, end: true },
 ];
 
+// Extra links only shown to "admin".
 const admin_items = [
   { to: "/users", label: "Liste des utilisateurs", icon: Users, end: true },
 ];
 
+// Small confirmation modal shown before actually logging the user out.
 function LogoutModal({ onConfirm, onCancel }) {
   return (
     <div className="logout-modal-overlay" role="dialog" aria-modal="true">
@@ -49,6 +54,7 @@ function Layout({ children }) {
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
 
+  // Role-based flags used to conditionally render navigation items below.
   const isManager = user?.role === "responsable" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
 
@@ -143,6 +149,7 @@ function Layout({ children }) {
       />
 
       <main className="intranet-main">
+        {/* Actual page content is rendered here, passed down from the route element. */}
         {children}
       </main>
 

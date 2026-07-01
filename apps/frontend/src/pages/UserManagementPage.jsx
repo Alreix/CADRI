@@ -1,3 +1,6 @@
+// Admin-only page listing all users, with search, filters and pagination.
+// Same client-side filtering pattern as DashboardPage: fetch once, then
+// filter/sort/paginate the already-loaded list in memory.
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/layout/Layout";
@@ -22,6 +25,7 @@ function UserManagementPage() {
   const [filters, setFilters] = useState(defaul_filters);
   const [page, setPage] = useState(1);
 
+  // Fetch the full user list once on mount.
   useEffect(() => {
     getUsers().then(setUsers);
   }, []);
@@ -31,6 +35,8 @@ function UserManagementPage() {
     setPage(1);
   };
 
+  // Builds the list of distinct service names for the service filter dropdown,
+  // derived directly from the loaded users rather than a separate API call.
   const services = [...new Set(users.map((user) => user.service))].filter(Boolean).sort();
 
   const filtered = users.filter((user) => {

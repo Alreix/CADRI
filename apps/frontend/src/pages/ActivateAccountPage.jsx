@@ -1,3 +1,5 @@
+// Account activation page, reached via the emailed activation link (?token=...).
+// Lets a newly created user set their initial password.
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
@@ -7,6 +9,7 @@ import { activateAccount } from "../api/authApi";
 import { Info, X } from "lucide-react";
 import "../styles/AuthLayout.css";
 
+// One-time welcome modal shown automatically when the page first loads.
 function WelcomeModal({ onClose }) {
   return (
     <div className="auth-modal-overlay" role="dialog" aria-modal="true">
@@ -35,6 +38,7 @@ function ActivateAccountPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // Activation token comes from the URL, e.g. /activate?token=abc123
   const token = searchParams.get("token") || "";
 
   const [showWelcome, setShowWelcome] = useState(true);

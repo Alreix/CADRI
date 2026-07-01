@@ -1,3 +1,5 @@
+// Mobile/collapsible version of the main navigation, shown via the hamburger button
+// in Layout. Mirrors the same nav items as the desktop header.
 import { useContext } from "react";
 import { NavLink } from "react-router-dom";
 import {
@@ -26,6 +28,7 @@ const admin_items = [
   { to: "/users", label: "Liste des utilisateurs", icon: Users, end: true },
 ];
 
+// isOpen/onClose are controlled by the parent Layout; this component holds no open/close state itself.
 function Sidebar({ isOpen, onClose, onLogout }) {
   const { user } = useContext(AuthContext);
 
@@ -37,6 +40,7 @@ function Sidebar({ isOpen, onClose, onLogout }) {
     onLogout();
   };
 
+  // Build the final menu by combining the base items with role-specific ones.
   const allItems = [
     ...nav_items,
     ...(isManager ? manager_items : []),

@@ -1,4 +1,5 @@
-
+// Minimal layout used by public/unauthenticated pages (login, password reset, etc.).
+// No navigation menu, since the user isn't logged in yet.
 import logo from "../../assets/logo.png";
 
 function AuthLayout({ children }) {

@@ -1,3 +1,5 @@
+// "Reset password" form, reached via the emailed link (?token=...).
+// Reads the token from the URL query string rather than from route params.
 import { useEffect, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
@@ -12,6 +14,7 @@ function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // Reset token comes from the URL, e.g. /reset-password?token=abc123
   const token = searchParams.get("token") || "";
 
   const [password, setPassword] = useState("");
@@ -20,6 +23,7 @@ function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
 
+  // Clear any leftover password input if the token changes (e.g. user opens a new link).
   useEffect(() => {
     setPassword("");
     setConfirmPassword("");
