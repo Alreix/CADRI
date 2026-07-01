@@ -1,3 +1,5 @@
+// Small pill/tag displaying a mission's priority and/or status, with color
+// variants applied conditionally based on the value.
 function StatusBadge({ priority, status }) {
   return (
     <>

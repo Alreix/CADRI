@@ -1,3 +1,5 @@
+// Renders a list of mission cards (already filtered/paginated by the parent page).
+// Purely presentational: receives a finished `missions` array as a prop and owns no state.
 import { Link } from "react-router-dom";
 import StatusBadge from "./StatusBadge";
 import { formatDateFR } from "../../api/missionsApi";

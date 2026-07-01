@@ -1,3 +1,5 @@
+// Current user's own profile page: view mode (read-only) toggled with an
+// edit mode that also lets the user optionally change their password.
 import { useState, useEffect, useContext } from "react";
 import { User, Info, X } from "lucide-react";
 import Layout from "../components/layout/Layout";
@@ -59,6 +61,8 @@ function ProfilePage() {
   const [showPasswordHint, setShowPasswordHint] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
 
+  // Single form object covering both profile fields and the optional password
+  // change fields, following the same pattern as the mission/user forms.
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -68,6 +72,7 @@ function ProfilePage() {
     confirmPassword: "",
   });
 
+  // Load the current user's profile once on mount.
   useEffect(() => {
     getProfile().then((data) => {
       setProfile(data);
@@ -93,6 +98,8 @@ function ProfilePage() {
 
   const handleSave = async (event) => {
     event.preventDefault();
+    // Password change is optional: only validated/submitted if the user
+    // actually typed something in the new-password fields.
     const wantsPasswordChange = form.password || form.confirmPassword;
 
     if (wantsPasswordChange) {
@@ -122,6 +129,7 @@ function ProfilePage() {
     }
   };
 
+  // Discards any unsaved changes and resets the form back to the loaded profile.
   const handleCancel = () => {
     setForm({
       firstName: profile.firstName || "",

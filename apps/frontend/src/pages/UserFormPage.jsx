@@ -1,3 +1,6 @@
+// Single form used for creating, viewing and editing a user (mode="create" | "view" | "edit").
+// Same "mode" pattern as MissionFormPage: one component, fields become
+// read-only inputs in "view" mode instead of duplicating three near-identical forms.
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Trash2, X } from "lucide-react";
@@ -43,23 +46,32 @@ function UserFormPage({ mode = "create" }) {
   const isAdmin = currentUser?.role === "admin";
   const isManager = currentUser?.role === "responsable";
   const [serviceOptions, setServiceOptions] = useState([]);
+
+  // Hardcoded fallback roles, replaced by the backend list once it loads.
   const [roleOptionsSource, setRoleOptionsSource] = useState([
     { value: "agent", label: "Agent" },
     { value: "responsable", label: "Responsable" },
     { value: "admin", label: "Admin" },
   ]);
+
   const [form, setForm] = useState({
+    // A "responsable" creating a user can only create agents (see backend rules),
+    // so the role is pre-filled and locked to "agent" for them.
     role: isManager ? "agent" : "",
     service: "",
     firstName: "",
     lastName: "",
     email: "",
   });
+
+  // Backend-provided display label for the role, used in "view" mode instead
+  // of re-deriving it from roleOptionsSource (more reliable if labels differ).
   const [loadedRoleLabel, setLoadedRoleLabel] = useState("");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Loads reference data (services, roles) and, in view/edit mode, the target user.
   useEffect(() => {
     getServices()
       .then((data) => {
@@ -111,6 +123,7 @@ function UserFormPage({ mode = "create" }) {
     navigate("/users");
   };
 
+  // A "responsable" can never assign the "admin" role, even when editing.
   const roleOptions = isAdmin
     ? roleOptionsSource
     : roleOptionsSource.filter((role) => role.value !== "admin");

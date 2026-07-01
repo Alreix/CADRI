@@ -1,5 +1,9 @@
+// API calls for missions: listing, CRUD, and the status workflow
+// (start, add remark, validate, complete). Used by DashboardPage, MissionDetailPage
+// and MissionFormPage.
 import { apiRequest } from "./apiClient";
 
+// Display labels for the backend's raw priority/status codes (UI is in French).
 const priorityLabels = {
   low: "Basse",
   medium: "Moyenne",
@@ -13,17 +17,21 @@ const statusLabels = {
   completed: "Terminée",
 };
 
+// Backend may return full ISO datetimes; <input type="date"> only accepts "YYYY-MM-DD".
 function toDateInputValue(value) {
   if (!value) return "";
   return value.slice(0, 10);
 }
 
+// Formats an ISO date string as DD/MM/YYYY for display.
 export function formatDateFR(value) {
   if (!value) return "";
   const [year, month, day] = value.slice(0, 10).split("-");
   return `${day}/${month}/${year}`;
 }
 
+// Converts a backend mission (snake_case fields, nested services/assignments) into
+// the flat camelCase shape used throughout the UI, including precomputed display labels.
 function mapMissionFromBackend(mission) {
   if (!mission) return mission;
 
@@ -48,10 +56,12 @@ function mapMissionFromBackend(mission) {
     serviceIds: services.map((service) => service.id),
     assignments,
     assignedUsers: assignments.map((user) => user.id),
+    // Convenience flag so components don't need to know the exact status string.
     requiresValidation: mission.status === "remark_pending_validation",
   };
 }
 
+// Converts a frontend mission form object into the snake_case payload the backend expects.
 function mapMissionToBackend(mission) {
   const assignedUserIds = mission.assignedUsers ?? mission.assigned_user_ids ?? [];
   const serviceIds = mission.serviceIds ?? (
@@ -75,6 +85,7 @@ function mapMissionToBackend(mission) {
   };
 }
 
+// Moves a mission to a new status (e.g. "to_do" -> "in_progress" when an agent starts it).
 export async function updateMissionStatus(id, status) {
   const data = await apiRequest(`/missions/${id}/status`, {
     method: "PATCH",
@@ -84,6 +95,7 @@ export async function updateMissionStatus(id, status) {
   return mapMissionFromBackend(data.mission);
 }
 
+// Records the actual time spent on a mission once the work is done.
 export async function updateMissionActualDuration(id, actualDuration) {
   const data = await apiRequest(`/missions/${id}/actual-duration`, {
     method: "PATCH",
@@ -95,6 +107,7 @@ export async function updateMissionActualDuration(id, actualDuration) {
   return mapMissionFromBackend(data.mission);
 }
 
+// Adds a remark to a mission; backend moves the status to "remark_pending_validation".
 export async function addMissionRemark(id, remark) {
   const data = await apiRequest(`/missions/${id}/remark`, {
     method: "POST",
@@ -104,6 +117,7 @@ export async function addMissionRemark(id, remark) {
   return mapMissionFromBackend(data.mission);
 }
 
+// Marks a mission as fully completed (final step of the workflow).
 export async function completeMission(id) {
   const data = await apiRequest(`/missions/${id}/complete`, {
     method: "POST",
@@ -116,6 +130,7 @@ export async function completeMission(id) {
   };
 }
 
+// Fetches the list of missions, with optional filters (e.g. only the current user's missions).
 export async function getMissions(filters = {}) {
   const queryParams = new URLSearchParams();
 
@@ -129,6 +144,7 @@ export async function getMissions(filters = {}) {
 
   const queryString = queryParams.toString();
   const data = await apiRequest(`/missions${queryString ? `?${queryString}` : ""}`);
+  // Handles both a plain array and a paginated { items: [...] } response.
   const missions = Array.isArray(data) ? data : data.items ?? [];
   return missions.map(mapMissionFromBackend);
 }
@@ -138,6 +154,7 @@ export async function getMission(id) {
   return mapMissionFromBackend(data);
 }
 
+// Validates a mission that has a pending remark, allowing it to move to "completed".
 export async function validateMission(id) {
   const data = await apiRequest(`/missions/${id}/validate`, {
     method: "POST",

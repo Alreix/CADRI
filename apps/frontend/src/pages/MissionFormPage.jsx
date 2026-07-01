@@ -1,3 +1,7 @@
+// Single form used for both creating and editing a mission (mode="create" | "edit").
+// Field availability and required-ness change depending on the role of the
+// logged-in user and, in edit mode, the mission's current status — see the
+// "can..." permission flags below.
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, X, UserPlus } from "lucide-react";
@@ -22,6 +26,8 @@ const priorityOptions = [
   { value: "high", label: "Urgente" },
 ];
 
+// Default shape of the form, used both for "create" mode and as a base
+// before the mission data has finished loading in "edit" mode.
 const emptyForm = {
   title: "",
   description: "",
@@ -93,6 +99,8 @@ function MissionFormPage({ mode = "create" }) {
   const isEdit = mode === "edit";
 
   const [form, setForm] = useState(emptyForm);
+  // Snapshot of the form right after loading, used to detect which fields the
+  // user actually changed (e.g. only call updateMissionActualDuration if it changed).
   const [initialForm, setInitialForm] = useState(emptyForm);
   const [loadedMission, setLoadedMission] = useState(null);
   const [serviceOptions, setServiceOptions] = useState([]);
@@ -107,6 +115,10 @@ function MissionFormPage({ mode = "create" }) {
     create: "Créer une mission",
     edit: "Modifier la mission",
   };
+
+  // Loads reference data (services, assignable users) and, in edit mode, the
+  // mission itself. Assignable users are only fetched for managers since
+  // agents can't reassign a mission.
   useEffect(() => {
     const requests = [
       getServices().then(setServiceOptions).catch(() => { }),
@@ -151,6 +163,8 @@ function MissionFormPage({ mode = "create" }) {
     });
   }, [id, isEdit, isManager]);
 
+  // Generic change handler for simple inputs/textareas/checkboxes; relies on
+  // the `name` attribute matching a key in `form` (single state object pattern).
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     setForm((prevForm) => ({
@@ -159,6 +173,7 @@ function MissionFormPage({ mode = "create" }) {
     }));
   };
 
+  // Toggles a single service in/out of the multi-select serviceIds array.
   const handleServiceToggle = (serviceId) => {
     setForm((prevForm) => ({
       ...prevForm,
@@ -168,6 +183,8 @@ function MissionFormPage({ mode = "create" }) {
     }));
   };
 
+  // Toggles a single user in/out of the assignedUsers array (used both to
+  // assign new users and to remove already-assigned ones).
   const handleUserToggle = (userId) => {
     setForm((prevForm) => ({
       ...prevForm,
@@ -198,9 +215,12 @@ function MissionFormPage({ mode = "create" }) {
 
     try {
       if (isEdit) {
+        // Agents never call updateMission (full edit): they can only touch
+        // actual duration and remark, both handled by their own endpoints below.
         if (!isAgent) {
           await updateMission(id, form);
         }
+        // Only sends the actual-duration update if it actually changed.
         if (
           form.actualDuration !== "" &&
           String(form.actualDuration) !== String(initialForm.actualDuration)
@@ -244,6 +264,8 @@ function MissionFormPage({ mode = "create" }) {
     }
   };
 
+  // An agent editing a mission only sees the tracking fields (actual duration,
+  // remark); all other mission fields are locked for them.
   const isAgentEdit = isEdit && isAgent && !isManager;
   const lockMissionFields = isAgentEdit;
 
@@ -279,6 +301,8 @@ function MissionFormPage({ mode = "create" }) {
 
   if (loading) return null;
 
+  // Splits the pool of assignable users into "already assigned" (shown in the
+  // table with a remove button) and "not yet assigned" (shown in the add-users panel).
   const assignedUserDetails = assignableUsers.filter((candidate) =>
     form.assignedUsers.includes(candidate.id)
   );
