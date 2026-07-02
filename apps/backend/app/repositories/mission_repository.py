@@ -93,7 +93,7 @@ class MissionRepository:
         )
 
         items = (
-            query.order_by(Mission.end_date.asc(), priority_order.asc())
+            query.order_by(priority_order.asc(), Mission.end_date.asc(), Mission.title.asc())
             .group_by(Mission.id)
             .offset((page - 1) * per_page)
             .limit(per_page)
