@@ -41,7 +41,7 @@ function DashboardPage() {
   useEffect(() => {
     getMissions({
       myMissions: filters.myMissions,
-      perPage: 10,
+      perPage: 100,
     }).then((data) => {
       setMissions(data);
       const activeMissions = data.filter((mission) => mission.status !== "completed");
