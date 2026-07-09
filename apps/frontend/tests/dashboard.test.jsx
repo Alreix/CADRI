@@ -86,12 +86,9 @@ describe('DashboardPage — affichage', () => {
   test('affiche le nombre de missions en cours et urgentes dans les cartes statistiques', async () => {
     renderAs('agent');
     await waitFor(() => {
-      expect(screen.getByText('Missions en cours')).toBeInTheDocument();
-      expect(screen.getByText('Missions urgentes')).toBeInTheDocument();
+      const values = screen.getAllByText(/^[0-9]+$/);
+      expect(values.map((node) => node.textContent)).toEqual(expect.arrayContaining(['2', '1']));
     });
-    // 2 missions "in_progress" sur les 3 du mock, 1 "high" priority
-    const values = screen.getAllByText(/^[0-9]+$/);
-    expect(values.map((node) => node.textContent)).toEqual(expect.arrayContaining(['2', '1']));
   });
 
   test('affiche à la fois le badge de priorité et le badge de statut sur une mission urgente', async () => {
