@@ -36,4 +36,7 @@ def validate_password(password):
     if not re.search(r"\d", password):
         raise ValidationError("Password must contain at least one number.")
 
+    if not re.search(r"[^A-Za-z0-9\s]", password):
+        raise ValidationError("Password must contain at least one special character.")
+
     return password

@@ -50,19 +50,12 @@ echo "PostgreSQL is ready."
 echo ""
 
 # ---------------------------------------------------------------------------
-# Create test database if missing
+# Reset test database
 # ---------------------------------------------------------------------------
 
-echo "Checking test database..."
-
-TEST_DB_EXISTS=$(docker compose exec -T db psql -U cadri_user -d cadri_db -tAc "SELECT 1 FROM pg_database WHERE datname='cadri_test_db';")
-
-if [ "$TEST_DB_EXISTS" != "1" ]; then
-    echo "cadri_test_db does not exist. Creating it..."
-    docker compose exec -T db psql -U cadri_user -d cadri_db -c "CREATE DATABASE cadri_test_db;"
-else
-    echo "cadri_test_db already exists."
-fi
+echo "Resetting test database..."
+docker compose exec -T db psql -U cadri_user -d cadri_db -c "DROP DATABASE IF EXISTS cadri_test_db WITH (FORCE);"
+docker compose exec -T db psql -U cadri_user -d cadri_db -c "CREATE DATABASE cadri_test_db;"
 
 echo ""
 
@@ -206,9 +199,9 @@ echo "Mailpit:"
 echo "http://localhost:8025"
 echo ""
 echo "Default users:"
-echo "Admin:        admin@cadri.local / StrongPass1"
-echo "Responsable:  responsable@cadri.local / StrongPass1"
-echo "Agent:        agent@cadri.local / StrongPass1"
+echo "Admin:        admin@cadri.local / StrongPass1*"
+echo "Responsable:  responsable@cadri.local / StrongPass1*"
+echo "Agent:        agent@cadri.local / StrongPass1*"
 echo ""
 echo "To run backend tests:"
 echo "docker compose exec backend pytest -v"

@@ -31,7 +31,7 @@ def test_logout_without_cookie_is_rejected(client):
 def test_activate_account_with_unknown_token_returns_404(client):
     response = client.post(
         "/auth/activate-account",
-        json={"token": "unknown-token", "password": "NewStrongPass1"},
+        json={"token": "unknown-token", "password": "NewStrongPass1!"},
     )
 
     assert response.status_code == 404
@@ -45,7 +45,7 @@ def test_activate_account_with_used_token_returns_410(client, inactive_user):
 
     response = client.post(
         "/auth/activate-account",
-        json={"token": raw_token, "password": "NewStrongPass1"},
+        json={"token": raw_token, "password": "NewStrongPass1!"},
     )
 
     assert response.status_code == 410
@@ -64,7 +64,7 @@ def test_forgot_password_for_inactive_user_does_not_create_token(client, inactiv
 def test_reset_password_with_unknown_token_returns_404(client):
     response = client.post(
         "/auth/reset-password",
-        json={"token": "unknown-token", "password": "ResetStrongPass1"},
+        json={"token": "unknown-token", "password": "ResetStrongPass1!"},
     )
 
     assert response.status_code == 404
@@ -78,7 +78,7 @@ def test_reset_password_with_used_token_returns_410(client, admin_user):
 
     response = client.post(
         "/auth/reset-password",
-        json={"token": raw_token, "password": "ResetStrongPass1"},
+        json={"token": raw_token, "password": "ResetStrongPass1!"},
     )
 
     assert response.status_code == 410
@@ -93,7 +93,7 @@ def test_change_password_with_wrong_current_password_is_rejected(
         headers=auth_headers(admin_token),
         json={
             "current_password": "WrongPass1",
-            "new_password": "NewStrongPass1",
+            "new_password": "NewStrongPass1!",
         },
     )
 
