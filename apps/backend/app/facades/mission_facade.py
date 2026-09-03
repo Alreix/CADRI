@@ -17,9 +17,9 @@ class MissionFacade:
         return MissionService.list_missions(current_user, **filters)
 
     @staticmethod
-    def get_mission_details(mission_id):
+    def get_mission_details(current_user, mission_id):
         """Return all information for a mission."""
-        return MissionService.get_mission_details(mission_id)
+        return MissionService.get_mission_details(current_user, mission_id)
 
     @staticmethod
     def update_mission(current_user, mission_id, payload: dict):

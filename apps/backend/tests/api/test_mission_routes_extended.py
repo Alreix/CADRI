@@ -39,6 +39,54 @@ def test_get_mission_details_returns_relations(client, admin_token, roles_servic
     assert len(data["assignments"]) == 1
 
 
+def test_mission_details_authorization_rules(
+    client,
+    admin_token,
+    responsable_token,
+    agent_token,
+    roles_services,
+    agent_user,
+    responsable_user,
+):
+    assigned_mission = create_api_mission(
+        client,
+        admin_token,
+        roles_services,
+        [agent_user.id],
+    )
+    unassigned_mission = create_api_mission(
+        client,
+        admin_token,
+        roles_services,
+        [responsable_user.id],
+    )
+
+    responsable_response = client.get(
+        f"/missions/{unassigned_mission['id']}",
+        headers=auth_headers(responsable_token),
+    )
+    agent_assigned_response = client.get(
+        f"/missions/{assigned_mission['id']}",
+        headers=auth_headers(agent_token),
+    )
+    agent_unassigned_response = client.get(
+        f"/missions/{unassigned_mission['id']}",
+        headers=auth_headers(agent_token),
+    )
+
+    assert responsable_response.status_code == 200
+    assert agent_assigned_response.status_code == 200
+    assert agent_unassigned_response.status_code == 403
+
+
+def test_get_mission_details_requires_jwt(client, admin_token, roles_services, agent_user):
+    mission = create_api_mission(client, admin_token, roles_services, [agent_user.id])
+
+    response = client.get(f"/missions/{mission['id']}")
+
+    assert response.status_code == 401
+
+
 def test_get_unknown_mission_returns_404(client, admin_token):
     response = client.get(
         f"/missions/{uuid.uuid4()}",

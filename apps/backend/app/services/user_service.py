@@ -101,6 +101,12 @@ class UserService:
             raise AuthorizationError("Only admin can list users.")
         
     @staticmethod
+    def _check_user_details_permissions(current_user, user_id):
+        """Ensure users can only access allowed user details."""
+        if current_user.role.name != ADMIN_ROLE and str(current_user.id) != str(user_id):
+            raise AuthorizationError("You are not allowed to access this user.")
+
+    @staticmethod
     def _check_assignable_users_permissions(current_user):
         """Ensure only admins and responsables can list assignable users."""
         if current_user.role.name not in (ADMIN_ROLE, RESPONSABLE_ROLE):
@@ -190,8 +196,10 @@ class UserService:
         }
 
     @staticmethod
-    def get_user_details(user_id):
+    def get_user_details(current_user, user_id):
         """Return a single user's details."""
+        UserService._check_user_details_permissions(current_user, user_id)
+
         user = UserRepository.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found.")
