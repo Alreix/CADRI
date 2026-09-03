@@ -32,16 +32,16 @@ echo "$PROJECT_ROOT"
 echo ""
 
 # ---------------------------------------------------------------------------
-# Start containers
+# Start database and mail service
 # ---------------------------------------------------------------------------
 
-echo "Starting Docker containers..."
-docker compose up --build -d
+echo "Starting database and mail containers..."
+docker compose up -d db mailpit
 
 echo ""
 echo "Waiting for PostgreSQL to be ready..."
 
-until docker compose exec -T db pg_isready -U cadri_user -d cadri_db > /dev/null 2>&1; do
+until docker compose exec -T db pg_isready -U cadri_user -d postgres > /dev/null 2>&1; do
     echo "PostgreSQL is not ready yet. Waiting..."
     sleep 2
 done
@@ -50,12 +50,26 @@ echo "PostgreSQL is ready."
 echo ""
 
 # ---------------------------------------------------------------------------
-# Reset test database
+# Reset development and test databases
 # ---------------------------------------------------------------------------
 
+echo "Resetting development database..."
+docker compose exec -T db psql -U cadri_user -d postgres -c "DROP DATABASE IF EXISTS cadri_db WITH (FORCE);"
+docker compose exec -T db psql -U cadri_user -d postgres -c "CREATE DATABASE cadri_db;"
+
+echo ""
 echo "Resetting test database..."
-docker compose exec -T db psql -U cadri_user -d cadri_db -c "DROP DATABASE IF EXISTS cadri_test_db WITH (FORCE);"
-docker compose exec -T db psql -U cadri_user -d cadri_db -c "CREATE DATABASE cadri_test_db;"
+docker compose exec -T db psql -U cadri_user -d postgres -c "DROP DATABASE IF EXISTS cadri_test_db WITH (FORCE);"
+docker compose exec -T db psql -U cadri_user -d postgres -c "CREATE DATABASE cadri_test_db;"
+
+echo ""
+
+# ---------------------------------------------------------------------------
+# Build and start application containers
+# ---------------------------------------------------------------------------
+
+echo "Starting application containers..."
+docker compose up --build -d backend frontend
 
 echo ""
 

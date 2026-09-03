@@ -42,8 +42,83 @@ FAIL=0
 SKIP=0
 RUN_ID="$(date +%s)"
 
+cleanup_curl_test_data() {
+    # Keep the development dashboard readable by removing records owned by this suite.
+    if ! command -v docker >/dev/null 2>&1 || ! docker compose ps backend >/dev/null 2>&1; then
+        return 0
+    fi
+
+    docker compose exec -T backend python - <<'PY' 2>/dev/null || true
+from app import create_app
+from app.extensions import db
+from app.models.account_activation_token import AccountActivationToken
+from app.models.mission import Mission
+from app.models.mission_assignment import MissionAssignment
+from app.models.mission_service_link import MissionServiceLink
+from app.models.password_reset_token import PasswordResetToken
+from app.models.refresh_token import RefreshToken
+from app.models.user import User
+
+app = create_app()
+
+with app.app_context():
+    mission_ids = [
+        mission_id
+        for (mission_id,) in db.session.query(Mission.id)
+        .filter(Mission.title.like("Curl %"))
+        .all()
+    ]
+    deleted_missions = len(mission_ids)
+
+    if mission_ids:
+        MissionAssignment.query.filter(
+            MissionAssignment.mission_id.in_(mission_ids)
+        ).delete(synchronize_session=False)
+        MissionServiceLink.query.filter(
+            MissionServiceLink.mission_id.in_(mission_ids)
+        ).delete(synchronize_session=False)
+        Mission.query.filter(Mission.id.in_(mission_ids)).delete(
+            synchronize_session=False
+        )
+
+    user_ids = [
+        user_id
+        for (user_id,) in db.session.query(User.id)
+        .filter(User.email.like("curl.%@cadri.test"))
+        .all()
+    ]
+    deleted_users = len(user_ids)
+
+    if user_ids:
+        MissionAssignment.query.filter(MissionAssignment.user_id.in_(user_ids)).delete(
+            synchronize_session=False
+        )
+        AccountActivationToken.query.filter(
+            AccountActivationToken.user_id.in_(user_ids)
+        ).delete(synchronize_session=False)
+        PasswordResetToken.query.filter(
+            PasswordResetToken.user_id.in_(user_ids)
+        ).delete(synchronize_session=False)
+        RefreshToken.query.filter(RefreshToken.user_id.in_(user_ids)).delete(
+            synchronize_session=False
+        )
+        User.query.filter(User.id.in_(user_ids)).delete(synchronize_session=False)
+
+    db.session.commit()
+
+    if deleted_missions or deleted_users:
+        print(
+            f"INFO — cleaned cURL test data: "
+            f"missions={deleted_missions}, users={deleted_users}"
+        )
+PY
+}
+
 cleanup() {
+    local exit_code=$?
+    cleanup_curl_test_data
     rm -rf "$TMP_DIR"
+    exit "$exit_code"
 }
 trap cleanup EXIT
 
@@ -323,6 +398,7 @@ echo "Run ID: $RUN_ID"
 echo ""
 echo "This script is destructive for test data. Use only on local/dev DB."
 
+cleanup_curl_test_data
 ensure_seed_data
 reset_test_passwords
 

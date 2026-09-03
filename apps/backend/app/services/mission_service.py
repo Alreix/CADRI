@@ -132,7 +132,9 @@ class MissionService:
     def list_missions(current_user, **filters) -> tuple[list[Mission], int]:
         """Return missions with filters, search, and pagination."""
         assigned_to_user_id = None
-        if filters.get("my_missions_only"):
+        if current_user.role.name == AGENT_ROLE:
+            assigned_to_user_id = str(current_user.id)
+        elif filters.get("my_missions_only"):
             assigned_to_user_id = str(current_user.id)
 
         return MissionRepository.list_filtered(
@@ -149,11 +151,15 @@ class MissionService:
         )
 
     @staticmethod
-    def get_mission_details(mission_id) -> Mission:
+    def get_mission_details(current_user, mission_id) -> Mission:
         """Return mission details."""
+        MissionService._require_agent_or_manager(current_user)
+
         mission = MissionRepository.get_by_id(mission_id)
         if not mission:
             raise NotFoundError("Mission not found.")
+
+        MissionService._require_agent_assignment_if_agent(current_user, mission)
         return mission
 
     @staticmethod
@@ -161,7 +167,7 @@ class MissionService:
         """Update editable mission fields."""
         MissionService._require_admin_or_responsable(current_user)
 
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService.get_mission_details(current_user, mission_id)
 
         service_ids = payload.get("service_ids", [])
         assigned_user_ids = payload.get("assigned_user_ids", [])
@@ -205,7 +211,7 @@ class MissionService:
     def update_status(current_user, mission_id, new_status: str) -> Mission:
         """Update mission status according to business rules."""
         MissionService._require_agent_or_manager(current_user)
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService.get_mission_details(current_user, mission_id)
         MissionService._require_agent_assignment_if_agent(current_user, mission)
 
         if new_status == MISSION_STATUS_IN_PROGRESS:
@@ -222,7 +228,7 @@ class MissionService:
     def update_actual_duration(current_user, mission_id, actual_duration: float) -> Mission:
         """Update the actual duration."""
         MissionService._require_agent_or_manager(current_user)
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService.get_mission_details(current_user, mission_id)
         MissionService._require_agent_assignment_if_agent(current_user, mission)
 
         if actual_duration <= 0:
@@ -240,7 +246,7 @@ class MissionService:
                 "Only an assigned agent or responsable can add a remark."
             )
 
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService.get_mission_details(current_user, mission_id)
 
         if not MissionService._is_user_assigned_to_mission(current_user, mission):
             raise AuthorizationError("Only assigned users can add a remark.")
@@ -263,7 +269,7 @@ class MissionService:
     def validate_mission(current_user, mission_id) -> Mission:
         """Validate a mission containing a remark."""
         MissionService._require_admin_or_responsable(current_user)
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService.get_mission_details(current_user, mission_id)
 
         if not mission.remark:
             raise ValidationError("Mission validation requires an existing remark.")
@@ -283,7 +289,7 @@ class MissionService:
     def complete_mission(current_user, mission_id) -> Mission:
         """Complete a mission if business conditions are met."""
         MissionService._require_agent_or_manager(current_user)
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService.get_mission_details(current_user, mission_id)
         MissionService._require_agent_assignment_if_agent(current_user, mission)
 
         if mission.actual_duration is None:
@@ -303,5 +309,5 @@ class MissionService:
     def delete_mission(current_user, mission_id) -> None:
         """Delete a mission in an exceptional way."""
         MissionService._require_admin_or_responsable(current_user)
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService.get_mission_details(current_user, mission_id)
         MissionRepository.delete(mission)

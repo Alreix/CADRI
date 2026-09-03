@@ -189,7 +189,8 @@ class MissionItemResource(Resource):
     def get(self, mission_id):
         """Return mission details."""
         try:
-            mission = MissionFacade.get_mission_details(mission_id)
+            current_user = get_current_user()
+            mission = MissionFacade.get_mission_details(current_user, mission_id)
             return mission.to_dict(include_relations=True), 200
         except AppError as error:
             return error.to_dict(), error.status_code

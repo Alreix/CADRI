@@ -144,7 +144,8 @@ class UserItemResource(Resource):
     def get(self, user_id):
         """Return one user."""
         try:
-            user = UserFacade.get_user_details(user_id)
+            current_user = get_current_user()
+            user = UserFacade.get_user_details(current_user, user_id)
             return user.to_dict(include_timestamps=True), 200
 
         except AppError as error:

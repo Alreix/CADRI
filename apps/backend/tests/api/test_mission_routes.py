@@ -152,6 +152,7 @@ def test_create_mission_rejects_invalid_date_order(
 def test_list_missions_supports_my_missions_only_filter(
     client,
     admin_access_token,
+    responsable_access_token,
     agent_access_token,
     roles_services,
     agent_user,
@@ -174,15 +175,46 @@ def test_list_missions_supports_my_missions_only_filter(
         assigned_user_ids=[str(responsable_user.id)],
     )
 
-    response = client.get(
+    admin_response = client.get(
+        "/missions",
+        headers=auth_headers(admin_access_token),
+    )
+    responsable_response = client.get(
+        "/missions",
+        headers=auth_headers(responsable_access_token),
+    )
+    agent_response = client.get(
+        "/missions",
+        headers=auth_headers(agent_access_token),
+    )
+    my_missions_response = client.get(
         "/missions?my_missions_only=true",
         headers=auth_headers(agent_access_token),
     )
+    status_response = client.get(
+        "/missions",
+        headers=auth_headers(agent_access_token),
+        query_string={"status": "to_do"},
+    )
 
-    assert response.status_code == 200
-    titles = {mission["title"] for mission in response.get_json()["items"]}
+    assert admin_response.status_code == 200
+    assert responsable_response.status_code == 200
+    assert agent_response.status_code == 200
+    assert my_missions_response.status_code == 200
+    assert status_response.status_code == 200
 
-    assert titles == {"Mission assigned to agent"}
+    all_titles = {"Mission assigned to agent", "Mission assigned to responsable"}
+    assert {mission["title"] for mission in admin_response.get_json()["items"]} == all_titles
+    assert {mission["title"] for mission in responsable_response.get_json()["items"]} == all_titles
+    assert {mission["title"] for mission in agent_response.get_json()["items"]} == {
+        "Mission assigned to agent"
+    }
+    assert {mission["title"] for mission in my_missions_response.get_json()["items"]} == {
+        "Mission assigned to agent"
+    }
+    assert {mission["title"] for mission in status_response.get_json()["items"]} == {
+        "Mission assigned to agent"
+    }
 
 
 def test_agent_assigned_to_mission_can_update_status_and_actual_duration(

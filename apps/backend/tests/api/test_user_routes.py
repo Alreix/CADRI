@@ -103,6 +103,54 @@ def test_get_user_details_returns_user(client, admin_token, agent_user):
     assert response.get_json()["email"] == agent_user.email
 
 
+def test_users_can_get_own_details(
+    client,
+    responsable_token,
+    responsable_user,
+    agent_token,
+    agent_user,
+):
+    responsable_response = client.get(
+        f"/users/{responsable_user.id}",
+        headers=auth_headers(responsable_token),
+    )
+    agent_response = client.get(
+        f"/users/{agent_user.id}",
+        headers=auth_headers(agent_token),
+    )
+
+    assert responsable_response.status_code == 200
+    assert responsable_response.get_json()["email"] == responsable_user.email
+    assert agent_response.status_code == 200
+    assert agent_response.get_json()["email"] == agent_user.email
+
+
+def test_non_admin_cannot_get_another_user_details(
+    client,
+    responsable_token,
+    agent_token,
+    admin_user,
+    agent_user,
+):
+    responsable_response = client.get(
+        f"/users/{agent_user.id}",
+        headers=auth_headers(responsable_token),
+    )
+    agent_response = client.get(
+        f"/users/{admin_user.id}",
+        headers=auth_headers(agent_token),
+    )
+
+    assert responsable_response.status_code == 403
+    assert agent_response.status_code == 403
+
+
+def test_get_user_details_requires_jwt(client, agent_user):
+    response = client.get(f"/users/{agent_user.id}")
+
+    assert response.status_code == 401
+
+
 def test_admin_can_update_user(client, admin_token, agent_user, roles_services):
     response = client.patch(
         f"/users/{agent_user.id}",

@@ -43,9 +43,9 @@ class UserFacade:
         )
 
     @staticmethod
-    def get_user_details(user_id):
+    def get_user_details(current_user, user_id):
         """Return a single user's details."""
-        return UserService.get_user_details(user_id)
+        return UserService.get_user_details(current_user, user_id)
 
     @staticmethod
     def update_user(current_user, user_id, first_name, last_name, email, role_name, service_id):
@@ -79,4 +79,3 @@ class UserFacade:
             last_name=last_name,
             email=email,
         )
-    
