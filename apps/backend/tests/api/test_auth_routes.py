@@ -84,14 +84,14 @@ def test_activate_account_with_valid_token(client, user_factory, roles_services)
 
     response = client.post(
         "/auth/activate-account",
-        json={"token": raw_token, "password": "NewStrongPass1"},
+        json={"token": raw_token, "password": "NewStrongPass1!"},
     )
 
     assert response.status_code == 200
     db.session.refresh(user)
     db.session.refresh(token)
     assert user.is_active is True
-    assert user.check_password("NewStrongPass1") is True
+    assert user.check_password("NewStrongPass1!") is True
     assert token.used_at is not None
 
 
@@ -121,7 +121,7 @@ def test_reset_password_with_valid_token(client, admin_user):
 
     response = client.post(
         "/auth/reset-password",
-        json={"token": raw_token, "password": "ResetStrongPass1"},
+        json={"token": raw_token, "password": "ResetStrongPass1!"},
     )
 
     assert response.status_code == 200
@@ -129,7 +129,7 @@ def test_reset_password_with_valid_token(client, admin_user):
     refreshed_user = UserRepository.get_by_id(admin_user.id)
     db.session.refresh(token)
 
-    assert refreshed_user.check_password("ResetStrongPass1") is True
+    assert refreshed_user.check_password("ResetStrongPass1!") is True
     assert token.used_at is not None
 
 
@@ -143,7 +143,7 @@ def test_change_password_revokes_existing_refresh_token(client, admin_user, admi
     response = client.patch(
         "/auth/change-password",
         headers=auth_headers(admin_token),
-        json={"current_password": "StrongPass1", "new_password": "ChangedPass1"},
+        json={"current_password": "StrongPass1", "new_password": "ChangedPass1!"},
     )
 
     assert response.status_code == 200
@@ -151,6 +151,6 @@ def test_change_password_revokes_existing_refresh_token(client, admin_user, admi
     refreshed_user = UserRepository.get_by_id(admin_user.id)
     stored_tokens = RefreshToken.query.filter_by(user_id=admin_user.id).all()
 
-    assert refreshed_user.check_password("ChangedPass1") is True
+    assert refreshed_user.check_password("ChangedPass1!") is True
     assert stored_tokens
     assert all(token.is_revoked() for token in stored_tokens) is True

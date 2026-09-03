@@ -11,9 +11,9 @@
 #   - backend reachable on BASE_URL, default: http://127.0.0.1:5000
 #   - python3 and curl installed on the host
 #   - seeded local users available:
-#       admin@cadri.local / StrongPass1
-#       responsable@cadri.local / StrongPass1
-#       agent@cadri.local / StrongPass1
+#       admin@cadri.local / StrongPass1*
+#       responsable@cadri.local / StrongPass1*
+#       agent@cadri.local / StrongPass1*
 #
 # Usage from apps/backend or project root:
 #   chmod +x cadri_curl_full_test_suite.sh
@@ -307,7 +307,7 @@ with app.app_context():
     for email in ("admin@cadri.local", "responsable@cadri.local", "agent@cadri.local"):
         user = User.query.filter_by(email=email).first()
         if user:
-            user.set_password("StrongPass1")
+            user.set_password("StrongPass1*")
             user.is_active = True
     db.session.commit()
 PY
@@ -341,9 +341,9 @@ STATUS=$(request -X GET "$BASE_URL/docs")
 check_one_of "GET /docs is reachable" "$STATUS" 200 308 301
 
 section "Authentication setup"
-login_and_capture "admin@cadri.local" "StrongPass1" "$COOKIE_ADMIN" ADMIN_TOKEN "Admin login returns 200"
-login_and_capture "responsable@cadri.local" "StrongPass1" "$COOKIE_RESPONSABLE" RESPONSABLE_TOKEN "Responsable login returns 200"
-login_and_capture "agent@cadri.local" "StrongPass1" "$COOKIE_AGENT" AGENT_TOKEN "Agent login returns 200"
+login_and_capture "admin@cadri.local" "StrongPass1*" "$COOKIE_ADMIN" ADMIN_TOKEN "Admin login returns 200"
+login_and_capture "responsable@cadri.local" "StrongPass1*" "$COOKIE_RESPONSABLE" RESPONSABLE_TOKEN "Responsable login returns 200"
+login_and_capture "agent@cadri.local" "StrongPass1*" "$COOKIE_AGENT" AGENT_TOKEN "Agent login returns 200"
 
 STATUS=$(request -X POST "$BASE_URL/auth/login" \
     -H "Content-Type: application/json" \
@@ -352,12 +352,12 @@ check "POST /auth/login wrong password returns 401" 401 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/login" \
     -H "Content-Type: application/json" \
-    -d '{"email":"unknown@cadri.local","password":"StrongPass1"}')
+    -d '{"email":"unknown@cadri.local","password":"StrongPass1*"}')
 check "POST /auth/login unknown email returns 401" 401 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/login" \
     -H "Content-Type: application/json" \
-    -d '{"email":"invalid-email","password":"StrongPass1"}')
+    -d '{"email":"invalid-email","password":"StrongPass1*"}')
 check "POST /auth/login invalid email returns 400" 400 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/login" \
@@ -547,27 +547,27 @@ TEMP_ACTIVATION_TOKEN=$(get_activation_token_from_db "$TEMP_AGENT_EMAIL")
 if [ -n "$TEMP_ACTIVATION_TOKEN" ]; then
     STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$TEMP_ACTIVATION_TOKEN\",\"password\":\"TempStrongPass1\"}")
+        -d "{\"token\":\"$TEMP_ACTIVATION_TOKEN\",\"password\":\"TempStrongPass1!\"}")
     check "POST /auth/activate-account valid token returns 200" 200 "$STATUS"
 
     STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$TEMP_ACTIVATION_TOKEN\",\"password\":\"TempStrongPass1\"}")
+        -d "{\"token\":\"$TEMP_ACTIVATION_TOKEN\",\"password\":\"TempStrongPass1!\"}")
     check "POST /auth/activate-account reused token returns 410" 410 "$STATUS"
 
-    login_and_capture "$TEMP_AGENT_EMAIL" "TempStrongPass1" "$COOKIE_TEMP" TEMP_AGENT_TOKEN "Activated temp agent login returns 200"
+    login_and_capture "$TEMP_AGENT_EMAIL" "TempStrongPass1!" "$COOKIE_TEMP" TEMP_AGENT_TOKEN "Activated temp agent login returns 200"
 else
     skip_check "Activation token tests" "docker compose backend setup not available"
 fi
 
 STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
     -H "Content-Type: application/json" \
-    -d '{"token":"unknown-token","password":"StrongPass1"}')
+    -d '{"token":"unknown-token","password":"StrongPass1!"}')
 check "POST /auth/activate-account unknown token returns 404" 404 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
     -H "Content-Type: application/json" \
-    -d '{"token":"","password":"StrongPass1"}')
+    -d '{"token":"","password":"StrongPass1*"}')
 check "POST /auth/activate-account missing token returns 400" 400 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
@@ -603,18 +603,18 @@ RESET_ACTIVATION_TOKEN=$(get_activation_token_from_db "$RESET_USER_EMAIL")
 if [ -n "$RESET_ACTIVATION_TOKEN" ]; then
     STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$RESET_ACTIVATION_TOKEN\",\"password\":\"ResetOldPass1\"}")
+        -d "{\"token\":\"$RESET_ACTIVATION_TOKEN\",\"password\":\"ResetOldPass1!\"}")
     check "Activate reset test user returns 200" 200 "$STATUS"
 
     RESET_TOKEN=$(get_reset_token_from_db "$RESET_USER_EMAIL")
     STATUS=$(request -X POST "$BASE_URL/auth/reset-password" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$RESET_TOKEN\",\"password\":\"ResetNewPass1\"}")
+        -d "{\"token\":\"$RESET_TOKEN\",\"password\":\"ResetNewPass1!\"}")
     check "POST /auth/reset-password valid token returns 200" 200 "$STATUS"
 
     STATUS=$(request -X POST "$BASE_URL/auth/reset-password" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$RESET_TOKEN\",\"password\":\"ResetNewPass2\"}")
+        -d "{\"token\":\"$RESET_TOKEN\",\"password\":\"ResetNewPass2!\"}")
     check "POST /auth/reset-password reused token returns 410" 410 "$STATUS"
 else
     skip_check "Reset-password valid/reused token tests" "docker compose backend setup not available"
@@ -622,7 +622,7 @@ fi
 
 STATUS=$(request -X POST "$BASE_URL/auth/reset-password" \
     -H "Content-Type: application/json" \
-    -d '{"token":"unknown-token","password":"ResetNewPass1"}')
+    -d '{"token":"unknown-token","password":"ResetNewPass1!"}')
 check "POST /auth/reset-password unknown token returns 404" 404 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/reset-password" \
@@ -643,7 +643,7 @@ check "POST /auth/logout without cookie returns 401" 401 "$STATUS"
 STATUS=$(request -X POST "$BASE_URL/auth/logout" -b "$COOKIE_RESPONSABLE")
 check "POST /auth/logout with cookie returns 200" 200 "$STATUS"
 # Login responsable again because logout revoked cookie/token session record only, access token remains valid until expiry but refresh cookie is cleared.
-login_and_capture "responsable@cadri.local" "StrongPass1" "$COOKIE_RESPONSABLE" RESPONSABLE_TOKEN "Responsable re-login after logout returns 200"
+login_and_capture "responsable@cadri.local" "StrongPass1*" "$COOKIE_RESPONSABLE" RESPONSABLE_TOKEN "Responsable re-login after logout returns 200"
 
 CHANGE_EMAIL="curl.change.$RUN_ID@cadri.test"
 STATUS=$(create_user_api "$ADMIN_TOKEN" "Change" "Password" "$CHANGE_EMAIL" "agent" "$GREEN_SERVICE_ID")
@@ -652,32 +652,32 @@ CHANGE_ACTIVATION_TOKEN=$(get_activation_token_from_db "$CHANGE_EMAIL")
 if [ -n "$CHANGE_ACTIVATION_TOKEN" ]; then
     STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$CHANGE_ACTIVATION_TOKEN\",\"password\":\"ChangeOldPass1\"}")
+        -d "{\"token\":\"$CHANGE_ACTIVATION_TOKEN\",\"password\":\"ChangeOldPass1!\"}")
     check "Activate password-change user returns 200" 200 "$STATUS"
-    login_and_capture "$CHANGE_EMAIL" "ChangeOldPass1" "$COOKIE_PREVIOUS" CHANGE_TOKEN "Password-change user login returns 200"
+    login_and_capture "$CHANGE_EMAIL" "ChangeOldPass1!" "$COOKIE_PREVIOUS" CHANGE_TOKEN "Password-change user login returns 200"
 
     STATUS=$(request -X PATCH "$BASE_URL/auth/change-password" \
         -H "Authorization: Bearer $CHANGE_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"current_password":"WrongPassword1","new_password":"ChangeNewPass1"}')
+        -d '{"current_password":"WrongPassword1","new_password":"ChangeNewPass1!"}')
     check "PATCH /auth/change-password wrong current password returns 403" 403 "$STATUS"
 
     STATUS=$(request -X PATCH "$BASE_URL/auth/change-password" \
         -H "Authorization: Bearer $CHANGE_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"current_password":"ChangeOldPass1","new_password":"short"}')
+        -d '{"current_password":"ChangeOldPass1!","new_password":"short"}')
     check "PATCH /auth/change-password weak new password returns 400" 400 "$STATUS"
 
     STATUS=$(request -X PATCH "$BASE_URL/auth/change-password" \
         -H "Authorization: Bearer $CHANGE_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"current_password":"ChangeOldPass1","new_password":"ChangeNewPass1"}')
+        -d '{"current_password":"ChangeOldPass1!","new_password":"ChangeNewPass1!"}')
     check "PATCH /auth/change-password valid returns 200" 200 "$STATUS"
 
     STATUS=$(request -X POST "$BASE_URL/auth/login" \
         -c "$COOKIE_PREVIOUS" \
         -H "Content-Type: application/json" \
-        -d "{\"email\":\"$CHANGE_EMAIL\",\"password\":\"ChangeNewPass1\"}")
+        -d "{\"email\":\"$CHANGE_EMAIL\",\"password\":\"ChangeNewPass1!\"}")
     check "Login with changed password returns 200" 200 "$STATUS"
 else
     skip_check "Change-password valid flow" "docker compose backend setup not available"

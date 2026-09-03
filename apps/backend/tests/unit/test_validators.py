@@ -16,12 +16,15 @@ def test_validate_email_rejects_invalid_values(email):
         validate_email(email)
 
 
-@pytest.mark.parametrize("password", ["StrongPass1", "AnotherPass2"])
+@pytest.mark.parametrize("password", ["StrongPass1!", "AnotherPass2!"])
 def test_validate_password_accepts_valid_passwords(password):
     assert validate_password(password) == password
 
 
-@pytest.mark.parametrize("password", ["short", "lowercase1", "NOLOWERCASE1", "NoNumber"])
+@pytest.mark.parametrize(
+    "password",
+    ["short", "lowercase1", "NOLOWERCASE1", "NoNumber", "StrongPass1"],
+)
 def test_validate_password_rejects_weak_passwords(password):
     with pytest.raises(ValidationError):
         validate_password(password)

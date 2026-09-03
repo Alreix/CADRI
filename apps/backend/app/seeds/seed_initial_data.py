@@ -115,7 +115,7 @@ def seed_test_users():
             "email": "admin@cadri.local",
             "role_id": admin_role.id,
             "service_id": green_spaces.id,
-            "password": "StrongPass1",
+            "password": "StrongPass1*",
         },
         {
             "first_name": "Responsable",
@@ -123,7 +123,7 @@ def seed_test_users():
             "email": "responsable@cadri.local",
             "role_id": responsable_role.id,
             "service_id": green_spaces.id,
-            "password": "StrongPass1",
+            "password": "StrongPass1*",
         },
         {
             "first_name": "Agent",
@@ -131,7 +131,7 @@ def seed_test_users():
             "email": "agent@cadri.local",
             "role_id": agent_role.id,
             "service_id": roads.id,
-            "password": "StrongPass1",
+            "password": "StrongPass1*",
         },
     ]
 
