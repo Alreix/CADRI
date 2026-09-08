@@ -22,10 +22,14 @@ def test_refresh_without_cookie_is_rejected(client):
     assert response.status_code == 401
 
 
-def test_logout_without_cookie_is_rejected(client):
+def test_logout_without_cookie_is_idempotent(client):
+    """Logout without stored credentials still clears client session state."""
+
     response = client.post("/auth/logout")
 
-    assert response.status_code == 401
+    assert response.status_code == 200
+    assert response.get_json()["message"] == "Logout successful"
+    assert "refresh_token=;" in response.headers.get("Set-Cookie", "")
 
 
 def test_activate_account_with_unknown_token_returns_404(client):

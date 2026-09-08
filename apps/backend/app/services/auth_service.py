@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from flask import current_app
 from flask_jwt_extended import create_access_token
 
+from app.extensions import db
 from app.models.account_activation_token import AccountActivationToken
 from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
@@ -25,6 +26,7 @@ from app.repositories.password_reset_token_repository import (
     PasswordResetTokenRepository,
 )
 from app.repositories.refresh_token_repository import RefreshTokenRepository
+from app.repositories.token_blocklist_repository import TokenBlocklistRepository
 from app.repositories.user_repository import UserRepository
 from app.services.email_service import EmailService
 from app.utils.exceptions import (
@@ -43,6 +45,16 @@ class AuthService:
     Keep business logic here and keep database interactions in repositories so
     the code remains testable and easy to reason about.
     """
+
+    @staticmethod
+    def _issue_access_token(user_id):
+        """Issue an access JWT with sub-second UTC precision for invalidation."""
+
+        return create_access_token(
+            identity=str(user_id),
+            additional_claims={"iat": datetime.now(timezone.utc).timestamp()},
+        )
+
     @staticmethod
     def login(email, password):
         """Authenticate a user and create a fresh access/refresh token pair.
@@ -68,7 +80,7 @@ class AuthService:
         if not user.check_password(password):
             raise AuthenticationError("Invalid credentials.")
 
-        access_token = create_access_token(identity=str(user.id))
+        access_token = AuthService._issue_access_token(user.id)
 
         RefreshTokenRepository.revoke_all_for_user(user.id)
         refresh_token, raw_refresh_token = RefreshToken.create_for_user(
@@ -96,20 +108,41 @@ class AuthService:
         }
 
     @staticmethod
-    def logout(raw_refresh_token):
-        """Revoke the current refresh token when a user logs out."""
-        if not raw_refresh_token:
-            raise AuthenticationError("Refresh token is required.")
+    def logout(raw_refresh_token, access_token_data=None):
+        """Atomically revoke the current access JWT and opaque refresh token.
 
-        token_hash = hash_token(raw_refresh_token)
-        token = RefreshTokenRepository.get_by_token_hash(token_hash)
+        Access-token metadata is optional so an expired or missing access token
+        cannot prevent the refresh cookie from being terminated.
+        """
+        has_staged_changes = False
+        try:
+            if access_token_data:
+                access_token_user = UserRepository.get_by_id(
+                    access_token_data["user_id"]
+                )
+                if access_token_user is not None:
+                    TokenBlocklistRepository.create_if_absent(
+                        jti=access_token_data["jti"],
+                        user_id=access_token_data["user_id"],
+                        token_type=access_token_data["token_type"],
+                        expires_at=access_token_data["expires_at"],
+                        commit=False,
+                    )
+                    has_staged_changes = True
 
-        if not token:
-            raise AuthenticationError("Invalid refresh token.")
+            if raw_refresh_token:
+                token_hash = hash_token(raw_refresh_token)
+                token = RefreshTokenRepository.get_by_token_hash(token_hash)
+                if token is not None and not token.is_revoked():
+                    token.revoke()
+                    RefreshTokenRepository.update(commit=False)
+                    has_staged_changes = True
 
-        if not token.is_revoked():
-            token.revoke()
-            RefreshTokenRepository.update()
+            if has_staged_changes:
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
         return {"message": "Logout successful"}
 
@@ -132,7 +165,7 @@ class AuthService:
         if not user:
             raise AuthenticationError("User not found.")
 
-        access_token = create_access_token(identity=str(user.id))
+        access_token = AuthService._issue_access_token(user.id)
 
         new_refresh_token, new_raw_refresh_token = RefreshToken.create_for_user(
             user.id,
@@ -228,11 +261,18 @@ class AuthService:
         if not user:
             raise NotFoundError("User not found.")
 
-        user.set_password(password)
-        token.mark_as_used()
+        try:
+            user.set_password(password)
+            user.invalidate_existing_access_tokens()
+            token.mark_as_used()
 
-        UserRepository.update()
-        PasswordResetTokenRepository.update()
+            UserRepository.update(commit=False)
+            PasswordResetTokenRepository.update(commit=False)
+            RefreshTokenRepository.revoke_all_for_user(user.id, commit=False)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
         return {"message": "Password reset successfully"}
 
@@ -251,9 +291,15 @@ class AuthService:
                 status_code=403,
             )
 
-        user.set_password(new_password)
-        UserRepository.update()
-        RefreshTokenRepository.revoke_all_for_user(user.id)
+        try:
+            user.set_password(new_password)
+            user.invalidate_existing_access_tokens()
+            UserRepository.update(commit=False)
+            RefreshTokenRepository.revoke_all_for_user(user.id, commit=False)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
         return {"message": "Password changed successfully"}
 

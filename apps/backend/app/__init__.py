@@ -1,8 +1,57 @@
+from datetime import timezone
+
 from flask import Flask
 from flask_restx import Api
 
 from app.config import get_config
 from app.extensions import bcrypt, cors, db, jwt, migrate
+
+
+def _as_utc(value):
+    """Normalize a database datetime to an aware UTC value for JWT checks."""
+
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def configure_jwt_blocklist():
+    """Reject explicitly revoked JWTs and tokens predating password changes."""
+
+    @jwt.token_in_blocklist_loader
+    def is_access_token_revoked(jwt_header, jwt_payload):
+        """Fail securely when access-token revocation cannot be disproved."""
+
+        del jwt_header
+        if jwt_payload.get("type") != "access":
+            return False
+
+        try:
+            from datetime import datetime, timezone
+
+            from app.repositories.token_blocklist_repository import (
+                TokenBlocklistRepository,
+            )
+            from app.repositories.user_repository import UserRepository
+
+            jti = jwt_payload.get("jti")
+            identity = jwt_payload.get("sub")
+            issued_at = jwt_payload.get("iat")
+            if not jti or not identity or issued_at is None:
+                return True
+            if TokenBlocklistRepository.is_revoked(jti):
+                return True
+
+            user = UserRepository.get_by_id(identity)
+            if user is None:
+                return True
+            if user.tokens_valid_after is None:
+                return False
+
+            token_issued_at = datetime.fromtimestamp(issued_at, tz=timezone.utc)
+            return token_issued_at < _as_utc(user.tokens_valid_after)
+        except (TypeError, ValueError):
+            return True
 
 
 def create_app():
@@ -32,6 +81,7 @@ def configure_extensions(app):
     )
 
     jwt.init_app(app)
+    configure_jwt_blocklist()
     bcrypt.init_app(app)
 
 

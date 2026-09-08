@@ -52,7 +52,10 @@ class PasswordResetTokenRepository:
         return token
 
     @staticmethod
-    def update():
-        """Commit pending changes for password reset token records."""
+    def update(*, commit: bool = True):
+        """Flush reset-token changes and optionally commit the transaction."""
 
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()

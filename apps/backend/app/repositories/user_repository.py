@@ -75,9 +75,13 @@ class UserRepository:
         return user
 
     @staticmethod
-    def update():
-        """Commit pending changes for user records."""
-        db.session.commit()
+    def update(*, commit: bool = True):
+        """Flush user changes and optionally commit the current transaction."""
+
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
 
     @staticmethod
     def delete(user):

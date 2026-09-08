@@ -35,19 +35,23 @@ class RefreshTokenRepository:
         )
 
     @staticmethod
-    def revoke_all_for_user(user_id):
+    def revoke_all_for_user(user_id, *, commit: bool = True):
         """Revoke every refresh token currently linked to a user.
 
         This is typically used when a session must be invalidated globally,
         for example after a password change, an account compromise, or a
-        forced logout across devices.
+        forced logout across devices. A caller may defer the commit when these
+        changes belong to a larger atomic security operation.
         """
 
         tokens = RefreshToken.query.filter_by(user_id=user_id).all()
         for token in tokens:
             if not token.is_revoked():
                 token.revoke()
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
 
     @staticmethod
     def create(token):
@@ -58,7 +62,10 @@ class RefreshTokenRepository:
         return token
 
     @staticmethod
-    def update():
-        """Commit pending changes for refresh token records."""
+    def update(*, commit: bool = True):
+        """Flush refresh-token changes and optionally commit the transaction."""
 
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
