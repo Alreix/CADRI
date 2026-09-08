@@ -7,6 +7,7 @@ import MissionFilters from "../components/mission/MissionFilters";
 import MissionList from "../components/mission/MissionList";
 import { AuthContext } from "../contexts/AuthContext";
 import { getMissions } from "../api/missionsApi";
+import { usePagination } from "../hooks/usePagination";
 import "../styles/DashboardPage.css";
 import {
   Clock3,
@@ -33,7 +34,6 @@ function DashboardPage() {
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState(default_filters);
-  const [page, setPage] = useState(1);
 
   // Fetch missions from the API whenever the "my missions only" toggle changes.
   // Other filters (status, priority, search, dates) are applied client-side below,
@@ -90,9 +90,7 @@ function DashboardPage() {
     return currentMission.title.localeCompare(nextMission.title);
   });
 
-  // Slice the filtered/sorted list into the current page.
-  const totalPages = Math.max(1, Math.ceil(filtered.length / items_per_page));
-  const paginated = filtered.slice((page - 1) * items_per_page, page * items_per_page);
+  const { page, setPage, totalPages, paginated } = usePagination(filtered, items_per_page);
 
   return (
     <Layout user={user}>
