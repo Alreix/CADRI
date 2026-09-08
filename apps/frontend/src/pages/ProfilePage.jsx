@@ -1,56 +1,18 @@
 // Current user's own profile page: view mode (read-only) toggled with an
 // edit mode that also lets the user optionally change their password.
 import { useState, useEffect, useContext } from "react";
-import { User, Info, X } from "lucide-react";
+import { User, Info } from "lucide-react";
 import Layout from "../components/layout/Layout";
+import ConfirmModal from "../components/common/ConfirmModal";
+import AlertModal from "../components/common/AlertModal";
 import { AuthContext } from "../contexts/AuthContext";
 import { getProfile, updateProfile } from "../api/profileApi";
 import { changePassword } from "../api/authApi";
+import { useFormState } from "../hooks/useFormState";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordInput from "../components/common/PasswordInput";
 import "../styles/ProfilePage.css";
 import "../styles/ConfirmModals.css";
-
-function LogoutConfirmModal({ onConfirm, onCancel }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Déconnexion</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">
-          Êtes-vous sûr de vouloir vous déconnecter ?
-        </div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-cancel" onClick={onCancel}>Non</button>
-          <button className="profile-btn-primary" onClick={onConfirm}>Oui</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AlertModal({ message, onClose }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Attention</span>
-          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">{message}</div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-confirm-primary" onClick={onClose}>OK</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function ProfilePage() {
   const { user, logout } = useContext(AuthContext);
@@ -63,7 +25,7 @@ function ProfilePage() {
 
   // Single form object covering both profile fields and the optional password
   // change fields, following the same pattern as the mission/user forms.
-  const [form, setForm] = useState({
+  const [form, setForm, setField] = useFormState({
     firstName: "",
     lastName: "",
     email: "",
@@ -147,7 +109,11 @@ function ProfilePage() {
   return (
     <Layout>
       {showLogout && (
-        <LogoutConfirmModal
+        <ConfirmModal
+          title="Déconnexion"
+          message="Êtes-vous sûr de vouloir vous déconnecter ?"
+          cancelLabel="Non"
+          confirmLabel="Oui"
           onConfirm={logout}
           onCancel={() => setShowLogout(false)}
         />
@@ -238,7 +204,7 @@ function ProfilePage() {
                     id="firstName"
                     className="profile-field-input"
                     value={form.firstName}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, firstName: event.target.value }))}
+                    onChange={(event) => setField("firstName", event.target.value)}
                     required
                   />
                 </div>
@@ -251,7 +217,7 @@ function ProfilePage() {
                     id="lastName"
                     className="profile-field-input"
                     value={form.lastName}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, lastName: event.target.value }))}
+                    onChange={(event) => setField("lastName", event.target.value)}
                     required
                   />
                 </div>
@@ -265,7 +231,7 @@ function ProfilePage() {
                     type="email"
                     className="profile-field-input"
                     value={form.email}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, email: event.target.value }))}
+                    onChange={(event) => setField("email", event.target.value)}
                     required
                   />
                 </div>
@@ -285,7 +251,7 @@ function ProfilePage() {
                     className="profile-field-input"
                     placeholder="Saisir votre mot de passe actuel"
                     value={form.currentPassword}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, currentPassword: event.target.value }))}
+                    onChange={(event) => setField("currentPassword", event.target.value)}
                     autoComplete="current-password"
                     rightIcon={
                       <button
@@ -310,12 +276,7 @@ function ProfilePage() {
                     className="profile-field-input"
                     placeholder="Laisser vide pour conserver l'actuel"
                     value={form.password}
-                    onChange={(event) =>
-                      setForm((prevForm) => ({
-                        ...prevForm,
-                        password: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => setField("password", event.target.value)}
                     autoComplete="new-password"
                     rightIcon={
                       <button
@@ -340,7 +301,7 @@ function ProfilePage() {
                     className="profile-field-input"
                     placeholder="Laisser vide pour conserver l'actuel"
                     value={form.confirmPassword}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, confirmPassword: event.target.value }))}
+                    onChange={(event) => setField("confirmPassword", event.target.value)}
                     autoComplete="new-password"
                     rightIcon={
                       <button
