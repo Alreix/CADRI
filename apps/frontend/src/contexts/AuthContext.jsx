@@ -88,19 +88,6 @@ function AuthProvider({ children }) {
           }
         }
 
-        apiRequest("/me")
-          .then((profile) => {
-            if (isMounted) {
-              setUser(normalizeUser(profile));
-              localStorage.setItem(storage_key, JSON.stringify(normalizeUser(profile)));
-            }
-          })
-          .catch(() => {
-            if (isMounted) setUser(null);
-            localStorage.removeItem(storage_key);
-            clearAccessToken();
-          });
-
         return;
       }
 
