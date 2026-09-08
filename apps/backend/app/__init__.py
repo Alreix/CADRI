@@ -16,7 +16,7 @@ def _as_utc(value):
 
 
 def configure_jwt_blocklist():
-    """Reject explicitly revoked JWTs and tokens predating password changes."""
+    """Reject revoked JWTs and tokens predating session invalidation events."""
 
     @jwt.token_in_blocklist_loader
     def is_access_token_revoked(jwt_header, jwt_payload):

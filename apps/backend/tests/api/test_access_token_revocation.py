@@ -302,3 +302,64 @@ def test_logout_rolls_back_both_revocations_after_late_failure(
     assert response.status_code == 200
     assert TokenBlocklist.query.filter_by(jti=jti).one_or_none() is not None
     assert RefreshTokenRepository.get_by_id(refresh_id).is_revoked()
+
+
+def test_password_reset_rolls_back_when_final_commit_fails(
+    monkeypatch, admin_user
+):
+    """A final commit failure must roll back every staged reset mutation."""
+
+    AuthService.login(admin_user.email, "StrongPass1")
+    user_id = admin_user.id
+    refresh_id = RefreshTokenRepository.get_latest_for_user(user_id).id
+    reset_token, raw_reset_token = PasswordResetToken.create_for_user(user_id)
+    db.session.add(reset_token)
+    db.session.commit()
+    reset_token_id = reset_token.id
+    original_password_hash = admin_user.password_hash
+    original_valid_after = admin_user.tokens_valid_after
+    original_commit = db.session.commit
+
+    def fail_final_commit():
+        """Raise instead of committing after all reset changes are flushed."""
+
+        raise RuntimeError("injected final commit failure")
+
+    monkeypatch.setattr(db.session, "commit", fail_final_commit)
+    with pytest.raises(RuntimeError, match="injected final commit failure"):
+        AuthService.reset_password(raw_reset_token, "ResetStrongPass1!")
+    monkeypatch.setattr(db.session, "commit", original_commit)
+
+    db.session.expire_all()
+    persisted_user = UserRepository.get_by_id(user_id)
+    persisted_reset = db.session.get(PasswordResetToken, reset_token_id)
+    persisted_refresh = RefreshTokenRepository.get_by_id(refresh_id)
+    assert persisted_user.password_hash == original_password_hash
+    assert persisted_user.check_password("StrongPass1")
+    assert not persisted_user.check_password("ResetStrongPass1!")
+    assert persisted_user.tokens_valid_after == original_valid_after
+    assert not persisted_reset.is_used()
+    assert not persisted_refresh.is_revoked()
+
+
+def test_admin_can_delete_user_with_blocklisted_access_token(
+    client, admin_token, user_factory
+):
+    """Deleting a user removes existing blocklist rows without ORM errors."""
+
+    target_user = user_factory(email="blocked-delete@cadri.test")
+    login = _login(client, target_user)
+    access_token = login["access_token"]
+    jti = decode_token(access_token)["jti"]
+    assert client.post(
+        "/auth/logout", headers=auth_headers(access_token)
+    ).status_code == 200
+    assert TokenBlocklist.query.filter_by(jti=jti).one_or_none() is not None
+
+    response = client.delete(
+        f"/users/{target_user.id}", headers=auth_headers(admin_token)
+    )
+
+    assert response.status_code == 200
+    assert UserRepository.get_by_id(target_user.id) is None
+    assert TokenBlocklist.query.filter_by(jti=jti).one_or_none() is None

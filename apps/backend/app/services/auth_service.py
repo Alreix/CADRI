@@ -57,37 +57,42 @@ class AuthService:
 
     @staticmethod
     def login(email, password):
-        """Authenticate a user and create a fresh access/refresh token pair.
+        """Authenticate under a user lock and atomically create a new session.
 
-        The login flow normalizes the email, validates account activation, and
-        revokes previous refresh tokens so a new login replaces older sessions.
+        Password and account checks occur after the row lock is acquired so a
+        concurrent password security event cannot be bypassed with stale state.
         """
         email = validate_email(email)
+        try:
+            user = UserRepository.get_by_email_for_update(email)
+            if not user:
+                raise AuthenticationError("Invalid credentials.")
 
-        user = UserRepository.get_by_email(email)
-        if not user:
-            raise AuthenticationError("Invalid credentials.")
+            if not user.is_active:
+                raise AuthenticationError(
+                    "Account is not activated.", status_code=403
+                )
 
-        if not user.is_active:
-            raise AuthenticationError("Account is not activated.", status_code=403)
+            if not user.password_hash:
+                raise AuthenticationError(
+                    "Password is not initialized for this account.",
+                    status_code=403,
+                )
 
-        if not user.password_hash:
-            raise AuthenticationError(
-                "Password is not initialized for this account.",
-                status_code=403,
+            if not user.check_password(password):
+                raise AuthenticationError("Invalid credentials.")
+
+            RefreshTokenRepository.revoke_all_for_user(user.id, commit=False)
+            refresh_token, raw_refresh_token = RefreshToken.create_for_user(
+                user.id,
+                expires_in_days=current_app.config["REFRESH_TOKEN_EXPIRES_DAYS"],
             )
-
-        if not user.check_password(password):
-            raise AuthenticationError("Invalid credentials.")
-
-        access_token = AuthService._issue_access_token(user.id)
-
-        RefreshTokenRepository.revoke_all_for_user(user.id)
-        refresh_token, raw_refresh_token = RefreshToken.create_for_user(
-            user.id,
-            expires_in_days=current_app.config["REFRESH_TOKEN_EXPIRES_DAYS"],
-        )
-        RefreshTokenRepository.create(refresh_token)
+            RefreshTokenRepository.create(refresh_token, commit=False)
+            access_token = AuthService._issue_access_token(user.id)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
         return {
             "message": "Login successful",
@@ -112,27 +117,58 @@ class AuthService:
         """Atomically revoke the current access JWT and opaque refresh token.
 
         Access-token metadata is optional so an expired or missing access token
-        cannot prevent the refresh cookie from being terminated.
+        cannot prevent the refresh cookie from being terminated. User locks are
+        acquired in deterministic ID order when the credentials do not match.
         """
         has_staged_changes = False
         try:
+            token_hash = hash_token(raw_refresh_token) if raw_refresh_token else None
+            initial_refresh_token = (
+                RefreshTokenRepository.get_by_token_hash(token_hash)
+                if token_hash
+                else None
+            )
+
+            user_ids = set()
             if access_token_data:
-                access_token_user = UserRepository.get_by_id(
-                    access_token_data["user_id"]
-                )
-                if access_token_user is not None:
+                user_ids.add(str(access_token_data["user_id"]))
+            if initial_refresh_token is not None:
+                user_ids.add(str(initial_refresh_token.user_id))
+
+            locked_users = {
+                user_id: UserRepository.get_by_id_for_update(user_id)
+                for user_id in sorted(user_ids)
+            }
+
+            if access_token_data:
+                access_user_id = str(access_token_data["user_id"])
+                if locked_users.get(access_user_id) is not None:
                     TokenBlocklistRepository.create_if_absent(
                         jti=access_token_data["jti"],
-                        user_id=access_token_data["user_id"],
+                        user_id=access_user_id,
                         token_type=access_token_data["token_type"],
                         expires_at=access_token_data["expires_at"],
                         commit=False,
                     )
                     has_staged_changes = True
 
-            if raw_refresh_token:
-                token_hash = hash_token(raw_refresh_token)
-                token = RefreshTokenRepository.get_by_token_hash(token_hash)
+            if initial_refresh_token is not None:
+                refresh_user_id = str(initial_refresh_token.user_id)
+                token = RefreshTokenRepository.get_by_token_hash_fresh(token_hash)
+                if locked_users.get(refresh_user_id) is not None and token is not None:
+                    token_to_revoke = token
+                    if token.replaced_by_token_hash:
+                        replacement = RefreshTokenRepository.get_by_token_hash_fresh(
+                            token.replaced_by_token_hash
+                        )
+                        if replacement is not None:
+                            token_to_revoke = replacement
+
+                    if not token_to_revoke.is_revoked():
+                        token_to_revoke.revoke()
+                        RefreshTokenRepository.update(commit=False)
+                        has_staged_changes = True
+
                 if token is not None and not token.is_revoked():
                     token.revoke()
                     RefreshTokenRepository.update(commit=False)
@@ -148,33 +184,36 @@ class AuthService:
 
     @staticmethod
     def refresh_session(raw_refresh_token):
-        """Rotate a valid refresh token and issue a new access token."""
+        """Serialize and atomically rotate one valid opaque refresh token."""
         if not raw_refresh_token:
             raise AuthenticationError("Refresh token is required.")
 
         token_hash = hash_token(raw_refresh_token)
-        token = RefreshTokenRepository.get_by_token_hash(token_hash)
+        try:
+            initial_token = RefreshTokenRepository.get_by_token_hash(token_hash)
+            if not initial_token:
+                raise AuthenticationError("Invalid refresh token.")
 
-        if not token:
-            raise AuthenticationError("Invalid refresh token.")
+            user = UserRepository.get_by_id_for_update(initial_token.user_id)
+            if not user:
+                raise AuthenticationError("User not found.")
 
-        if not token.is_valid():
-            raise AuthenticationError("Refresh token is expired or invalid.")
+            token = RefreshTokenRepository.get_by_token_hash_fresh(token_hash)
+            if not token or not token.is_valid():
+                raise AuthenticationError("Refresh token is expired or invalid.")
 
-        user = UserRepository.get_by_id(token.user_id)
-        if not user:
-            raise AuthenticationError("User not found.")
-
-        access_token = AuthService._issue_access_token(user.id)
-
-        new_refresh_token, new_raw_refresh_token = RefreshToken.create_for_user(
-            user.id,
-            expires_in_days=current_app.config["REFRESH_TOKEN_EXPIRES_DAYS"],
-        )
-
-        token.rotate(new_raw_refresh_token)
-        RefreshTokenRepository.update()
-        RefreshTokenRepository.create(new_refresh_token)
+            new_refresh_token, new_raw_refresh_token = RefreshToken.create_for_user(
+                user.id,
+                expires_in_days=current_app.config["REFRESH_TOKEN_EXPIRES_DAYS"],
+            )
+            token.rotate(new_raw_refresh_token)
+            RefreshTokenRepository.update(commit=False)
+            RefreshTokenRepository.create(new_refresh_token, commit=False)
+            access_token = AuthService._issue_access_token(user.id)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
         return {
             "access_token": access_token,
@@ -242,7 +281,7 @@ class AuthService:
 
     @staticmethod
     def reset_password(raw_token, password):
-        """Reset a user's password after validating a one-time reset token."""
+        """Reset password and sessions atomically under the user's row lock."""
         if not raw_token:
             raise ValidationError("Reset token is required.")
 
@@ -254,14 +293,17 @@ class AuthService:
         if not token:
             raise NotFoundError("Reset token not found.")
 
-        if token.is_used() or token.is_expired():
-            raise GoneError("Reset token is expired or already used.")
-
-        user = UserRepository.get_by_id(token.user_id)
-        if not user:
-            raise NotFoundError("User not found.")
-
         try:
+            user = UserRepository.get_by_id_for_update(token.user_id)
+            if not user:
+                raise NotFoundError("User not found.")
+
+            token = PasswordResetTokenRepository.get_by_token_hash_fresh(token_hash)
+            if not token:
+                raise NotFoundError("Reset token not found.")
+            if token.is_used() or token.is_expired():
+                raise GoneError("Reset token is expired or already used.")
+
             user.set_password(password)
             user.invalidate_existing_access_tokens()
             token.mark_as_used()
@@ -278,20 +320,19 @@ class AuthService:
 
     @staticmethod
     def change_password(user_id, current_password, new_password):
-        """Change the current user's password and revoke active refresh tokens."""
+        """Change password and revoke sessions atomically under a user lock."""
         validate_password(new_password)
-
-        user = UserRepository.get_by_id(user_id)
-        if not user:
-            raise NotFoundError("User not found.")
-
-        if not user.check_password(current_password):
-            raise AuthenticationError(
-                "Current password is incorrect.",
-                status_code=403,
-            )
-
         try:
+            user = UserRepository.get_by_id_for_update(user_id)
+            if not user:
+                raise NotFoundError("User not found.")
+
+            if not user.check_password(current_password):
+                raise AuthenticationError(
+                    "Current password is incorrect.",
+                    status_code=403,
+                )
+
             user.set_password(new_password)
             user.invalidate_existing_access_tokens()
             UserRepository.update(commit=False)

@@ -24,6 +24,17 @@ class RefreshTokenRepository:
         return RefreshToken.query.filter_by(token_hash=token_hash).first()
 
     @staticmethod
+    def get_by_token_hash_fresh(token_hash):
+        """Re-read a refresh token from the database after its user lock is held."""
+
+        return (
+            RefreshToken.query
+            .populate_existing()
+            .filter_by(token_hash=token_hash)
+            .first()
+        )
+
+    @staticmethod
     def get_latest_for_user(user_id):
         """Return the most recently created refresh token for a user."""
 
@@ -54,11 +65,14 @@ class RefreshTokenRepository:
             db.session.flush()
 
     @staticmethod
-    def create(token):
-        """Persist a new refresh token and return it."""
+    def create(token, *, commit: bool = True):
+        """Stage a refresh token and optionally commit the current transaction."""
 
         db.session.add(token)
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
         return token
 
     @staticmethod

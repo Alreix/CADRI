@@ -10,6 +10,7 @@ from app.extensions import db
 from app.models.account_activation_token import AccountActivationToken
 from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
+from app.models.token_blocklist import TokenBlocklist
 from app.models.user import User
 from app.repositories.role_repository import RoleRepository
 from app.repositories.service_repository import ServiceRepository
@@ -246,6 +247,7 @@ class UserService:
         AccountActivationToken.query.filter_by(user_id=user.id).delete()
         PasswordResetToken.query.filter_by(user_id=user.id).delete()
         RefreshToken.query.filter_by(user_id=user.id).delete()
+        TokenBlocklist.query.filter_by(user_id=user.id).delete()
 
         db.session.delete(user)
         db.session.commit()

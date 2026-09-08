@@ -169,7 +169,7 @@ class LoginResource(Resource):
 
 @auth_ns.route("/logout")
 class LogoutResource(Resource):
-    """Terminate the current refresh-token based session."""
+    """Terminate the current authenticated session."""
 
     def post(self):
         """Revoke available session credentials and clear the refresh cookie."""
