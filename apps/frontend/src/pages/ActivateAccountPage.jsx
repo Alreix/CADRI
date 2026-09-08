@@ -1,12 +1,13 @@
 // Account activation page, reached via the emailed activation link (?token=...).
 // Lets a newly created user set their initial password.
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
-import PasswordInput from "../components/common/PasswordInput";
+import PasswordFieldWithHint from "../components/common/PasswordFieldWithHint";
+import { usePasswordConfirmation } from "../hooks/usePasswordConfirmation";
 import { activateAccount } from "../api/authApi";
-import { Info, X } from "lucide-react";
+import { X } from "lucide-react";
 import "../styles/AuthLayout.css";
 
 // One-time welcome modal shown automatically when the page first loads.
@@ -42,21 +43,24 @@ function ActivateAccountPage() {
   const token = searchParams.get("token") || "";
 
   const [showWelcome, setShowWelcome] = useState(true);
-  const [showPasswordHint, setShowPasswordHint] = useState(false);
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const {
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    mismatch,
+    reset,
+    showHint,
+    openHint,
+    closeHint,
+  } = usePasswordConfirmation(token);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setPassword("");
-    setConfirmPassword("");
-  }, [token]);
-
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (password !== confirmPassword) {
+    if (mismatch) {
       setError("Les mots de passe ne correspondent pas.");
       return;
     }
@@ -64,8 +68,7 @@ function ActivateAccountPage() {
     setError(null);
     try {
       await activateAccount({ token, password });
-      setPassword("");
-      setConfirmPassword("");
+      reset();
       navigate("/login");
     } catch (err) {
       setError(err.message || "Une erreur s'est produite.");
@@ -78,65 +81,29 @@ function ActivateAccountPage() {
     <AuthLayout>
       {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
 
-      {showPasswordHint && (
-        <PasswordRequirementsModal onClose={() => setShowPasswordHint(false)} />
+      {showHint && (
+        <PasswordRequirementsModal onClose={closeHint} />
       )}
 
       <div className="auth-card">
         <h1 className="auth-card-title">Activer votre compte</h1>
 
         <form onSubmit={handleSubmit} autoComplete="off" noValidate>
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="activation-new-password">
-              Mot de passe<span className="auth-label-required">*</span>
-            </label>
-            <PasswordInput
-              id="activation-new-password"
-              name="activation-new-password"
-              className="auth-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              autoComplete="new-password"
-              rightIcon={
-                <button
-                  type="button"
-                  className="auth-password-info-btn"
-                  onClick={() => setShowPasswordHint(true)}
-                  aria-label="Voir les exigences du mot de passe"
-                >
-                  <Info size={16} />
-                </button>
-              }
-            />
-          </div>
+          <PasswordFieldWithHint
+            id="activation-new-password"
+            label="Mot de passe"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            onShowHint={openHint}
+          />
 
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="activation-confirm-password">
-              Confirmer le mot de passe<span className="auth-label-required">*</span>
-            </label>
-            <PasswordInput
-              id="activation-confirm-password"
-              name="activation-confirm-password"
-              className="auth-input"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              required
-              autoComplete="new-password"
-              rightIcon={
-                <button
-                  type="button"
-                  className="auth-password-info-btn"
-                  onClick={() => setShowPasswordHint(true)}
-                  aria-label="Voir les exigences du mot de passe"
-                >
-                  <Info size={16} />
-                </button>
-              }
-            />
-          </div>
+          <PasswordFieldWithHint
+            id="activation-confirm-password"
+            label="Confirmer le mot de passe"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            onShowHint={openHint}
+          />
 
           {error && (
             <p style={{ color: "var(--auth-required)", fontSize: "0.875rem", marginBottom: "12px" }}>
