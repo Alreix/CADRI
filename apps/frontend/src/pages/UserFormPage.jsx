@@ -3,40 +3,15 @@
 // read-only inputs in "view" mode instead of duplicating three near-identical forms.
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Trash2, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Layout from "../components/layout/Layout";
+import ConfirmModal from "../components/common/ConfirmModal";
 import { AuthContext } from "../contexts/AuthContext";
 import { getUser, createUser, updateUser, deleteUser } from "../api/usersApi";
 import { getRoles, getServices } from "../api/metadataApi";
+import { useMetadataOptions } from "../hooks/useMetadataOptions";
+import { useFormState } from "../hooks/useFormState";
 import "../styles/ConfirmModals.css";
-
-function DeleteConfirmModal({ onConfirm, onCancel }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Supprimer l'utilisateur</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">
-          Êtes-vous sûr de vouloir supprimer cet utilisateur ?
-          Cette action ne peut pas être annulée.
-        </div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-cancel" onClick={onCancel}>Non, conserver</button>
-          <button
-            className="confirm-modal-confirm-danger"
-            onClick={onConfirm}
-          >
-            Oui, supprimer
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function UserFormPage({ mode = "create" }) {
   const { id } = useParams();
@@ -45,16 +20,20 @@ function UserFormPage({ mode = "create" }) {
 
   const isAdmin = currentUser?.role === "admin";
   const isManager = currentUser?.role === "responsable";
-  const [serviceOptions, setServiceOptions] = useState([]);
+
+  const [serviceOptions] = useMetadataOptions(getServices, []);
 
   // Hardcoded fallback roles, replaced by the backend list once it loads.
-  const [roleOptionsSource, setRoleOptionsSource] = useState([
-    { value: "agent", label: "Agent" },
-    { value: "responsable", label: "Responsable" },
-    { value: "admin", label: "Admin" },
-  ]);
+  const [roleOptionsSource] = useMetadataOptions(
+    () => getRoles().then((data) => data.map((role) => ({ value: role.value, label: role.label }))),
+    [
+      { value: "agent", label: "Agent" },
+      { value: "responsable", label: "Responsable" },
+      { value: "admin", label: "Admin" },
+    ]
+  );
 
-  const [form, setForm] = useState({
+  const [form, setForm, setField] = useFormState({
     // A "responsable" creating a user can only create agents (see backend rules),
     // so the role is pre-filled and locked to "agent" for them.
     role: isManager ? "agent" : "",
@@ -71,24 +50,8 @@ function UserFormPage({ mode = "create" }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Loads reference data (services, roles) and, in view/edit mode, the target user.
+  // Loads the target user in view/edit mode.
   useEffect(() => {
-    getServices()
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setServiceOptions(data);
-      })
-      .catch(() => {});
-
-    getRoles()
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setRoleOptionsSource(
-            data.map((role) => ({ value: role.value, label: role.label }))
-          );
-        }
-      })
-      .catch(() => {});
-
     if ((mode === "view" || mode === "edit") && id) {
       getUser(id).then((data) => {
         setForm({
@@ -146,7 +109,12 @@ function UserFormPage({ mode = "create" }) {
   return (
     <Layout>
       {showDeleteModal && (
-        <DeleteConfirmModal
+        <ConfirmModal
+          title="Supprimer l'utilisateur"
+          message="Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action ne peut pas être annulée."
+          cancelLabel="Non, conserver"
+          confirmLabel="Oui, supprimer"
+          danger
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteModal(false)}
         />
@@ -181,7 +149,7 @@ function UserFormPage({ mode = "create" }) {
                     id="role"
                     className="profile-field-select"
                     value={form.role}
-                    onChange={(event) => setForm((formData) => ({ ...formData, role: event.target.value }))}
+                    onChange={(event) => setField("role", event.target.value)}
                     required
                   >
                     <option value="" />
@@ -209,7 +177,7 @@ function UserFormPage({ mode = "create" }) {
                     id="service"
                     className="profile-field-select"
                     value={form.service}
-                    onChange={(event) => setForm((formData) => ({ ...formData, service: event.target.value }))}
+                    onChange={(event) => setField("service", event.target.value)}
                     required
                   >
                     <option value="" />
@@ -229,7 +197,7 @@ function UserFormPage({ mode = "create" }) {
                   id="firstName"
                   className="profile-field-input"
                   value={form.firstName}
-                  onChange={(event) => setForm((formData) => ({ ...formData, firstName: event.target.value }))}
+                  onChange={(event) => setField("firstName", event.target.value)}
                   readOnly={isReadOnly}
                   required={!isReadOnly}
                   placeholder={isReadOnly ? "" : "Jean"}
@@ -245,7 +213,7 @@ function UserFormPage({ mode = "create" }) {
                   id="lastName"
                   className="profile-field-input"
                   value={form.lastName}
-                  onChange={(event) => setForm((formData) => ({ ...formData, lastName: event.target.value }))}
+                  onChange={(event) => setField("lastName", event.target.value)}
                   readOnly={isReadOnly}
                   required={!isReadOnly}
                   placeholder={isReadOnly ? "" : "Dupont"}
@@ -262,7 +230,7 @@ function UserFormPage({ mode = "create" }) {
                   type="email"
                   className="profile-field-input"
                   value={form.email}
-                  onChange={(event) => setForm((formData) => ({ ...formData, email: event.target.value }))}
+                  onChange={(event) => setField("email", event.target.value)}
                   readOnly={isReadOnly}
                   required={!isReadOnly}
                   placeholder={isReadOnly ? "" : "jean.dupont@municipality.fr"}
