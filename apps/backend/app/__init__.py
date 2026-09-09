@@ -1,10 +1,12 @@
-from datetime import timezone
+from datetime import datetime, timezone
 
 from flask import Flask
 from flask_restx import Api
 
 from app.config import get_config
 from app.extensions import bcrypt, cors, db, jwt, migrate
+from app.repositories.token_blocklist_repository import TokenBlocklistRepository
+from app.repositories.user_repository import UserRepository
 
 
 def _as_utc(value):
@@ -27,13 +29,6 @@ def configure_jwt_blocklist():
             return False
 
         try:
-            from datetime import datetime, timezone
-
-            from app.repositories.token_blocklist_repository import (
-                TokenBlocklistRepository,
-            )
-            from app.repositories.user_repository import UserRepository
-
             jti = jwt_payload.get("jti")
             identity = jwt_payload.get("sub")
             issued_at = jwt_payload.get("iat")

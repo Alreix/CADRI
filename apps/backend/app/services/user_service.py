@@ -237,20 +237,24 @@ class UserService:
 
     @staticmethod
     def delete_user(current_user, user_id):
-        """Delete a user and related authentication tokens directly."""
+        """Delete a locked user and authentication state in one transaction."""
         UserService._check_user_delete_permissions(current_user)
 
-        user = UserRepository.get_by_id(user_id)
-        if not user:
-            raise NotFoundError("User not found.")
+        try:
+            user = UserRepository.get_by_id_for_update(user_id)
+            if not user:
+                raise NotFoundError("User not found.")
 
-        AccountActivationToken.query.filter_by(user_id=user.id).delete()
-        PasswordResetToken.query.filter_by(user_id=user.id).delete()
-        RefreshToken.query.filter_by(user_id=user.id).delete()
-        TokenBlocklist.query.filter_by(user_id=user.id).delete()
+            AccountActivationToken.query.filter_by(user_id=user.id).delete()
+            PasswordResetToken.query.filter_by(user_id=user.id).delete()
+            RefreshToken.query.filter_by(user_id=user.id).delete()
+            TokenBlocklist.query.filter_by(user_id=user.id).delete()
 
-        db.session.delete(user)
-        db.session.commit()
+            db.session.delete(user)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
         return {"message": "User deleted successfully"}
 
