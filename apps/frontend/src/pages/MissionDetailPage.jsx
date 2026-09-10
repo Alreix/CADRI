@@ -3,8 +3,8 @@
 // This is where the mission lifecycle (see missionsApi.js) becomes visible to the user.
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
 import Layout from "../components/layout/Layout";
+import AlertModal from "../components/common/AlertModal";
 import { AuthContext } from "../contexts/AuthContext";
 import { formatDateFR } from "../api/missionsApi";
 import "../styles/MissionDetailPage.css";
@@ -15,26 +15,6 @@ import {
   updateMissionStatus,
   completeMission,
 } from "../api/missionsApi";
-
-// Simple blocking alert dialog used to surface API errors to the user.
-function AlertModal({ message, onClose }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Attention</span>
-          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">{message}</div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-confirm-primary" onClick={onClose}>OK</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MissionDetailPage() {
   const { id } = useParams();

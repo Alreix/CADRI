@@ -2,24 +2,28 @@
 // Handles attaching the auth token and silently refreshing it on expiry.
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export const ACCESS_TOKEN_STORAGE_KEY = "cadri_access_token";
-
 // Shared in-flight refresh promise: prevents firing multiple parallel
 // /auth/refresh calls if several requests get a 401 at the same time.
 let refreshRequest = null;
 
+// The access token lives only in this module-level variable, never in
+// localStorage/sessionStorage: it's wiped on every reload, which limits what
+// an XSS payload could steal. The refresh token (a separate HTTP-only cookie,
+// see refreshAccessToken below) is what makes the session survive reloads.
+let accessToken = null;
+
 export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  return accessToken;
 }
 
 export function setAccessToken(token) {
   if (token) {
-    localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+    accessToken = token;
   }
 }
 
 export function clearAccessToken() {
-  localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  accessToken = null;
 }
 
 // Merges default headers (JSON content type, Bearer token) with any custom headers.

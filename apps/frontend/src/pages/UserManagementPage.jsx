@@ -7,6 +7,7 @@ import Layout from "../components/layout/Layout";
 import UserFilters from "../components/user/UserFilters";
 import UserTable from "../components/user/UserTable";
 import { getUsers } from "../api/usersApi";
+import { usePagination } from "../hooks/usePagination";
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import '../styles/UserManagementPage.css';
 
@@ -23,7 +24,6 @@ function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState(defaul_filters);
-  const [page, setPage] = useState(1);
 
   // Fetch the full user list once on mount.
   useEffect(() => {
@@ -47,8 +47,7 @@ function UserManagementPage() {
     return true;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / items_per_page));
-  const paginated = filtered.slice((page - 1) * items_per_page, page * items_per_page);
+  const { page, setPage, totalPages, paginated } = usePagination(filtered, items_per_page);
 
   return (
     <Layout>

@@ -6,6 +6,8 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, X, UserPlus } from "lucide-react";
 import Layout from "../components/layout/Layout";
+import ConfirmModal from "../components/common/ConfirmModal";
+import AlertModal from "../components/common/AlertModal";
 import { AuthContext } from "../contexts/AuthContext";
 import { getServices } from "../api/metadataApi";
 import {
@@ -45,47 +47,6 @@ const emptyForm = {
   remark: "",
   assignedUsers: [],
 };
-
-function DeleteConfirmModal({ onConfirm, onCancel }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Supprimer la mission</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">
-          Êtes-vous sûr de vouloir supprimer cette mission ? Cette action ne peut pas être annulée.
-        </div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-cancel" onClick={onCancel}>Non, conserver</button>
-          <button className="confirm-modal-confirm-danger" onClick={onConfirm}>Oui, supprimer</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AlertModal({ message, onClose }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Attention</span>
-          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">{message}</div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-confirm-primary" onClick={onClose}>OK</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MissionFormPage({ mode = "create" }) {
   const { id } = useParams();
@@ -319,7 +280,12 @@ function MissionFormPage({ mode = "create" }) {
         </button>
 
         {showDeleteModal && (
-          <DeleteConfirmModal
+          <ConfirmModal
+            title="Supprimer la mission"
+            message="Êtes-vous sûr de vouloir supprimer cette mission ? Cette action ne peut pas être annulée."
+            cancelLabel="Non, conserver"
+            confirmLabel="Oui, supprimer"
+            danger
             onConfirm={handleDelete}
             onCancel={() => setShowDeleteModal(false)}
           />

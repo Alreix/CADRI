@@ -1,43 +1,29 @@
 // Filter panel for the mission list (DashboardPage). Purely "controlled":
 // it doesn't own the filter state itself, it receives `filters` and reports
 // any change to the parent via `onChange`.
-import { useEffect, useState } from "react";
 import { getPriorities, getStatuses } from "../../api/metadataApi";
+import { useMetadataOptions } from "../../hooks/useMetadataOptions";
 import "../../styles/MissionFilters.css";
 
 
 function MissionFilters({ filters, onChange }) {
   // Hardcoded fallback options, replaced by the real backend list once it loads
   // (avoids an empty filter panel while the metadata request is in flight).
-  const [statuses, setStatuses] = useState([
-    { value: "to_do", label: "À faire" },
-    { value: "in_progress", label: "En cours" },
-    { value: "completed", label: "Terminée" },
-  ]);
-  const [priorities, setPriorities] = useState([
+  const [statuses] = useMetadataOptions(
+    // "remark_pending_validation" is an internal workflow status, not meant
+    // to be used as a manual filter option.
+    () => getStatuses().then((data) => data.filter((status) => status.value !== "remark_pending_validation")),
+    [
+      { value: "to_do", label: "À faire" },
+      { value: "in_progress", label: "En cours" },
+      { value: "completed", label: "Terminée" },
+    ]
+  );
+  const [priorities] = useMetadataOptions(getPriorities, [
     { value: "high", label: "Urgente" },
     { value: "medium", label: "Moyenne" },
     { value: "low", label: "Basse" },
   ]);
-
-  // Load the real reference data once when the component mounts.
-  useEffect(() => {
-    getStatuses()
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          // "remark_pending_validation" is an internal workflow status, not meant
-          // to be used as a manual filter option.
-          setStatuses(data.filter((status) => status.value !== "remark_pending_validation"));
-        }
-      })
-      .catch(() => { });
-
-    getPriorities()
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setPriorities(data);
-      })
-      .catch(() => { });
-  }, []);
 
   // Status filter is multi-select: toggles a single status in/out of the active list.
   const handleStatus = (statusToToggle) => {

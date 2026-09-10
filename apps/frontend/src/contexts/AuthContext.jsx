@@ -5,7 +5,6 @@ import { createContext, useState, useEffect } from "react";
 import {
   apiRequest,
   clearAccessToken,
-  getAccessToken,
   setAccessToken,
 } from "../api/apiClient";
 import { logout as logoutApi } from "../api/authApi";
@@ -45,9 +44,12 @@ function AuthProvider({ children }) {
 
     // On app startup, try to restore a previous session from localStorage,
     // then re-validate it against the backend before fully trusting it.
+    // The access token itself lives only in memory (see apiClient.js) and is
+    // always gone at this point (fresh page load), so the /me call below
+    // relies on apiRequest's automatic refresh-on-401 to get a new one from
+    // the HTTP-only refresh cookie.
     async function restoreSession() {
       const stored = localStorage.getItem(storage_key);
-      const token = getAccessToken();
       let storedUser = null;
 
       if (stored) {
@@ -59,61 +61,21 @@ function AuthProvider({ children }) {
         }
       }
 
-      if (storedUser && token) {
-        // Optimistic UI: show the cached user immediately so the app doesn't
-        // flash a logged-out state while we confirm the session is still valid.
-        if (isMounted) {
-          setUser(storedUser);
-          setLoading(false);
-        }
-
-        try {
-          const profile = await apiRequest("/me");
-          const normalizedUser = normalizeUser(profile);
-
-          if (isMounted) {
-            setUser(normalizedUser);
-            localStorage.setItem(storage_key, JSON.stringify(normalizedUser));
-          }
-        } catch {
-          // Session is no longer valid on the server: clear everything locally.
-          if (isMounted) {
-            setUser(null);
-          }
-          localStorage.removeItem(storage_key);
-          clearAccessToken();
-        } finally {
-          if (isMounted) {
-            setLoading(false);
-          }
-        }
-
-        apiRequest("/me")
-          .then((profile) => {
-            if (isMounted) {
-              setUser(normalizeUser(profile));
-              localStorage.setItem(storage_key, JSON.stringify(normalizeUser(profile)));
-            }
-          })
-          .catch(() => {
-            if (isMounted) setUser(null);
-            localStorage.removeItem(storage_key);
-            clearAccessToken();
-          });
-
-        return;
-      }
-
-      // No cached user and no token: nothing to restore, app starts logged out.
-      if (!storedUser && !token) {
+      if (!storedUser) {
+        // No cached user: nothing to restore, app starts logged out.
         if (isMounted) {
           setLoading(false);
         }
         return;
       }
 
-      // Edge case: only one of (cached user / token) is present.
-      // Still attempt to fetch the profile in case the session is actually valid.
+      // Optimistic UI: show the cached user immediately so the app doesn't
+      // flash a logged-out state while we confirm the session is still valid.
+      if (isMounted) {
+        setUser(storedUser);
+        setLoading(false);
+      }
+
       try {
         const profile = await apiRequest("/me");
         const normalizedUser = normalizeUser(profile);
@@ -123,6 +85,7 @@ function AuthProvider({ children }) {
           localStorage.setItem(storage_key, JSON.stringify(normalizedUser));
         }
       } catch {
+        // Session is no longer valid on the server: clear everything locally.
         if (isMounted) {
           setUser(null);
         }
