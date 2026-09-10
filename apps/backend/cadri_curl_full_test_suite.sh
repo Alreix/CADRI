@@ -33,6 +33,7 @@ MAILPIT_URL="${MAILPIT_URL:-http://127.0.0.1:8025}"
 TMP_DIR="$(mktemp -d)"
 COOKIE_ADMIN="$TMP_DIR/admin.cookies"
 COOKIE_RESPONSABLE="$TMP_DIR/responsable.cookies"
+COOKIE_RESPONSABLE_REVOKED="$TMP_DIR/responsable.revoked.cookies"
 COOKIE_AGENT="$TMP_DIR/agent.cookies"
 COOKIE_TEMP="$TMP_DIR/temp.cookies"
 COOKIE_PREVIOUS="$TMP_DIR/previous.cookies"
@@ -714,12 +715,25 @@ check "POST /auth/refresh with cookie returns 200" 200 "$STATUS"
 AGENT_TOKEN=$(json_get "access_token")
 
 STATUS=$(request -X POST "$BASE_URL/auth/logout")
-check "POST /auth/logout without cookie returns 401" 401 "$STATUS"
+check "POST /auth/logout without credentials is idempotent and returns 200" 200 "$STATUS"
 
-STATUS=$(request -X POST "$BASE_URL/auth/logout" -b "$COOKIE_RESPONSABLE")
-check "POST /auth/logout with cookie returns 200" 200 "$STATUS"
-# Login responsable again because logout revoked cookie/token session record only, access token remains valid until expiry but refresh cookie is cleared.
+cp "$COOKIE_RESPONSABLE" "$COOKIE_RESPONSABLE_REVOKED"
+STATUS=$(request -X POST "$BASE_URL/auth/logout" \
+    -H "Authorization: Bearer $RESPONSABLE_TOKEN" \
+    -b "$COOKIE_RESPONSABLE_REVOKED")
+check "POST /auth/logout with access and refresh credentials returns 200" 200 "$STATUS"
+
+STATUS=$(request -X GET "$BASE_URL/me" -H "Authorization: Bearer $RESPONSABLE_TOKEN")
+check "GET /me rejects the old access token after logout" 401 "$STATUS"
+
+STATUS=$(request -X POST "$BASE_URL/auth/refresh" -b "$COOKIE_RESPONSABLE_REVOKED")
+check "POST /auth/refresh rejects the old refresh token after logout" 401 "$STATUS"
+
+# Log in again with fresh credentials after verifying that the previous
+# access and refresh credentials were both revoked by logout.
 login_and_capture "responsable@cadri.local" "StrongPass1*" "$COOKIE_RESPONSABLE" RESPONSABLE_TOKEN "Responsable re-login after logout returns 200"
+STATUS=$(request -X GET "$BASE_URL/me" -H "Authorization: Bearer $RESPONSABLE_TOKEN")
+check "GET /me accepts the fresh access token after re-login" 200 "$STATUS"
 
 CHANGE_EMAIL="curl.change.$RUN_ID@cadri.test"
 STATUS=$(create_user_api "$ADMIN_TOKEN" "Change" "Password" "$CHANGE_EMAIL" "agent" "$GREEN_SERVICE_ID")

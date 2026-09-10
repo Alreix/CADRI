@@ -27,6 +27,10 @@ class BaseConfig:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(
         minutes=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_MINUTES", 15))
     )
+    # Tolerate small clock drift between servers when validating iat/nbf/exp;
+    # without this, a token minted and checked a moment apart can be rejected
+    # as "immature" on machines whose clock briefly steps backward.
+    JWT_DECODE_LEEWAY = int(os.getenv("JWT_DECODE_LEEWAY_SECONDS", 2))
 
     ACCOUNT_ACTIVATION_TOKEN_EXPIRES_HOURS = int(
         os.getenv("ACCOUNT_ACTIVATION_TOKEN_EXPIRES_HOURS", 24)
