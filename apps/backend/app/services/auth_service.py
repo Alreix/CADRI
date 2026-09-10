@@ -169,11 +169,6 @@ class AuthService:
                         RefreshTokenRepository.update(commit=False)
                         has_staged_changes = True
 
-                if token is not None and not token.is_revoked():
-                    token.revoke()
-                    RefreshTokenRepository.update(commit=False)
-                    has_staged_changes = True
-
             if has_staged_changes:
                 db.session.commit()
         except Exception:
