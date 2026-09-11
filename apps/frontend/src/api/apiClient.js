@@ -26,6 +26,23 @@ export function clearAccessToken() {
   accessToken = null;
 }
 
+// Registered by AuthContext so this framework-agnostic module can announce a
+// dead session without importing React state directly. AuthContext already
+// imports apiClient, so importing AuthContext back here would create a
+// circular dependency — a plain callback keeps the two decoupled.
+let sessionExpiredHandler = null;
+
+export function setSessionExpiredHandler(handler) {
+  sessionExpiredHandler = handler;
+}
+
+// Clears the access token and tells whoever is listening (AuthContext) that
+// the session is definitively over, so React state stays in sync with it.
+function notifySessionExpired() {
+  clearAccessToken();
+  sessionExpiredHandler?.();
+}
+
 // Merges default headers (JSON content type, Bearer token) with any custom headers.
 function buildHeaders(headers = {}) {
   const token = getAccessToken();
@@ -63,9 +80,8 @@ async function refreshAccessToken() {
         const data = await parseResponse(response);
 
         if (!response.ok || !data?.access_token) {
-          // Refresh failed: the session is dead, clear everything locally.
-          localStorage.removeItem("cadri_user");
-          clearAccessToken();
+          // Refresh failed: the session is dead.
+          notifySessionExpired();
           return null;
         }
 
@@ -107,16 +123,17 @@ export async function apiRequest(path, options = {}, retryOnUnauthorized = true)
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
-      // Refresh didn't help (or wasn't attempted): force logout locally.
-      localStorage.removeItem("cadri_user");
-      clearAccessToken();
+    if (response.status === 401 && shouldRefresh(path)) {
+      // Refresh didn't help (or wasn't attempted): the session is dead.
+      // Auth endpoints (login/logout/refresh) are excluded so a wrong
+      // password on login is never mistaken for an expired session.
+      notifySessionExpired();
     }
 
-      const error = new Error(data?.message || data?.error || "API request failed.");
-      error.status = response.status;
-      throw error;
-    }
-
-    return data;
+    const error = new Error(data?.message || data?.error || data?.msg || "API request failed.");
+    error.status = response.status;
+    throw error;
   }
+
+  return data;
+}
