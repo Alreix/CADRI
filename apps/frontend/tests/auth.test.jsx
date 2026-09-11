@@ -20,14 +20,14 @@ describe('LoginPage', () => {
   test('affiche le formulaire avec email, mot de passe et bouton de connexion', () => {
     renderWithRouter(<LoginPage />);
     expect(screen.getByLabelText(/^email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/mot de passe/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^mot de passe/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
   });
 
   test('les champs email et mot de passe sont requis', () => {
     renderWithRouter(<LoginPage />);
     expect(screen.getByLabelText(/^email/i)).toBeRequired();
-    expect(screen.getByLabelText(/mot de passe/i)).toBeRequired();
+    expect(screen.getByLabelText(/^mot de passe/i)).toBeRequired();
   });
 
   test('affiche une modale d\'erreur quand les identifiants sont invalides', async () => {
@@ -38,7 +38,7 @@ describe('LoginPage', () => {
 
     renderWithRouter(<LoginPage />);
     fireEvent.change(screen.getByLabelText(/^email/i), { target: { value: 'wrong@cadri.fr' } });
-    fireEvent.change(screen.getByLabelText(/mot de passe/i), { target: { value: 'wrongpassword' } });
+    fireEvent.change(screen.getByLabelText(/^mot de passe/i), { target: { value: 'wrongpassword' } });
     fireEvent.click(screen.getByRole('button', { name: /se connecter/i }));
 
     await waitFor(() => {
