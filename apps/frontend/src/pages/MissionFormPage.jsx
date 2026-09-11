@@ -206,7 +206,7 @@ function MissionFormPage({ mode = "create" }) {
           : "/"
       );
     } catch (err) {
-      console.error("Error saving mission:", err);
+      setAlertMessage(err.message || "Impossible d'enregistrer la mission.");
     } finally {
       setSaving(false);
     }
