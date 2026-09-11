@@ -28,12 +28,27 @@ function mapUserToBackend(user) {
   };
 }
 
-// Fetches the full list of users (admin only). Handles both a plain array response
-// and a paginated { items: [...] } response from the backend.
+// The backend rejects any per_page above 100 (see UserService._validate_pagination),
+// so fetching "everyone" means walking every page rather than requesting a huge one.
+const MAX_PAGE_SIZE = 100;
+
+// Fetches the full list of users (admin only) by walking the backend's
+// pagination until every page has been collected. Handles both a plain array
+// response and a paginated { items, pagination } response from the backend.
 export async function getUsers() {
-  const data = await apiRequest("/users");
-  const users = Array.isArray(data) ? data : data.items ?? [];
-  return users.map(mapUserFromBackend);
+  let page = 1;
+  let totalPages = 1;
+  let allUsers = [];
+
+  do {
+    const data = await apiRequest(`/users?page=${page}&per_page=${MAX_PAGE_SIZE}`);
+    const items = Array.isArray(data) ? data : data.items ?? [];
+    allUsers = allUsers.concat(items);
+    totalPages = data?.pagination?.total_pages ?? 1;
+    page += 1;
+  } while (page <= totalPages);
+
+  return allUsers.map(mapUserFromBackend);
 }
 
 // Fetches a single user by id, used for the view/edit forms.
