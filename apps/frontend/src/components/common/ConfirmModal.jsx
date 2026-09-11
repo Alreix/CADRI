@@ -1,6 +1,7 @@
 // Generic yes/no confirmation dialog (delete a record, log out, etc.).
 // `danger` switches the confirm button to the red/destructive style.
 import { X } from "lucide-react";
+import { useModalAccessibility } from "../../hooks/useModalAccessibility";
 
 function ConfirmModal({
   title,
@@ -11,9 +12,11 @@ function ConfirmModal({
   confirmLabel = "Confirmer",
   danger = false,
 }) {
+  const containerRef = useModalAccessibility(onCancel);
+
   return (
     <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
+      <div className="confirm-modal" ref={containerRef} tabIndex={-1}>
         <div className="confirm-modal-header">
           <span className="confirm-modal-title">{title}</span>
           <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
