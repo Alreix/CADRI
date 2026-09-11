@@ -8,6 +8,7 @@ import MissionList from "../components/mission/MissionList";
 import { AuthContext } from "../contexts/AuthContext";
 import { getMissions } from "../api/missionsApi";
 import { usePagination } from "../hooks/usePagination";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/DashboardPage.css";
 import {
   Clock3,
@@ -28,6 +29,7 @@ const default_filters = {
 };
 
 function DashboardPage() {
+  useDocumentTitle("Tableau de bord");
   const { user } = useContext(AuthContext);
   const [missions, setMissions] = useState([]);
   const [stats, setStats] = useState({ inProgressCount: 0, urgentCount: 0 });
@@ -130,6 +132,7 @@ function DashboardPage() {
             type="search"
             className="search-input"
             placeholder="Rechercher des missions..."
+            aria-label="Rechercher des missions"
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -166,6 +169,7 @@ function DashboardPage() {
             key={currentPage}
             className={`pagination-page ${currentPage === page ? "pagination-page--active" : ""}`}
             onClick={() => setPage(currentPage)}
+            aria-current={currentPage === page ? "page" : undefined}
           >
             {currentPage}
           </button>

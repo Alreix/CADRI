@@ -11,6 +11,7 @@ import { getUser, createUser, updateUser, deleteUser } from "../api/usersApi";
 import { getRoles, getServices } from "../api/metadataApi";
 import { useMetadataOptions } from "../hooks/useMetadataOptions";
 import { useFormState } from "../hooks/useFormState";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/ConfirmModals.css";
 
 function UserFormPage({ mode = "create" }) {
@@ -104,6 +105,8 @@ function UserFormPage({ mode = "create" }) {
     edit: "Modifier le profil utilisateur",
   };
 
+  useDocumentTitle(titles[mode]);
+
   const isReadOnly = mode === "view";
 
   return (
@@ -126,7 +129,7 @@ function UserFormPage({ mode = "create" }) {
         </button>
 
         <div className="profile-card">
-          <p className="profile-section-title">{titles[mode]}</p>
+          <h1 className="profile-section-title">{titles[mode]}</h1>
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="profile-form-grid">
