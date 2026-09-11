@@ -57,7 +57,14 @@ function mockFetchRoutes({ mission = MISSION_TO_DO, services = SERVICES_MOCK, as
       return Promise.resolve({ ok: true, json: async () => assignableUsers });
     }
     if (path.match(/\/missions\/[^/]+\/status/) && method === 'PATCH') {
-      return Promise.resolve({ ok: true, json: async () => ({ mission: { ...mission, status: 'in_progress' } }) });
+      // The real backend's PATCH /missions/:id/status returns mission.to_dict()
+      // WITHOUT include_relations=True, so services/assignments are omitted
+      // here on purpose — callers must refetch (GET) to get them back.
+      const { services: _services, assignments: _assignments, ...missionWithoutRelations } = mission;
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ mission: { ...missionWithoutRelations, status: 'in_progress' } }),
+      });
     }
     if (path.match(/\/missions\/[^/]+\/actual-duration/) && method === 'PATCH') {
       return Promise.resolve({ ok: true, json: async () => ({ mission }) });
@@ -133,6 +140,46 @@ describe('MissionDetailPage — agent', () => {
     renderDetail('agent', { mission: MISSION_TO_DO, userId: '42' });
     await waitFor(() => screen.getByText('Mission Alpha'));
     expect(screen.getByRole('button', { name: /démarrer la mission/i })).toBeInTheDocument();
+  });
+
+  test('démarrer la mission ne perd pas l\'assignation (la page se refait charger au lieu de faire confiance à la réponse /status)', async () => {
+    // Self-contained, stateful mock: PATCH /status behaves like the real
+    // backend (its response omits services/assignments), and GET always
+    // returns the full, current mission — so this test actually fails if
+    // the page trusts the /status response instead of refetching.
+    let currentMission = MISSION_TO_DO;
+    global.fetch = vi.fn((url, options = {}) => {
+      const path = String(url);
+      const method = options.method || 'GET';
+
+      if (path.match(/\/missions\/[^/]+\/status/) && method === 'PATCH') {
+        currentMission = { ...currentMission, status: 'in_progress' };
+        const { services: _services, assignments: _assignments, ...withoutRelations } = currentMission;
+        return Promise.resolve({ ok: true, json: async () => ({ mission: withoutRelations }) });
+      }
+      if (path.match(/\/missions\/[^/]+$/) && method === 'GET') {
+        return Promise.resolve({ ok: true, json: async () => currentMission });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+
+    render(
+      <AuthContext.Provider value={{ user: { role: 'agent', id: '42' } }}>
+        <MemoryRouter initialEntries={['/missions/1']}>
+          <Routes>
+            <Route path="/missions/:id" element={<MissionDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+
+    await waitFor(() => screen.getByText('Mission Alpha'));
+    fireEvent.click(screen.getByRole('button', { name: /démarrer la mission/i }));
+
+    // If the assignment had been wiped by the incomplete /status response,
+    // this agent would no longer be considered assigned and would lose
+    // access to "Terminer la mission".
+    expect(await screen.findByRole('button', { name: /terminer la mission/i })).toBeInTheDocument();
   });
 });
 

@@ -47,8 +47,13 @@ function MissionDetailPage() {
   const handleStartMission = async () => {
     setSavingAction(true);
     try {
-      const updatedMission = await updateMissionStatus(id, "in_progress");
-      setMission(updatedMission);
+      // Refetch the mission (like the other actions below) instead of using
+      // the /status response directly: that endpoint doesn't include the
+      // service/assignment relations, so trusting it would wipe them from
+      // the UI (and with them, the assignment-dependent action buttons)
+      // until the next full page reload.
+      await updateMissionStatus(id, "in_progress");
+      await refreshMission();
     } catch (err) {
       setAlertMessage(err.message || "Impossible de démarrer la mission.");
     } finally {
