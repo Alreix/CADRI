@@ -1,5 +1,7 @@
 """API tests for user routes."""
 
+import pytest
+
 from app.services.auth_service import AuthService
 from tests.helpers.auth_helpers import auth_headers
 
@@ -183,3 +185,48 @@ def test_agent_cannot_access_assignable_users(client, agent_token):
     response = client.get("/users/assignable", headers=auth_headers(agent_token))
 
     assert response.status_code == 403
+
+
+@pytest.mark.parametrize(
+    "field,value,message",
+    [
+        ("page", "abc", "integer"),
+        ("per_page", "abc", "integer"),
+        ("page", "", "integer"),
+        ("per_page", "", "integer"),
+        ("page", "1.5", "integer"),
+        ("per_page", "1.5", "integer"),
+        ("page", "0", "greater than or equal to 1"),
+        ("page", "-1", "greater than or equal to 1"),
+        ("per_page", "0", "greater than or equal to 1"),
+        ("per_page", "-1", "greater than or equal to 1"),
+        ("per_page", "101", "less than or equal to 100"),
+    ],
+)
+def test_users_reject_invalid_pagination(client, admin_token, field, value, message):
+    """Return useful client errors for malformed integers and existing bounds."""
+    response = client.get(
+        "/users", headers=auth_headers(admin_token), query_string={field: value}
+    )
+
+    assert response.status_code == 400
+    error = response.get_json()["error"].lower()
+    assert field.replace("_", " ") in error.replace("_", " ")
+    assert message in error
+
+
+@pytest.mark.parametrize("per_page", [1, 10, 100])
+def test_users_accept_valid_pagination(client, admin_token, admin_user, per_page):
+    """Preserve the pagination response shape and inclusive page-size bounds."""
+    response = client.get(
+        "/users", headers=auth_headers(admin_token),
+        query_string={"page": 1, "per_page": per_page},
+    )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert set(data) == {"items", "pagination"}
+    assert data["pagination"] == {
+        "page": 1, "per_page": per_page, "total_items": 1, "total_pages": 1,
+    }
+    assert [item["id"] for item in data["items"]] == [str(admin_user.id)]

@@ -2,6 +2,13 @@
 
 from datetime import datetime, timedelta, timezone
 import uuid
+from unittest.mock import Mock
+
+import pytest
+
+from app.extensions import db
+from app.models.mission import Mission
+from app.repositories.mission_repository import MissionRepository
 
 from app.utils.constants import MISSION_STATUS_IN_PROGRESS
 from tests.helpers.auth_helpers import auth_headers
@@ -527,3 +534,162 @@ def test_complete_already_completed_mission_returns_409(
         headers=auth_headers(agent_token),
     )
     assert second_complete_response.status_code == 409
+
+
+@pytest.mark.parametrize(
+    "field,value,message",
+    [
+        ("page", "abc", "integer"),
+        ("per_page", "abc", "integer"),
+        ("page", "", "integer"),
+        ("per_page", "", "integer"),
+        ("page", "1.5", "integer"),
+        ("per_page", "1.5", "integer"),
+        ("page", "0", "greater than or equal to 1"),
+        ("page", "-1", "greater than or equal to 1"),
+        ("per_page", "0", "greater than or equal to 1"),
+        ("per_page", "-1", "greater than or equal to 1"),
+        ("per_page", "101", "less than or equal to 100"),
+    ],
+)
+def test_missions_reject_invalid_pagination_before_repository(
+    client, admin_token, monkeypatch, field, value, message,
+):
+    """Reject invalid pagination before offset, limit, or total-page arithmetic."""
+    repository_lookup = Mock(side_effect=AssertionError("Repository must not be called"))
+    monkeypatch.setattr(MissionRepository, "list_filtered", repository_lookup)
+
+    response = client.get(
+        "/missions", headers=auth_headers(admin_token), query_string={field: value}
+    )
+
+    assert response.status_code == 400
+    error = response.get_json()["error"].lower()
+    assert field.replace("_", " ") in error.replace("_", " ")
+    assert message in error
+    repository_lookup.assert_not_called()
+
+
+@pytest.mark.parametrize("per_page", [1, 10, 100])
+def test_missions_accept_valid_pagination(
+    client, admin_token, roles_services, agent_user, per_page,
+):
+    """Preserve pagination metadata and results at both page-size boundaries."""
+    mission = create_api_mission(client, admin_token, roles_services, [agent_user.id])
+    response = client.get(
+        "/missions", headers=auth_headers(admin_token),
+        query_string={"page": 1, "per_page": per_page},
+    )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert set(data) == {"items", "pagination"}
+    assert data["pagination"] == {
+        "page": 1, "per_page": per_page, "total_items": 1, "total_pages": 1,
+    }
+    assert [item["id"] for item in data["items"]] == [mission["id"]]
+
+
+@pytest.mark.parametrize("field", ["start_date", "end_date"])
+@pytest.mark.parametrize("value", ["banana", "", "2026-02-30T09:00:00"])
+def test_missions_reject_malformed_date_filters(client, admin_token, field, value):
+    """Reject malformed or explicitly empty filters instead of ignoring them."""
+    response = client.get(
+        "/missions", headers=auth_headers(admin_token), query_string={field: value}
+    )
+
+    assert response.status_code == 400
+    error = response.get_json()["error"]
+    assert field in error
+    assert "ISO" in error
+
+
+def mission_snapshots(app):
+    """Read persisted missions and their relationships in an independent session."""
+    with app.app_context():
+        return {
+            str(mission.id): mission.to_dict(include_relations=True)
+            for mission in Mission.query.all()
+        }
+
+
+@pytest.mark.parametrize("method", ["POST", "PATCH"])
+@pytest.mark.parametrize(
+    "dates,message",
+    [
+        ({"start_date": "banana"}, "start_date"),
+        ({"end_date": "not-a-date"}, "end_date"),
+        ({"start_date": ""}, "start_date"),
+        ({"end_date": ""}, "end_date"),
+        ({"start_date": "2026-02-30T09:00:00"}, "start_date"),
+        ({"end_date": "2026-02-30T09:00:00"}, "end_date"),
+        ({"start_date": "2026-09-14T09:00:00+00:00",
+          "end_date": "2026-09-14T12:00:00"}, "timezone"),
+        ({"start_date": "2026-09-14T09:00:00",
+          "end_date": "2026-09-14T12:00:00+00:00"}, "timezone"),
+        ({"start_date": "2026-09-15T09:00:00+00:00",
+          "end_date": "2026-09-14T12:00:00+00:00"}, "greater than or equal"),
+    ],
+)
+def test_invalid_mission_dates_do_not_mutate_data(
+    app, client, admin_token, roles_services, agent_user, responsable_user,
+    method, dates, message,
+):
+    """Reject invalid dates before creating rows or changing fields and relationships."""
+    path = "/missions"
+    if method == "PATCH":
+        mission = create_api_mission(client, admin_token, roles_services, [agent_user.id])
+        path = f"/missions/{mission['id']}"
+    before = mission_snapshots(app)
+    payload = mission_payload(
+        service_ids=[str(roles_services["green_spaces"].id)],
+        assigned_user_ids=[str(responsable_user.id)],
+    )
+    payload.update(title="Must not be persisted", location="Must not change", **dates)
+
+    response = client.open(path, method=method, headers=auth_headers(admin_token), json=payload)
+
+    assert response.status_code == 400
+    assert message in response.get_json()["error"]
+    assert mission_snapshots(app) == before
+    assert not db.session.new
+    assert not db.session.dirty
+
+
+@pytest.mark.parametrize(
+    "start,end",
+    [
+        ("2026-09-14T09:00:00+00:00", "2026-09-14T12:00:00+00:00"),
+        ("2026-09-14T09:00:00+02:00", "2026-09-14T12:00:00+02:00"),
+        ("2026-09-14T09:00:00Z", "2026-09-14T12:00:00Z"),
+        ("2026-09-14T09:00:00", "2026-09-14T12:00:00"),
+        ("2026-09-14 09:00:00.123456", "2026-09-14 12:00:00.123456"),
+        ("2026-09-14", "2026-09-14"),
+    ],
+)
+def test_existing_iso_formats_work_for_create_update_and_filters(
+    client, admin_token, roles_services, agent_user, start, end,
+):
+    """Keep accepted aware, naive, date-only, and fractional ISO inputs working."""
+    mission = create_api_mission(
+        client, admin_token, roles_services, [agent_user.id],
+        start_date=start, end_date=end,
+    )
+    payload = mission_payload(
+        service_ids=[str(roles_services["roads"].id)],
+        assigned_user_ids=[str(agent_user.id)],
+    )
+    payload.update(title="Valid date update", start_date=start, end_date=end)
+    response = client.patch(
+        f"/missions/{mission['id']}", headers=auth_headers(admin_token), json=payload
+    )
+    assert response.status_code == 200
+    assert response.get_json()["mission"]["title"] == "Valid date update"
+
+    for filters in ({"start_date": start}, {"end_date": end},
+                    {"start_date": start, "end_date": end}):
+        response = client.get(
+            "/missions", headers=auth_headers(admin_token), query_string=filters
+        )
+        assert response.status_code == 200
+        assert [item["id"] for item in response.get_json()["items"]] == [mission["id"]]

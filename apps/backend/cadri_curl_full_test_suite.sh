@@ -538,6 +538,9 @@ check "GET /users?service_id=<id> returns 200" 200 "$STATUS"
 STATUS=$(request -X GET "$BASE_URL/users?page=1&per_page=2" -H "Authorization: Bearer $ADMIN_TOKEN")
 check "GET /users pagination returns 200" 200 "$STATUS"
 
+STATUS=$(request -X GET "$BASE_URL/users?page=not-an-integer" -H "Authorization: Bearer $ADMIN_TOKEN")
+check "GET /users non-integer page returns 400" 400 "$STATUS"
+
 STATUS=$(request -X GET "$BASE_URL/users?page=0&per_page=10" -H "Authorization: Bearer $ADMIN_TOKEN")
 check "GET /users page=0 returns 400" 400 "$STATUS"
 
@@ -818,6 +821,13 @@ STATUS=$(request -X POST "$BASE_URL/missions" \
     -d "$BAD_DATE_PAYLOAD")
 check "POST /missions invalid date order returns 400" 400 "$STATUS"
 
+MALFORMED_DATE_PAYLOAD=$(make_mission_payload "Curl malformed date $RUN_ID" "medium" "$GREEN_SERVICE_ID" "$AGENT_ID" "not-a-date")
+STATUS=$(request -X POST "$BASE_URL/missions" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$MALFORMED_DATE_PAYLOAD")
+check "POST /missions malformed start_date returns 400" 400 "$STATUS"
+
 UNKNOWN_SERVICE_PAYLOAD=$(make_mission_payload "Curl unknown service $RUN_ID" "medium" "$UNKNOWN_UUID" "$AGENT_ID")
 STATUS=$(request -X POST "$BASE_URL/missions" \
     -H "Authorization: Bearer $ADMIN_TOKEN" \
@@ -874,6 +884,12 @@ check "GET /missions date filters return 200" 200 "$STATUS"
 
 STATUS=$(request -X GET "$BASE_URL/missions?page=1&per_page=2" -H "Authorization: Bearer $ADMIN_TOKEN")
 check "GET /missions pagination returns 200" 200 "$STATUS"
+
+STATUS=$(request -X GET "$BASE_URL/missions?per_page=0" -H "Authorization: Bearer $ADMIN_TOKEN")
+check "GET /missions per_page=0 returns 400" 400 "$STATUS"
+
+STATUS=$(request -X GET "$BASE_URL/missions?start_date=not-a-date" -H "Authorization: Bearer $ADMIN_TOKEN")
+check "GET /missions malformed start_date returns 400" 400 "$STATUS"
 
 STATUS=$(request -X GET "$BASE_URL/missions/$MISSION_ID" -H "Authorization: Bearer $ADMIN_TOKEN")
 check "GET /missions/<id> returns 200" 200 "$STATUS"

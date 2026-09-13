@@ -7,6 +7,7 @@ from flask_restx import Namespace, Resource, fields
 from app.facades.user_facade import UserFacade
 from app.repositories.user_repository import UserRepository
 from app.utils.exceptions import AppError, NotFoundError, ValidationError
+from app.utils.validators import parse_integer
 
 users_ns = Namespace("users", description="User management operations")
 
@@ -74,8 +75,8 @@ class UsersCollectionResource(Resource):
             search = request.args.get("search")
             role_name = request.args.get("role")
             service_id = request.args.get("service_id")
-            page = int(request.args.get("page", 1))
-            per_page = int(request.args.get("per_page", 10))
+            page = parse_integer(request.args.get("page", 1), "page")
+            per_page = parse_integer(request.args.get("per_page", 10), "per_page")
 
             result = UserFacade.list_users(
                 current_user=current_user,
