@@ -8,6 +8,7 @@ import UserFilters from "../components/user/UserFilters";
 import UserTable from "../components/user/UserTable";
 import { getUsers } from "../api/usersApi";
 import { usePagination } from "../hooks/usePagination";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import '../styles/UserManagementPage.css';
 
@@ -20,6 +21,7 @@ const defaul_filters = {
 };
 
 function UserManagementPage() {
+  useDocumentTitle("Gestion des utilisateurs");
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -69,6 +71,7 @@ function UserManagementPage() {
             type="search"
             className="search-input"
             placeholder="Rechercher des utilisateurs..."
+            aria-label="Rechercher des utilisateurs"
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -110,6 +113,7 @@ function UserManagementPage() {
             key={pageNumber}
             className={`pagination-page ${pageNumber === page ? "pagination-page--active" : ""}`}
             onClick={() => setPage(pageNumber)}
+            aria-current={pageNumber === page ? "page" : undefined}
           >
             {pageNumber}
           </button>

@@ -1,7 +1,5 @@
 """Business service for mission workflows."""
 
-from datetime import datetime, timezone
-
 from app.extensions import db
 from app.models.mission import Mission
 from app.models.mission_assignment import MissionAssignment
@@ -15,7 +13,6 @@ from app.utils.constants import (
     ADMIN_ROLE,
     AGENT_ROLE,
     ASSIGNABLE_ROLE_NAMES,
-    MISSION_STATUS_COMPLETED,
     MISSION_STATUS_IN_PROGRESS,
     MISSION_STATUS_REMARK_PENDING_VALIDATION,
     MISSION_STATUS_TO_DO,
@@ -55,6 +52,27 @@ class MissionService:
             mission,
         ):
             raise AuthorizationError("Agent can only act on assigned missions.")
+
+    @staticmethod
+    def _require_mission_status(
+        mission: Mission, allowed_statuses: tuple[str, ...], action: str
+    ) -> None:
+        """Ensure the current mission state permits the requested workflow action."""
+        if mission.status not in allowed_statuses:
+            raise ConflictError(
+                f"Cannot {action} while mission status is {mission.status}. "
+                f"Allowed statuses: {', '.join(allowed_statuses)}."
+            )
+
+    @staticmethod
+    def _get_mission_for_workflow(current_user, mission_id) -> Mission:
+        """Lock a fresh mission and enforce existing visibility permissions."""
+        MissionService._require_agent_or_manager(current_user)
+        mission = MissionRepository.get_by_id_for_update(mission_id)
+        if mission is None:
+            raise NotFoundError("Mission not found.")
+        MissionService._require_agent_assignment_if_agent(current_user, mission)
+        return mission
 
     @staticmethod
     def _validate_dates(start_date, end_date) -> None:
@@ -211,8 +229,7 @@ class MissionService:
     def update_status(current_user, mission_id, new_status: str) -> Mission:
         """Update mission status according to business rules."""
         MissionService._require_agent_or_manager(current_user)
-        mission = MissionService.get_mission_details(current_user, mission_id)
-        MissionService._require_agent_assignment_if_agent(current_user, mission)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
 
         if new_status == MISSION_STATUS_IN_PROGRESS:
             if mission.status != MISSION_STATUS_TO_DO:
@@ -228,8 +245,13 @@ class MissionService:
     def update_actual_duration(current_user, mission_id, actual_duration: float) -> Mission:
         """Update the actual duration."""
         MissionService._require_agent_or_manager(current_user)
-        mission = MissionService.get_mission_details(current_user, mission_id)
-        MissionService._require_agent_assignment_if_agent(current_user, mission)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
+
+        MissionService._require_mission_status(
+            mission,
+            (MISSION_STATUS_IN_PROGRESS, MISSION_STATUS_REMARK_PENDING_VALIDATION),
+            "update actual duration",
+        )
 
         if actual_duration <= 0:
             raise ValidationError("Actual duration must be greater than zero.")
@@ -246,13 +268,17 @@ class MissionService:
                 "Only an assigned agent or responsable can add a remark."
             )
 
-        mission = MissionService.get_mission_details(current_user, mission_id)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
 
         if not MissionService._is_user_assigned_to_mission(current_user, mission):
             raise AuthorizationError("Only assigned users can add a remark.")
 
         if mission.remark:
             raise ConflictError("A remark already exists for this mission.")
+
+        MissionService._require_mission_status(
+            mission, (MISSION_STATUS_IN_PROGRESS,), "add a remark"
+        )
 
         mission.add_remark(remark, current_user.id)
         mission.update_status(MISSION_STATUS_REMARK_PENDING_VALIDATION)
@@ -269,7 +295,7 @@ class MissionService:
     def validate_mission(current_user, mission_id) -> Mission:
         """Validate a mission containing a remark."""
         MissionService._require_admin_or_responsable(current_user)
-        mission = MissionService.get_mission_details(current_user, mission_id)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
 
         if not mission.remark:
             raise ValidationError("Mission validation requires an existing remark.")
@@ -289,17 +315,17 @@ class MissionService:
     def complete_mission(current_user, mission_id) -> Mission:
         """Complete a mission if business conditions are met."""
         MissionService._require_agent_or_manager(current_user)
-        mission = MissionService.get_mission_details(current_user, mission_id)
-        MissionService._require_agent_assignment_if_agent(current_user, mission)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
+
+        MissionService._require_mission_status(
+            mission, (MISSION_STATUS_IN_PROGRESS,), "complete the mission"
+        )
 
         if mission.actual_duration is None:
             raise ValidationError("Actual duration is required before completion.")
 
         if mission.remark and mission.validated_at is None:
             raise ConflictError("Mission remark must be validated before completion.")
-
-        if mission.status == MISSION_STATUS_COMPLETED:
-            raise ConflictError("Mission is already completed.")
 
         mission.complete_mission()
         MissionRepository.update()

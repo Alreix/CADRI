@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import { requestPasswordReset } from "../api/authApi";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/AuthLayout.css";
 
 function ForgotPasswordPage() {
+  useDocumentTitle("Mot de passe oublié");
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -74,7 +76,7 @@ function ForgotPasswordPage() {
           </div>
 
           {error && (
-            <p style={{ color: "var(--auth-required)", fontSize: "0.875rem", marginBottom: "12px" }}>
+            <p role="alert" style={{ color: "var(--auth-required)", fontSize: "0.875rem", marginBottom: "12px" }}>
               {error}
             </p>
           )}

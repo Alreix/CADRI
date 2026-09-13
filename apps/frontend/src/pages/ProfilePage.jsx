@@ -10,13 +10,14 @@ import { AuthContext } from "../contexts/AuthContext";
 import { getProfile, updateProfile } from "../api/profileApi";
 import { changePassword } from "../api/authApi";
 import { useFormState } from "../hooks/useFormState";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordInput from "../components/common/PasswordInput";
 import "../styles/ProfilePage.css";
 import "../styles/ConfirmModals.css";
 
 function ProfilePage() {
-  const navigate = useNavigate();
+  useDocumentTitle("Profil");
   const { user, logout } = useContext(AuthContext);
 
   const [profile, setProfile] = useState(null);
@@ -137,18 +138,11 @@ function ProfilePage() {
   };
 
   if (!profile) {
-    if (profileLoadError) {
-      return (
-        <Layout>
-          <div className="profile-page">
-            <p>
-              Impossible de charger votre profil pour le moment. Veuillez réessayer plus tard.
-            </p>
-          </div>
-        </Layout>
-      );
-    }
-    return null;
+    return (
+      <Layout>
+        <p role="status">Chargement…</p>
+      </Layout>
+    );
   }
 
   return (

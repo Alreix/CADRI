@@ -15,6 +15,16 @@ class MissionRepository:
         return db.session.get(Mission, mission_id)
 
     @staticmethod
+    def get_by_id_for_update(mission_id):
+        """Lock and refresh a mission in the current transaction, if it exists."""
+        return (
+            Mission.query.filter_by(id=mission_id)
+            .populate_existing()
+            .with_for_update()
+            .one_or_none()
+        )
+
+    @staticmethod
     def create(mission: Mission) -> Mission:
         """Persist a new mission."""
         db.session.add(mission)

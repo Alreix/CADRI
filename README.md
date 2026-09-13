@@ -887,10 +887,11 @@ CADRI implements several security-oriented controls:
 
 - passwords are hashed with Bcrypt;
 - raw passwords are never stored;
-- access tokens are short-lived;
-- refresh tokens are stored in HTTP-only cookies;
-- refresh tokens are rotated;
-- refresh tokens are revoked after logout and password changes;
+- access JWTs are short-lived (15 minutes by default) and identified by a unique JTI;
+- revoked access-token JTIs are blocklisted without storing the raw JWT;
+- opaque refresh tokens last 7 days by default and only their hashes are stored in HTTP-only cookie-backed sessions;
+- refresh tokens are rotated on refresh and revoked after logout, password changes, and password resets;
+- password changes and resets invalidate access JWTs issued before the security event;
 - activation and reset tokens are validated and consumed;
 - RBAC is enforced in backend services;
 - mission actions verify role, assignment, and mission state;

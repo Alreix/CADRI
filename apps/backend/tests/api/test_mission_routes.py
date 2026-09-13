@@ -2,6 +2,15 @@
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
+from app.utils.constants import (
+    MISSION_STATUS_TO_DO,
+    MISSION_STATUS_IN_PROGRESS,
+    MISSION_STATUS_REMARK_PENDING_VALIDATION,
+    MISSION_STATUS_COMPLETED,
+)
+
 
 def auth_headers(token):
     return {"Authorization": f"Bearer {token}"}
@@ -43,6 +52,17 @@ def create_mission(client, token, roles_services, agent_user, **overrides):
 
     assert response.status_code == 201, response.get_json()
     return response.get_json()["mission"]
+
+
+def start_mission(client, token, mission):
+    """Start a mission through the API before performing tracking actions."""
+    response = client.patch(
+        f"/missions/{mission['id']}/status",
+        headers=auth_headers(token),
+        json={"status": MISSION_STATUS_IN_PROGRESS},
+    )
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["mission"]["status"] == MISSION_STATUS_IN_PROGRESS
 
 
 def test_missions_health_route_is_public(client):
@@ -277,7 +297,10 @@ def test_agent_can_complete_mission_without_remark(
     roles_services,
     agent_user,
 ):
+    """Exercise mission behavior after the required start transition."""
     mission = create_mission(client, admin_access_token, roles_services, agent_user)
+
+    start_mission(client, agent_access_token, mission)
 
     duration_response = client.patch(
         f"/missions/{mission['id']}/actual-duration",
@@ -302,7 +325,10 @@ def test_mission_with_remark_requires_validation_before_completion(
     roles_services,
     agent_user,
 ):
+    """Exercise mission behavior after the required start transition."""
     mission = create_mission(client, admin_access_token, roles_services, agent_user)
+
+    start_mission(client, agent_access_token, mission)
 
     duration_response = client.patch(
         f"/missions/{mission['id']}/actual-duration",
@@ -343,6 +369,7 @@ def test_has_remark_filter_returns_only_missions_with_remark(
     roles_services,
     agent_user,
 ):
+    """Exercise mission behavior after the required start transition."""
     with_remark = create_mission(
         client,
         admin_access_token,
@@ -357,6 +384,8 @@ def test_has_remark_filter_returns_only_missions_with_remark(
         agent_user,
         title="Mission without remark",
     )
+
+    start_mission(client, agent_access_token, with_remark)
 
     duration_response = client.patch(
         f"/missions/{with_remark['id']}/actual-duration",
@@ -404,3 +433,146 @@ def test_admin_can_delete_mission(
     )
 
     assert get_response.status_code == 404
+
+
+@pytest.mark.parametrize(
+    "status",
+    [MISSION_STATUS_TO_DO, MISSION_STATUS_IN_PROGRESS,
+     MISSION_STATUS_REMARK_PENDING_VALIDATION, MISSION_STATUS_COMPLETED],
+)
+@pytest.mark.parametrize("action", ["actual-duration", "remark", "complete"])
+def test_tracking_actions_enforce_current_status(
+    client, admin_access_token, agent_access_token, roles_services, agent_user,
+    status, action,
+):
+    """Reject invalid direct API actions without changing persisted mission data."""
+    mission = create_mission(client, admin_access_token, roles_services, agent_user)
+    path = f"/missions/{mission['id']}"
+    headers = auth_headers(agent_access_token)
+    if status != MISSION_STATUS_TO_DO:
+        start_mission(client, agent_access_token, mission)
+        response = client.patch(
+            f"{path}/actual-duration", headers=headers, json={"actual_duration": 2}
+        )
+        assert response.status_code == 200
+    if status == MISSION_STATUS_REMARK_PENDING_VALIDATION:
+        response = client.post(f"{path}/remark", headers=headers, json={"remark": "Review"})
+        assert response.status_code == 200
+    elif status == MISSION_STATUS_COMPLETED:
+        assert client.post(f"{path}/complete", headers=headers).status_code == 200
+
+    before = client.get(path, headers=headers).get_json()
+    assert before["status"] == status
+    if action == "actual-duration":
+        response = client.patch(
+            f"{path}/{action}", headers=headers, json={"actual_duration": 3}
+        )
+        allowed = status in (MISSION_STATUS_IN_PROGRESS, MISSION_STATUS_REMARK_PENDING_VALIDATION)
+    elif action == "remark":
+        response = client.post(f"{path}/{action}", headers=headers, json={"remark": "New remark"})
+        allowed = status == MISSION_STATUS_IN_PROGRESS
+    else:
+        response = client.post(f"{path}/{action}", headers=headers)
+        allowed = status == MISSION_STATUS_IN_PROGRESS
+
+    assert response.status_code == (200 if allowed else 409), response.get_json()
+    after = client.get(path, headers=headers).get_json()
+    if not allowed:
+        assert after == before
+    elif action == "actual-duration":
+        assert after["actual_duration"] == 3
+        assert after["status"] == status
+    elif action == "remark":
+        assert after["status"] == MISSION_STATUS_REMARK_PENDING_VALIDATION
+        assert after["remark"] == "New remark"
+        assert after["completed_at"] is None
+    else:
+        assert after["status"] == MISSION_STATUS_COMPLETED
+        assert after["completed_at"] is not None
+        assert after["remark"] is None
+
+
+def test_started_mission_requires_duration_before_completion(
+    client, admin_access_token, agent_access_token, roles_services, agent_user,
+):
+    """Keep the existing missing-duration error for a started mission."""
+    mission = create_mission(client, admin_access_token, roles_services, agent_user)
+    start_mission(client, agent_access_token, mission)
+    response = client.post(
+        f"/missions/{mission['id']}/complete", headers=auth_headers(agent_access_token)
+    )
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Actual duration is required before completion."
+
+
+@pytest.mark.parametrize("validator_role", ["admin", "responsable"])
+def test_remark_can_receive_duration_then_manager_validation(
+    client, admin_access_token, responsable_access_token, agent_access_token,
+    roles_services, agent_user, validator_role,
+):
+    """Allow duration entry and correction while a remark awaits manager validation."""
+    mission = create_mission(client, admin_access_token, roles_services, agent_user)
+    start_mission(client, agent_access_token, mission)
+    path = f"/missions/{mission['id']}"
+    headers = auth_headers(agent_access_token)
+    manager_headers = auth_headers(
+        admin_access_token if validator_role == "admin" else responsable_access_token
+    )
+    response = client.post(f"{path}/remark", headers=headers, json={"remark": "Review needed"})
+    assert response.status_code == 200
+    assert response.get_json()["mission"]["status"] == MISSION_STATUS_REMARK_PENDING_VALIDATION
+    assert response.get_json()["mission"]["actual_duration"] is None
+    assert client.post(f"{path}/validate", headers=headers).status_code == 403
+    response = client.post(f"{path}/validate", headers=manager_headers)
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Actual duration is required before validation."
+    for duration in (2, 3):
+        response = client.patch(
+            f"{path}/actual-duration", headers=headers, json={"actual_duration": duration}
+        )
+        assert response.status_code == 200
+        assert response.get_json()["mission"]["actual_duration"] == duration
+    response = client.post(f"{path}/validate", headers=manager_headers)
+    assert response.status_code == 200
+    validated = response.get_json()["mission"]
+    assert validated["status"] == MISSION_STATUS_COMPLETED
+    assert validated["validated_at"] is not None
+    assert validated["completed_at"] is not None
+    assert client.post(f"{path}/validate", headers=manager_headers).status_code == 409
+
+
+@pytest.mark.parametrize("action", ["status", "actual-duration", "remark", "complete"])
+def test_unassigned_agent_cannot_use_workflow_actions(
+    client, admin_access_token, agent_access_token, roles_services,
+    agent_user, responsable_user, action,
+):
+    """Preserve assignment checks before evaluating mission state."""
+    mission = create_mission(
+        client, admin_access_token, roles_services, agent_user,
+        assigned_user_ids=[str(responsable_user.id)],
+    )
+    path = f"/missions/{mission['id']}"
+    headers = auth_headers(agent_access_token)
+    payloads = {
+        "status": {"status": MISSION_STATUS_IN_PROGRESS},
+        "actual-duration": {"actual_duration": 2},
+        "remark": {"remark": "Unauthorized"},
+    }
+    method = "PATCH" if action in ("status", "actual-duration") else "POST"
+    response = client.open(f"{path}/{action}", method=method, headers=headers, json=payloads.get(action))
+    assert response.status_code == 403
+    assert client.get(path, headers=headers).status_code == 403
+
+
+def test_restarting_mission_keeps_existing_validation_error(
+    client, admin_access_token, agent_access_token, roles_services, agent_user,
+):
+    """Preserve the public 400 error for an invalid repeated start."""
+    mission = create_mission(client, admin_access_token, roles_services, agent_user)
+    start_mission(client, agent_access_token, mission)
+    response = client.patch(
+        f"/missions/{mission['id']}/status", headers=auth_headers(agent_access_token),
+        json={"status": MISSION_STATUS_IN_PROGRESS},
+    )
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Mission can only be started from to_do status."

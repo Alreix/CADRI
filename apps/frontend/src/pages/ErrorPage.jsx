@@ -1,5 +1,6 @@
 import { useRouteError, useNavigate, isRouteErrorResponse } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/ErrorPage.css";
 
 
@@ -61,12 +62,14 @@ function ErrorPage({ code }) {
     errorCode === "500" ? "ERREUR SERVEUR" : "ERREUR"
   }`;
 
+  useDocumentTitle(errorTitle);
+
   return (
     <AuthLayout>
       <div className="error-card">
         <span className="error-code">{errorCode}</span>
         <p className="error-label">{errorLabel}</p>
-        <p className="error-title">{errorTitle}</p>
+        <h1 className="error-title">{errorTitle}</h1>
         <p className="error-message">{errorMessage}</p>
         <a href="/" className="error-btn">Retour à l'accueil</a>
       </div>

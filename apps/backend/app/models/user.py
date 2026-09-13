@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from app.extensions import db
 from app.models.base_model import BaseModel
 from app.utils.security import check_password, hash_password
@@ -24,6 +26,7 @@ class User(BaseModel):
 
     is_active = db.Column(db.Boolean, nullable=False, default=False)
     activated_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    tokens_valid_after = db.Column(db.DateTime(timezone=True), nullable=True)
 
     role = db.relationship("Role", back_populates="users")
     service = db.relationship("Service", back_populates="users")
@@ -41,6 +44,11 @@ class User(BaseModel):
     def activate_account(self) -> None:
         """Mark the user account as active."""
         self.is_active = True
+
+    def invalidate_existing_access_tokens(self) -> None:
+        """Reject access tokens issued before the current UTC instant."""
+
+        self.tokens_valid_after = datetime.now(timezone.utc)
 
     def update_profile(
         self,

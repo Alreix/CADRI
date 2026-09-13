@@ -6,9 +6,13 @@ factory can register it through `Api.add_namespace(...)`.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from flask import current_app, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import decode_token, get_jwt_identity, jwt_required
+from flask_jwt_extended.exceptions import JWTExtendedException
 from flask_restx import Namespace, Resource, fields
+from jwt.exceptions import PyJWTError
 from werkzeug.http import dump_cookie
 
 from app.facades.auth_facade import AuthFacade
@@ -96,6 +100,38 @@ def build_clear_refresh_cookie_header():
     )
 
 
+def get_access_token_revocation_data():
+    """Decode optional Bearer metadata for logout, accepting expired JWTs.
+
+    Invalid or absent Authorization headers are ignored so they cannot prevent
+    a valid opaque refresh-token session from being terminated.
+    """
+
+    authorization = request.headers.get("Authorization", "")
+    scheme, separator, encoded_token = authorization.partition(" ")
+    if separator != " " or scheme.lower() != "bearer" or not encoded_token:
+        return None
+
+    try:
+        payload = decode_token(encoded_token, allow_expired=True)
+    except (JWTExtendedException, PyJWTError, TypeError, ValueError):
+        return None
+
+    if payload.get("type") != "access":
+        return None
+
+    required_claims = ("jti", "sub", "exp")
+    if any(payload.get(claim) is None for claim in required_claims):
+        return None
+
+    return {
+        "jti": payload["jti"],
+        "user_id": payload["sub"],
+        "token_type": payload["type"],
+        "expires_at": datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
+    }
+
+
 @auth_ns.route("/health")
 class AuthHealthResource(Resource):
     """Expose a public health check for the authentication namespace."""
@@ -133,13 +169,16 @@ class LoginResource(Resource):
 
 @auth_ns.route("/logout")
 class LogoutResource(Resource):
-    """Terminate the current refresh-token based session."""
+    """Terminate the current authenticated session."""
 
     def post(self):
-        """Revoke the refresh token and clear the cookie."""
+        """Revoke available session credentials and clear the refresh cookie."""
         try:
             raw_refresh_token = request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"])
-            result = AuthFacade.logout(raw_refresh_token)
+            result = AuthFacade.logout(
+                raw_refresh_token,
+                access_token_data=get_access_token_revocation_data(),
+            )
 
             return result, 200, {"Set-Cookie": build_clear_refresh_cookie_header()}
 

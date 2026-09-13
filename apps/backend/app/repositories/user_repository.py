@@ -24,9 +24,33 @@ class UserRepository:
         return db.session.get(User, user_id)
 
     @staticmethod
+    def get_by_id_for_update(user_id):
+        """Return and lock a user row for serialized security-state changes."""
+
+        return (
+            User.query
+            .populate_existing()
+            .filter_by(id=user_id)
+            .with_for_update()
+            .first()
+        )
+
+    @staticmethod
     def get_by_email(email):
         """Return the user matching the given email address, if any."""
         return User.query.filter_by(email=email).first()
+
+    @staticmethod
+    def get_by_email_for_update(email):
+        """Return and lock an email-matched user for serialized authentication."""
+
+        return (
+            User.query
+            .populate_existing()
+            .filter_by(email=email)
+            .with_for_update()
+            .first()
+        )
 
     @staticmethod
     def list_filtered(
@@ -75,9 +99,13 @@ class UserRepository:
         return user
 
     @staticmethod
-    def update():
-        """Commit pending changes for user records."""
-        db.session.commit()
+    def update(*, commit: bool = True):
+        """Flush user changes and optionally commit the current transaction."""
+
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
 
     @staticmethod
     def delete(user):

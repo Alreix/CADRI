@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, timezone
 import uuid
 
+from app.utils.constants import MISSION_STATUS_IN_PROGRESS
 from tests.helpers.auth_helpers import auth_headers
 from tests.helpers.mission_helpers import mission_payload
 
@@ -22,6 +23,16 @@ def create_api_mission(client, token, roles_services, assigned_user_ids, **overr
 
     assert response.status_code == 201, response.get_json()
     return response.get_json()["mission"]
+
+
+def start_mission(client, token, mission):
+    """Start the mission before testing authorized tracking operations."""
+    response = client.patch(
+        f"/missions/{mission['id']}/status",
+        headers=auth_headers(token),
+        json={"status": MISSION_STATUS_IN_PROGRESS},
+    )
+    assert response.status_code == 200, response.get_json()
 
 
 def test_get_mission_details_returns_relations(client, admin_token, roles_services, agent_user):
@@ -373,6 +384,7 @@ def test_admin_cannot_add_remark_and_agent_cannot_validate_remark(
     roles_services,
     agent_user,
 ):
+    """Preserve the existing regression checks on a started mission."""
     mission = create_api_mission(client, admin_token, roles_services, [agent_user.id])
 
     admin_remark_response = client.post(
@@ -381,6 +393,8 @@ def test_admin_cannot_add_remark_and_agent_cannot_validate_remark(
         json={"remark": "Admin should not add this remark."},
     )
     assert admin_remark_response.status_code == 403
+
+    start_mission(client, admin_token, mission)
 
     agent_remark_response = client.post(
         f"/missions/{mission['id']}/remark",
@@ -404,6 +418,7 @@ def test_responsable_can_add_remark_only_when_assigned(
     agent_user,
     responsable_user,
 ):
+    """Preserve the existing regression checks on a started mission."""
     unassigned_mission = create_api_mission(
         client,
         admin_token,
@@ -424,6 +439,8 @@ def test_responsable_can_add_remark_only_when_assigned(
         roles_services,
         [responsable_user.id],
     )
+
+    start_mission(client, admin_token, assigned_mission)
 
     assigned_response = client.post(
         f"/missions/{assigned_mission['id']}/remark",
@@ -460,7 +477,10 @@ def test_actual_duration_and_status_validation_errors(
     roles_services,
     agent_user,
 ):
+    """Preserve the existing regression checks on a started mission."""
     mission = create_api_mission(client, admin_token, roles_services, [agent_user.id])
+
+    start_mission(client, admin_token, mission)
 
     duration_response = client.patch(
         f"/missions/{mission['id']}/actual-duration",
@@ -484,7 +504,10 @@ def test_complete_already_completed_mission_returns_409(
     roles_services,
     agent_user,
 ):
+    """Preserve the existing regression checks on a started mission."""
     mission = create_api_mission(client, admin_token, roles_services, [agent_user.id])
+
+    start_mission(client, admin_token, mission)
 
     duration_response = client.patch(
         f"/missions/{mission['id']}/actual-duration",

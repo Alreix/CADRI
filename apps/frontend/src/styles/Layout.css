@@ -17,6 +17,26 @@
   background-color: #e9eef2;
 }
 
+/* Hidden off-screen until keyboard-focused, so keyboard users can jump past
+   the header/nav straight to the page content. */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  z-index: 1000;
+  padding: 8px 16px;
+  background: #234e70;
+  color: #ffffff;
+  border-radius: 0 0 6px 6px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
 /* ── Header ── */
 .intranet-header {
   background-color: var(--intranet-header-bg);

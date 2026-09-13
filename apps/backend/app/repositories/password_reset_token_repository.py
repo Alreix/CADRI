@@ -24,6 +24,17 @@ class PasswordResetTokenRepository:
         return PasswordResetToken.query.filter_by(token_hash=token_hash).first()
 
     @staticmethod
+    def get_by_token_hash_fresh(token_hash):
+        """Re-read reset-token state after acquiring its user's security lock."""
+
+        return (
+            PasswordResetToken.query
+            .populate_existing()
+            .filter_by(token_hash=token_hash)
+            .first()
+        )
+
+    @staticmethod
     def get_latest_for_user(user_id):
         """Return the most recently created password reset token for a user."""
 
@@ -52,7 +63,10 @@ class PasswordResetTokenRepository:
         return token
 
     @staticmethod
-    def update():
-        """Commit pending changes for password reset token records."""
+    def update(*, commit: bool = True):
+        """Flush reset-token changes and optionally commit the transaction."""
 
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
