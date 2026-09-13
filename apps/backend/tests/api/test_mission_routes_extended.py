@@ -1,7 +1,7 @@
 """Additional API tests for mission route edge cases and filters."""
 
-from datetime import datetime, timedelta, timezone
 import uuid
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock
 
 import pytest
@@ -9,7 +9,6 @@ import pytest
 from app.extensions import db
 from app.models.mission import Mission
 from app.repositories.mission_repository import MissionRepository
-
 from app.utils.constants import MISSION_STATUS_IN_PROGRESS
 from tests.helpers.auth_helpers import auth_headers
 from tests.helpers.mission_helpers import mission_payload
@@ -342,9 +341,7 @@ def test_mission_list_supports_search_status_priority_service_date_and_paginatio
         },
     )
     assert date_response.status_code == 200
-    assert {item["title"] for item in date_response.get_json()["items"]} == {
-        "Park tree trimming"
-    }
+    assert {item["title"] for item in date_response.get_json()["items"]} == {"Park tree trimming"}
 
     pagination_response = client.get(
         "/missions",
@@ -553,7 +550,12 @@ def test_complete_already_completed_mission_returns_409(
     ],
 )
 def test_missions_reject_invalid_pagination_before_repository(
-    client, admin_token, monkeypatch, field, value, message,
+    client,
+    admin_token,
+    monkeypatch,
+    field,
+    value,
+    message,
 ):
     """Reject invalid pagination before offset, limit, or total-page arithmetic."""
     repository_lookup = Mock(side_effect=AssertionError("Repository must not be called"))
@@ -572,12 +574,17 @@ def test_missions_reject_invalid_pagination_before_repository(
 
 @pytest.mark.parametrize("per_page", [1, 10, 100])
 def test_missions_accept_valid_pagination(
-    client, admin_token, roles_services, agent_user, per_page,
+    client,
+    admin_token,
+    roles_services,
+    agent_user,
+    per_page,
 ):
     """Preserve pagination metadata and results at both page-size boundaries."""
     mission = create_api_mission(client, admin_token, roles_services, [agent_user.id])
     response = client.get(
-        "/missions", headers=auth_headers(admin_token),
+        "/missions",
+        headers=auth_headers(admin_token),
         query_string={"page": 1, "per_page": per_page},
     )
 
@@ -585,7 +592,10 @@ def test_missions_accept_valid_pagination(
     data = response.get_json()
     assert set(data) == {"items", "pagination"}
     assert data["pagination"] == {
-        "page": 1, "per_page": per_page, "total_items": 1, "total_pages": 1,
+        "page": 1,
+        "per_page": per_page,
+        "total_items": 1,
+        "total_pages": 1,
     }
     assert [item["id"] for item in data["items"]] == [mission["id"]]
 
@@ -623,17 +633,30 @@ def mission_snapshots(app):
         ({"end_date": ""}, "end_date"),
         ({"start_date": "2026-02-30T09:00:00"}, "start_date"),
         ({"end_date": "2026-02-30T09:00:00"}, "end_date"),
-        ({"start_date": "2026-09-14T09:00:00+00:00",
-          "end_date": "2026-09-14T12:00:00"}, "timezone"),
-        ({"start_date": "2026-09-14T09:00:00",
-          "end_date": "2026-09-14T12:00:00+00:00"}, "timezone"),
-        ({"start_date": "2026-09-15T09:00:00+00:00",
-          "end_date": "2026-09-14T12:00:00+00:00"}, "greater than or equal"),
+        (
+            {"start_date": "2026-09-14T09:00:00+00:00", "end_date": "2026-09-14T12:00:00"},
+            "timezone",
+        ),
+        (
+            {"start_date": "2026-09-14T09:00:00", "end_date": "2026-09-14T12:00:00+00:00"},
+            "timezone",
+        ),
+        (
+            {"start_date": "2026-09-15T09:00:00+00:00", "end_date": "2026-09-14T12:00:00+00:00"},
+            "greater than or equal",
+        ),
     ],
 )
 def test_invalid_mission_dates_do_not_mutate_data(
-    app, client, admin_token, roles_services, agent_user, responsable_user,
-    method, dates, message,
+    app,
+    client,
+    admin_token,
+    roles_services,
+    agent_user,
+    responsable_user,
+    method,
+    dates,
+    message,
 ):
     """Reject invalid dates before creating rows or changing fields and relationships."""
     path = "/missions"
@@ -668,12 +691,21 @@ def test_invalid_mission_dates_do_not_mutate_data(
     ],
 )
 def test_existing_iso_formats_work_for_create_update_and_filters(
-    client, admin_token, roles_services, agent_user, start, end,
+    client,
+    admin_token,
+    roles_services,
+    agent_user,
+    start,
+    end,
 ):
     """Keep accepted aware, naive, date-only, and fractional ISO inputs working."""
     mission = create_api_mission(
-        client, admin_token, roles_services, [agent_user.id],
-        start_date=start, end_date=end,
+        client,
+        admin_token,
+        roles_services,
+        [agent_user.id],
+        start_date=start,
+        end_date=end,
     )
     payload = mission_payload(
         service_ids=[str(roles_services["roads"].id)],
@@ -686,10 +718,11 @@ def test_existing_iso_formats_work_for_create_update_and_filters(
     assert response.status_code == 200
     assert response.get_json()["mission"]["title"] == "Valid date update"
 
-    for filters in ({"start_date": start}, {"end_date": end},
-                    {"start_date": start, "end_date": end}):
-        response = client.get(
-            "/missions", headers=auth_headers(admin_token), query_string=filters
-        )
+    for filters in (
+        {"start_date": start},
+        {"end_date": end},
+        {"start_date": start, "end_date": end},
+    ):
+        response = client.get("/missions", headers=auth_headers(admin_token), query_string=filters)
         assert response.status_code == 200
         assert [item["id"] for item in response.get_json()["items"]] == [mission["id"]]

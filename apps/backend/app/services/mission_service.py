@@ -35,13 +35,12 @@ class MissionService:
         """Ensure the current user can perform field-level mission actions."""
         if current_user.role.name not in (AGENT_ROLE, RESPONSABLE_ROLE, ADMIN_ROLE):
             raise AuthorizationError("You are not allowed to access this mission action.")
-        
+
     @staticmethod
     def _is_user_assigned_to_mission(current_user, mission: Mission) -> bool:
         """Return whether the current user is assigned to the mission."""
         return any(
-            str(assignment.user_id) == str(current_user.id)
-            for assignment in mission.assignments
+            str(assignment.user_id) == str(current_user.id) for assignment in mission.assignments
         )
 
     @staticmethod
@@ -284,9 +283,7 @@ class MissionService:
     def add_remark(current_user, mission_id, remark: str) -> Mission:
         """Add an assigned agent or responsable remark and apply business effects."""
         if current_user.role.name not in (AGENT_ROLE, RESPONSABLE_ROLE):
-            raise AuthorizationError(
-                "Only an assigned agent or responsable can add a remark."
-            )
+            raise AuthorizationError("Only an assigned agent or responsable can add a remark.")
 
         mission = MissionService._get_mission_for_workflow(current_user, mission_id)
 
@@ -304,7 +301,7 @@ class MissionService:
         mission.update_status(MISSION_STATUS_REMARK_PENDING_VALIDATION)
         MissionRepository.update()
         return mission
-    
+
     @staticmethod
     def _validate_estimated_duration(estimated_duration) -> None:
         """Ensure the planned mission duration is at least one hour."""

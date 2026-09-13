@@ -18,7 +18,6 @@ from werkzeug.http import dump_cookie
 from app.facades.auth_facade import AuthFacade
 from app.utils.exceptions import AppError, ValidationError
 
-
 auth_ns = Namespace("auth", description="Authentication operations")
 
 login_model = auth_ns.model(

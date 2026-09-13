@@ -27,13 +27,7 @@ class UserRepository:
     def get_by_id_for_update(user_id):
         """Return and lock a user row for serialized security-state changes."""
 
-        return (
-            User.query
-            .populate_existing()
-            .filter_by(id=user_id)
-            .with_for_update()
-            .first()
-        )
+        return User.query.populate_existing().filter_by(id=user_id).with_for_update().first()
 
     @staticmethod
     def get_by_email(email):
@@ -44,13 +38,7 @@ class UserRepository:
     def get_by_email_for_update(email):
         """Return and lock an email-matched user for serialized authentication."""
 
-        return (
-            User.query
-            .populate_existing()
-            .filter_by(email=email)
-            .with_for_update()
-            .first()
-        )
+        return User.query.populate_existing().filter_by(email=email).with_for_update().first()
 
     @staticmethod
     def list_filtered(

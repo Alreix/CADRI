@@ -3,7 +3,6 @@
 import uuid
 
 from app.repositories.user_repository import UserRepository
-from app.services.auth_service import AuthService
 from tests.helpers.auth_helpers import auth_headers
 
 
@@ -43,10 +42,7 @@ def test_users_list_supports_search_role_service_and_pagination(
         query_string={"service_id": str(roles_services["roads"].id)},
     )
     assert service_response.status_code == 200
-    assert all(
-        user["service"]["name"] == "roads"
-        for user in service_response.get_json()["items"]
-    )
+    assert all(user["service"]["name"] == "roads" for user in service_response.get_json()["items"])
 
     pagination_response = client.get(
         "/users",

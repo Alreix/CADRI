@@ -19,4 +19,3 @@ class MissionAssignmentRepository:
         """Remove all assignments linked to a mission."""
         MissionAssignment.query.filter_by(mission_id=mission_id).delete()
         db.session.flush()
-

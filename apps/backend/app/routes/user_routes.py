@@ -115,7 +115,7 @@ class UsersCollectionResource(Resource):
             return {
                 "message": "User created successfully",
                 "user": user.to_dict(),
-                }, 201
+            }, 201
 
         except AppError as error:
             return error.to_dict(), error.status_code

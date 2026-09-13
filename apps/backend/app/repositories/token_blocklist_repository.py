@@ -14,9 +14,7 @@ class TokenBlocklistRepository:
         """Return whether the given JWT identifier has been explicitly revoked."""
 
         return (
-            db.session.query(TokenBlocklist.id)
-            .filter(TokenBlocklist.jti == jti)
-            .first()
+            db.session.query(TokenBlocklist.id).filter(TokenBlocklist.jti == jti).first()
             is not None
         )
 

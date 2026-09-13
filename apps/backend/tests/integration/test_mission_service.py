@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.extensions import db
 from app.models.mission_assignment import MissionAssignment
 from app.models.mission_service_link import MissionServiceLink
 from app.repositories.mission_repository import MissionRepository

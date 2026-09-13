@@ -40,14 +40,10 @@ def _start_worker(app, name, operation, outcomes, outcomes_lock):
     return worker
 
 
-def test_same_refresh_token_can_only_rotate_once(
-    app, admin_user, monkeypatch
-):
+def test_same_refresh_token_can_only_rotate_once(app, admin_user, monkeypatch):
     """Concurrent requests for one token produce exactly one replacement."""
 
-    raw_refresh_token = AuthService.login(admin_user.email, "StrongPass1")[
-        "refresh_token"
-    ]
+    raw_refresh_token = AuthService.login(admin_user.email, "StrongPass1")["refresh_token"]
     user_id = admin_user.id
     initial_reads = Barrier(2)
     thread_state = local()
@@ -86,9 +82,7 @@ def test_same_refresh_token_can_only_rotate_once(
 
     db.session.expire_all()
     active_tokens = [
-        token
-        for token in RefreshToken.query.filter_by(user_id=user_id).all()
-        if token.is_valid()
+        token for token in RefreshToken.query.filter_by(user_id=user_id).all() if token.is_valid()
     ]
     assert [status for status, _ in outcomes].count("success") == 1
     errors = [value for status, value in outcomes if status == "error"]
@@ -97,14 +91,10 @@ def test_same_refresh_token_can_only_rotate_once(
     assert len(active_tokens) == 1
 
 
-def test_refresh_cannot_outlive_concurrent_password_change(
-    app, admin_user, monkeypatch
-):
+def test_refresh_cannot_outlive_concurrent_password_change(app, admin_user, monkeypatch):
     """A refresh paused before locking cannot bypass a completed password change."""
 
-    raw_refresh_token = AuthService.login(admin_user.email, "StrongPass1")[
-        "refresh_token"
-    ]
+    raw_refresh_token = AuthService.login(admin_user.email, "StrongPass1")["refresh_token"]
     user_id = admin_user.id
     refresh_has_read = Event()
     allow_refresh_to_lock = Event()
@@ -138,9 +128,7 @@ def test_refresh_cannot_outlive_concurrent_password_change(
     password_worker = _start_worker(
         app,
         "password-worker",
-        lambda: AuthService.change_password(
-            user_id, "StrongPass1", "ChangedPass1!"
-        ),
+        lambda: AuthService.change_password(user_id, "StrongPass1", "ChangedPass1!"),
         outcomes,
         outcomes_lock,
     )
@@ -152,26 +140,19 @@ def test_refresh_cannot_outlive_concurrent_password_change(
 
     db.session.expire_all()
     active_tokens = [
-        token
-        for token in RefreshToken.query.filter_by(user_id=user_id).all()
-        if token.is_valid()
+        token for token in RefreshToken.query.filter_by(user_id=user_id).all() if token.is_valid()
     ]
     assert any(status == "success" for status, _ in outcomes)
     assert any(
-        status == "error" and isinstance(value, AuthenticationError)
-        for status, value in outcomes
+        status == "error" and isinstance(value, AuthenticationError) for status, value in outcomes
     )
     assert active_tokens == []
 
 
-def test_refresh_cannot_resurrect_session_after_concurrent_logout(
-    app, admin_user, monkeypatch
-):
+def test_refresh_cannot_resurrect_session_after_concurrent_logout(app, admin_user, monkeypatch):
     """A completed logout makes an overlapping old-token refresh fail."""
 
-    raw_refresh_token = AuthService.login(admin_user.email, "StrongPass1")[
-        "refresh_token"
-    ]
+    raw_refresh_token = AuthService.login(admin_user.email, "StrongPass1")["refresh_token"]
     user_id = admin_user.id
     refresh_has_read = Event()
     allow_refresh_to_lock = Event()
@@ -217,14 +198,11 @@ def test_refresh_cannot_resurrect_session_after_concurrent_logout(
 
     db.session.expire_all()
     active_tokens = [
-        token
-        for token in RefreshToken.query.filter_by(user_id=user_id).all()
-        if token.is_valid()
+        token for token in RefreshToken.query.filter_by(user_id=user_id).all() if token.is_valid()
     ]
     assert any(status == "success" for status, _ in outcomes)
     assert any(
-        status == "error" and isinstance(value, AuthenticationError)
-        for status, value in outcomes
+        status == "error" and isinstance(value, AuthenticationError) for status, value in outcomes
     )
     assert active_tokens == []
 
@@ -237,9 +215,7 @@ def test_user_delete_waits_for_refresh_lock_then_removes_all_session_state(
     target_user = user_factory(email="delete-refresh-race@cadri.test")
     target_user_id = target_user.id
     admin_user_id = admin_user.id
-    raw_refresh_token = AuthService.login(target_user.email, "StrongPass1")[
-        "refresh_token"
-    ]
+    raw_refresh_token = AuthService.login(target_user.email, "StrongPass1")["refresh_token"]
     refresh_has_lock = Event()
     delete_is_waiting = Event()
     allow_refresh = Event()
@@ -302,9 +278,7 @@ def test_user_delete_waits_for_refresh_lock_then_removes_all_session_state(
     assert TokenBlocklist.query.filter_by(user_id=target_user_id).count() == 0
 
 
-def test_old_password_login_waiting_on_password_change_is_rejected(
-    app, admin_user, monkeypatch
-):
+def test_old_password_login_waiting_on_password_change_is_rejected(app, admin_user, monkeypatch):
     """A waiting login rechecks the password after password-change commit."""
 
     user_id = admin_user.id
@@ -347,9 +321,7 @@ def test_old_password_login_waiting_on_password_change_is_rejected(
     password_worker = _start_worker(
         app,
         "password-worker",
-        lambda: AuthService.change_password(
-            user_id, "StrongPass1", "ChangedPass1!"
-        ),
+        lambda: AuthService.change_password(user_id, "StrongPass1", "ChangedPass1!"),
         outcomes,
         outcomes_lock,
     )
@@ -377,9 +349,7 @@ def test_old_password_login_waiting_on_password_change_is_rejected(
     assert AuthService.login(email, "ChangedPass1!")["access_token"]
 
 
-def test_refresh_waiting_on_password_reset_cannot_resurrect_session(
-    app, admin_user, monkeypatch
-):
+def test_refresh_waiting_on_password_reset_cannot_resurrect_session(app, admin_user, monkeypatch):
     """A completed reset invalidates refresh state waiting on its user lock."""
 
     user_id = admin_user.id
@@ -440,9 +410,7 @@ def test_refresh_waiting_on_password_reset_cannot_resurrect_session(
     db.session.expire_all()
     persisted_reset = db.session.get(PasswordResetToken, reset_token_id)
     active_tokens = [
-        token
-        for token in RefreshToken.query.filter_by(user_id=user_id).all()
-        if token.is_valid()
+        token for token in RefreshToken.query.filter_by(user_id=user_id).all() if token.is_valid()
     ]
     assert [status for status, _ in outcomes].count("success") == 1
     errors = [value for status, value in outcomes if status == "error"]

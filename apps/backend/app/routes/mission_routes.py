@@ -117,11 +117,11 @@ class MissionCollectionResource(Resource):
 
             start_date = (
                 parse_iso_datetime(start_date_raw, "start_date")
-                if start_date_raw is not None else None
+                if start_date_raw is not None
+                else None
             )
             end_date = (
-                parse_iso_datetime(end_date_raw, "end_date")
-                if end_date_raw is not None else None
+                parse_iso_datetime(end_date_raw, "end_date") if end_date_raw is not None else None
             )
 
             has_remark_raw = request.args.get("has_remark")
@@ -176,7 +176,7 @@ class MissionCollectionResource(Resource):
             return {
                 "message": "Mission created successfully",
                 "mission": mission.to_dict(include_relations=True),
-                }, 201
+            }, 201
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -339,9 +339,7 @@ class MissionCompleteResource(Resource):
 
             return {
                 "message": "Mission completed successfully",
-                "completed_at": mission.completed_at.isoformat()
-                if mission.completed_at
-                else None,
+                "completed_at": mission.completed_at.isoformat() if mission.completed_at else None,
             }, 200
 
         except AppError as error:
