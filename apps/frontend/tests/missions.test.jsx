@@ -32,6 +32,18 @@ const MISSION_IN_PROGRESS = {
   status: 'in_progress',
 };
 
+const MISSION_REMARK_PENDING = {
+  ...MISSION_TO_DO,
+  status: 'remark_pending_validation',
+  actual_duration: 8,
+};
+
+const MISSION_COMPLETED = {
+  ...MISSION_TO_DO,
+  status: 'completed',
+  actual_duration: 8,
+};
+
 const SERVICES_MOCK = [
   { id: 's1', name: 'electrique', label: 'Électrique' },
   { id: 's2', name: 'travaux_publics', label: 'Travaux Publics' },
@@ -267,6 +279,76 @@ describe('MissionFormPage — édition', () => {
     renderForm('responsable', 'edit', { mission: MISSION_IN_PROGRESS });
     await waitFor(() => screen.getByLabelText(/^titre/i));
     expect(screen.getByLabelText(/durée réelle/i)).not.toBeDisabled();
+  });
+
+  test('le champ "Durée réelle" est désactivé pour un responsable quand la mission est "à faire"', async () => {
+    renderForm('responsable', 'edit', { mission: MISSION_TO_DO });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+    expect(screen.getByLabelText(/durée réelle/i)).toBeDisabled();
+  });
+
+  test('le champ "Durée réelle" est éditable pour un responsable quand une remarque est en attente de validation', async () => {
+    renderForm('responsable', 'edit', { mission: MISSION_REMARK_PENDING });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+    expect(screen.getByLabelText(/durée réelle/i)).not.toBeDisabled();
+  });
+
+  test('le champ "Durée réelle" est désactivé pour un responsable quand la mission est terminée', async () => {
+    renderForm('responsable', 'edit', { mission: MISSION_COMPLETED });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+    expect(screen.getByLabelText(/durée réelle/i)).toBeDisabled();
+  });
+
+  test('mission "à faire" : modifier un autre champ enregistre la mission mais n\'envoie aucun appel /actual-duration, même avec une ancienne valeur en mémoire', async () => {
+    const missionWithStaleDuration = { ...MISSION_TO_DO, actual_duration: 8 };
+    renderForm('responsable', 'edit', { mission: missionWithStaleDuration });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+
+    fireEvent.change(screen.getByLabelText(/^titre/i), { target: { value: 'Mission Alpha modifiée' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer les modifications/i }));
+
+    await waitFor(() => {
+      const missionPatchCall = global.fetch.mock.calls.find(
+        ([url, options]) => /\/missions\/[^/]+$/.test(String(url)) && options?.method === 'PATCH'
+      );
+      expect(missionPatchCall).toBeTruthy();
+    });
+
+    const actualDurationCall = global.fetch.mock.calls.find(
+      ([url, options]) => /\/actual-duration/.test(String(url)) && options?.method === 'PATCH'
+    );
+    expect(actualDurationCall).toBeUndefined();
+  });
+
+  test('mission "en cours" : modifier la durée réelle envoie bien l\'appel /actual-duration (responsable)', async () => {
+    renderForm('responsable', 'edit', { mission: MISSION_IN_PROGRESS });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+
+    fireEvent.change(screen.getByLabelText(/durée réelle/i), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer les modifications/i }));
+
+    await waitFor(() => {
+      const actualDurationCall = global.fetch.mock.calls.find(
+        ([url, options]) => /\/actual-duration/.test(String(url)) && options?.method === 'PATCH'
+      );
+      expect(actualDurationCall).toBeTruthy();
+    });
+  });
+
+  test('mission "en cours" : un admin peut aussi modifier la durée réelle', async () => {
+    renderForm('admin', 'edit', { mission: MISSION_IN_PROGRESS });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+    expect(screen.getByLabelText(/durée réelle/i)).not.toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/durée réelle/i), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer les modifications/i }));
+
+    await waitFor(() => {
+      const actualDurationCall = global.fetch.mock.calls.find(
+        ([url, options]) => /\/actual-duration/.test(String(url)) && options?.method === 'PATCH'
+      );
+      expect(actualDurationCall).toBeTruthy();
+    });
   });
 
   test('un agent assigné et sur une mission "en cours" peut renseigner la durée réelle et la remarque', async () => {
