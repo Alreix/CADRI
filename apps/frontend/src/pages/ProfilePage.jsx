@@ -1,6 +1,7 @@
 // Current user's own profile page: view mode (read-only) toggled with an
 // edit mode that also lets the user optionally change their password.
 import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Info } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import ConfirmModal from "../components/common/ConfirmModal";
@@ -20,6 +21,7 @@ function ProfilePage() {
   const { user, logout } = useContext(AuthContext);
 
   const [profile, setProfile] = useState(null);
+  const [profileLoadError, setProfileLoadError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
@@ -38,17 +40,24 @@ function ProfilePage() {
 
   // Load the current user's profile once on mount.
   useEffect(() => {
-    getProfile().then((data) => {
-      setProfile(data);
-      setForm({
-        firstName: data.firstName || "",
-        lastName: data.lastName || "",
-        email: data.email || "",
-        currentPassword: "",
-        password: "",
-        confirmPassword: "",
+    getProfile()
+      .then((data) => {
+        setProfile(data);
+        setForm({
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          email: data.email || "",
+          currentPassword: "",
+          password: "",
+          confirmPassword: "",
+        });
+      })
+      .catch(() => {
+        // A dead session (401) is already handled globally (AuthContext
+        // redirects to /login); this covers other failures (network, 500),
+        // so the page shows something actionable instead of staying blank.
+        setProfileLoadError(true);
       });
-    });
   }, []);
 
   const clearPasswordFields = () => {
@@ -77,20 +86,42 @@ function ProfilePage() {
       }
     }
 
+    // Profile fields are always saved first, while the current session is
+    // still guaranteed valid. Changing the password (below) revokes that
+    // same session server-side, so it must always happen last.
+    let updatedProfile;
     try {
-      if (wantsPasswordChange) {
-        await changePassword({
-          currentPassword: form.currentPassword,
-          newPassword: form.password,
-        });
-      }
-      const updatedProfile = await updateProfile(form);
-      setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
+      updatedProfile = await updateProfile(form);
+    } catch (err) {
+      setAlertMessage(err.message || "Impossible d'enregistrer le profil.");
+      return;
+    }
+
+    setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
+
+    if (!wantsPasswordChange) {
       clearPasswordFields();
       setEditing(false);
-    } catch (err) {
-      setAlertMessage(err.message || "Le mot de passe ne respecte pas les critères de sécurité.");
+      return;
     }
+
+    try {
+      await changePassword({
+        currentPassword: form.currentPassword,
+        newPassword: form.password,
+      });
+    } catch (err) {
+      // Profile fields were already saved above, but the password itself
+      // wasn't changed: keep the current session and let the user retry.
+      setAlertMessage(err.message || "Le mot de passe ne respecte pas les critères de sécurité.");
+      return;
+    }
+
+    // The password change just revoked this session's credentials server-side
+    // (access + refresh tokens): no further authenticated request may follow
+    // it. Clear the session locally and send the user back to log in again.
+    await logout();
+    navigate("/login", { replace: true });
   };
 
   // Discards any unsaved changes and resets the form back to the loaded profile.

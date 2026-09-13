@@ -184,8 +184,12 @@ function MissionFormPage({ mode = "create" }) {
         if (!isAgent) {
           await updateMission(id, form);
         }
-        // Only sends the actual-duration update if it actually changed.
+        // Only sends the actual-duration update if it actually changed, and
+        // only while the mission's status allows it — otherwise the backend
+        // rejects it with a 409, and a stale value from before the mission
+        // was completed (or before it started) must never be resubmitted.
         if (
+          canEditActualDuration &&
           form.actualDuration !== "" &&
           String(form.actualDuration) !== String(initialForm.actualDuration)
         ) {
@@ -209,7 +213,7 @@ function MissionFormPage({ mode = "create" }) {
           : "/"
       );
     } catch (err) {
-      console.error("Error saving mission:", err);
+      setAlertMessage(err.message || "Impossible d'enregistrer la mission.");
     } finally {
       setSaving(false);
     }
@@ -239,16 +243,22 @@ function MissionFormPage({ mode = "create" }) {
         String(assignedUserId) === String(currentUser?.id)
     );
 
-  // Actual duration follows the manager/agent workflow, while remarks are
-  // limited by the backend to an assigned agent or assigned responsable.
+  // Actual duration can only be touched while the mission is in progress or
+  // has a remark pending validation — matches the backend's own restriction
+  // (MissionService._require_mission_status), for every role including
+  // managers, who used to bypass this check entirely.
+  const isActualDurationEditableStatus = ["in_progress", "remark_pending_validation"].includes(
+    loadedMission?.status
+  );
+
+  // Remarks are limited by the backend to an assigned agent or assigned responsable.
   const canAgentUpdateTracking =
     isAgentEdit &&
     isAssignedToMission &&
-    ["in_progress", "remark_pending_validation"].includes(
-      loadedMission?.status
-    );
+    isActualDurationEditableStatus;
 
-  const canEditActualDuration = isManager || canAgentUpdateTracking;
+  const canEditActualDuration =
+    (isManager && isActualDurationEditableStatus) || canAgentUpdateTracking;
 
   const canAgentAddRemark =
     canAgentUpdateTracking &&

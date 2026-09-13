@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi } from 'vitest';
 
 import ProfilePage from '../src/pages/ProfilePage';
@@ -23,7 +23,7 @@ function mockFetchRoutes({ profile = PROFILE_MOCK } = {}) {
     const path = String(url);
     const method = options.method || 'GET';
 
-    if (path.endsWith('/change-password') && method === 'POST') {
+    if (path.endsWith('/change-password') && method === 'PATCH') {
       return Promise.resolve({ ok: true, json: async () => ({}) });
     }
     if (path.endsWith('/me') && method === 'PATCH') {
@@ -48,6 +48,39 @@ const renderProfile = (logout = vi.fn(), profile = PROFILE_MOCK) => {
 const openEditMode = async () => {
   await waitFor(() => screen.getByText('Modifier le profil'));
   fireEvent.click(screen.getByText('Modifier le profil'));
+};
+
+// Renders ProfilePage behind an actual /profile -> /login route pair, so
+// tests can assert on the real post-password-change redirect instead of
+// just checking that `logout` was called.
+const renderProfileWithRouting = ({ logout = vi.fn(), profile = PROFILE_MOCK, fetchOverride } = {}) => {
+  if (fetchOverride) {
+    global.fetch = fetchOverride;
+  } else {
+    mockFetchRoutes({ profile });
+  }
+  return render(
+    <AuthContext.Provider value={{ user: { role: 'agent', id: '1' }, logout }}>
+      <MemoryRouter initialEntries={['/profile']}>
+        <Routes>
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/login" element={<div>Page de connexion</div>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthContext.Provider>
+  );
+};
+
+const fillPasswordChangeFields = () => {
+  fireEvent.change(screen.getByLabelText(/mot de passe actuel/i), {
+    target: { value: 'AncienPass123!' },
+  });
+  fireEvent.change(screen.getByLabelText(/^nouveau mot de passe/i), {
+    target: { value: 'NouveauPass123!' },
+  });
+  fireEvent.change(screen.getByLabelText(/confirmer le nouveau mot de passe/i), {
+    target: { value: 'NouveauPass123!' },
+  });
 };
 
 // ---------------------------------------------------------------------------
@@ -177,6 +210,77 @@ describe('ProfilePage — changement de mot de passe', () => {
     expect(
       await screen.findByText(/mot de passe actuel est obligatoire/i)
     ).toBeInTheDocument();
+  });
+
+  test('changement de mot de passe réussi : PATCH /me puis PATCH /auth/change-password, session locale terminée, redirection vers /login', async () => {
+    const logoutMock = vi.fn();
+    renderProfileWithRouting({ logout: logoutMock });
+    await openEditMode();
+
+    fillPasswordChangeFields();
+    fireEvent.click(screen.getByRole('button', { name: /mettre à jour le profil/i }));
+
+    await waitFor(() => {
+      expect(logoutMock).toHaveBeenCalled();
+    });
+
+    const calls = global.fetch.mock.calls;
+    const meIndex = calls.findIndex(
+      ([url, options]) => String(url).endsWith('/me') && options?.method === 'PATCH'
+    );
+    const changePasswordIndex = calls.findIndex(
+      ([url, options]) => String(url).endsWith('/change-password') && options?.method === 'PATCH'
+    );
+
+    // The profile update must happen while the session is still valid,
+    // strictly before the request that revokes it.
+    expect(meIndex).toBeGreaterThanOrEqual(0);
+    expect(changePasswordIndex).toBeGreaterThan(meIndex);
+
+    // No authenticated /me request may follow the successful password change.
+    const meCallsAfterPasswordChange = calls.filter(
+      ([url, options], index) => index > changePasswordIndex && String(url).endsWith('/me')
+    );
+    expect(meCallsAfterPasswordChange).toHaveLength(0);
+
+    await waitFor(() => {
+      expect(screen.getByText(/page de connexion/i)).toBeInTheDocument();
+    });
+  });
+
+  test("échec du changement de mot de passe : ne déconnecte pas, ne redirige pas, affiche l'erreur", async () => {
+    const logoutMock = vi.fn();
+    const fetchOverride = vi.fn((url, options = {}) => {
+      const path = String(url);
+      const method = options.method || 'GET';
+
+      if (path.endsWith('/change-password') && method === 'PATCH') {
+        return Promise.resolve({
+          ok: false,
+          status: 403,
+          json: async () => ({ message: 'Mot de passe actuel incorrect.' }),
+        });
+      }
+      if (path.endsWith('/me') && method === 'PATCH') {
+        return Promise.resolve({ ok: true, json: async () => ({ user: PROFILE_MOCK }) });
+      }
+      if (path.endsWith('/me') && method === 'GET') {
+        return Promise.resolve({ ok: true, json: async () => PROFILE_MOCK });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+
+    renderProfileWithRouting({ logout: logoutMock, fetchOverride });
+    await openEditMode();
+
+    fillPasswordChangeFields();
+    fireEvent.click(screen.getByRole('button', { name: /mettre à jour le profil/i }));
+
+    expect(await screen.findByText(/mot de passe actuel incorrect/i)).toBeInTheDocument();
+    expect(logoutMock).not.toHaveBeenCalled();
+    expect(screen.queryByText(/page de connexion/i)).not.toBeInTheDocument();
+    // The form is still there and usable, so the user can retry.
+    expect(screen.getByLabelText(/mot de passe actuel/i)).toBeInTheDocument();
   });
 });
 

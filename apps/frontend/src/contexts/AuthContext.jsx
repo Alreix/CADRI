@@ -6,6 +6,7 @@ import {
   apiRequest,
   clearAccessToken,
   setAccessToken,
+  setSessionExpiredHandler,
 } from "../api/apiClient";
 import { logout as logoutApi } from "../api/authApi";
 
@@ -36,6 +37,21 @@ function normalizeUser(user) {
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // apiClient detects definitive authentication failures (e.g. a refresh
+  // attempt that fails after a 401) but can't touch React state itself, since
+  // importing AuthContext there would create a circular dependency. It calls
+  // this handler instead, so React state stays in sync with the dead session.
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      setUser(null);
+      localStorage.removeItem(storage_key);
+    });
+
+    return () => {
+      setSessionExpiredHandler(null);
+    };
+  }, []);
 
   useEffect(() => {
     // Guards against setting state after the component has unmounted
@@ -69,13 +85,12 @@ function AuthProvider({ children }) {
         return;
       }
 
-      // Optimistic UI: show the cached user immediately so the app doesn't
-      // flash a logged-out state while we confirm the session is still valid.
-      if (isMounted) {
-        setUser(storedUser);
-        setLoading(false);
-      }
-
+      // Deliberately not optimistic: the access token now lives only in
+      // memory (never localStorage), so unlike before, `storedUser` alone is
+      // not backed by any credential we can vouch for yet. Trusting it
+      // before /me confirms it would briefly render role-gated pages/menus
+      // for a session that may already be dead or belong to a stale cache.
+      // `loading` stays true until the server has actually confirmed it.
       try {
         const profile = await apiRequest("/me");
         const normalizedUser = normalizeUser(profile);

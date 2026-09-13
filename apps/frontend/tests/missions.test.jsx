@@ -32,6 +32,18 @@ const MISSION_IN_PROGRESS = {
   status: 'in_progress',
 };
 
+const MISSION_REMARK_PENDING = {
+  ...MISSION_TO_DO,
+  status: 'remark_pending_validation',
+  actual_duration: 8,
+};
+
+const MISSION_COMPLETED = {
+  ...MISSION_TO_DO,
+  status: 'completed',
+  actual_duration: 8,
+};
+
 const SERVICES_MOCK = [
   { id: 's1', name: 'electrique', label: 'Électrique' },
   { id: 's2', name: 'travaux_publics', label: 'Travaux Publics' },
@@ -57,7 +69,14 @@ function mockFetchRoutes({ mission = MISSION_TO_DO, services = SERVICES_MOCK, as
       return Promise.resolve({ ok: true, json: async () => assignableUsers });
     }
     if (path.match(/\/missions\/[^/]+\/status/) && method === 'PATCH') {
-      return Promise.resolve({ ok: true, json: async () => ({ mission: { ...mission, status: 'in_progress' } }) });
+      // The real backend's PATCH /missions/:id/status returns mission.to_dict()
+      // WITHOUT include_relations=True, so services/assignments are omitted
+      // here on purpose — callers must refetch (GET) to get them back.
+      const { services: _services, assignments: _assignments, ...missionWithoutRelations } = mission;
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ mission: { ...missionWithoutRelations, status: 'in_progress' } }),
+      });
     }
     if (path.match(/\/missions\/[^/]+\/actual-duration/) && method === 'PATCH') {
       return Promise.resolve({ ok: true, json: async () => ({ mission }) });
@@ -133,6 +152,46 @@ describe('MissionDetailPage — agent', () => {
     renderDetail('agent', { mission: MISSION_TO_DO, userId: '42' });
     await waitFor(() => screen.getByText('Mission Alpha'));
     expect(screen.getByRole('button', { name: /démarrer la mission/i })).toBeInTheDocument();
+  });
+
+  test('démarrer la mission ne perd pas l\'assignation (la page se refait charger au lieu de faire confiance à la réponse /status)', async () => {
+    // Self-contained, stateful mock: PATCH /status behaves like the real
+    // backend (its response omits services/assignments), and GET always
+    // returns the full, current mission — so this test actually fails if
+    // the page trusts the /status response instead of refetching.
+    let currentMission = MISSION_TO_DO;
+    global.fetch = vi.fn((url, options = {}) => {
+      const path = String(url);
+      const method = options.method || 'GET';
+
+      if (path.match(/\/missions\/[^/]+\/status/) && method === 'PATCH') {
+        currentMission = { ...currentMission, status: 'in_progress' };
+        const { services: _services, assignments: _assignments, ...withoutRelations } = currentMission;
+        return Promise.resolve({ ok: true, json: async () => ({ mission: withoutRelations }) });
+      }
+      if (path.match(/\/missions\/[^/]+$/) && method === 'GET') {
+        return Promise.resolve({ ok: true, json: async () => currentMission });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+
+    render(
+      <AuthContext.Provider value={{ user: { role: 'agent', id: '42' } }}>
+        <MemoryRouter initialEntries={['/missions/1']}>
+          <Routes>
+            <Route path="/missions/:id" element={<MissionDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+
+    await waitFor(() => screen.getByText('Mission Alpha'));
+    fireEvent.click(screen.getByRole('button', { name: /démarrer la mission/i }));
+
+    // If the assignment had been wiped by the incomplete /status response,
+    // this agent would no longer be considered assigned and would lose
+    // access to "Terminer la mission".
+    expect(await screen.findByRole('button', { name: /terminer la mission/i })).toBeInTheDocument();
   });
 });
 
@@ -220,6 +279,76 @@ describe('MissionFormPage — édition', () => {
     renderForm('responsable', 'edit', { mission: MISSION_IN_PROGRESS });
     await waitFor(() => screen.getByLabelText(/^titre/i));
     expect(screen.getByLabelText(/durée réelle/i)).not.toBeDisabled();
+  });
+
+  test('le champ "Durée réelle" est désactivé pour un responsable quand la mission est "à faire"', async () => {
+    renderForm('responsable', 'edit', { mission: MISSION_TO_DO });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+    expect(screen.getByLabelText(/durée réelle/i)).toBeDisabled();
+  });
+
+  test('le champ "Durée réelle" est éditable pour un responsable quand une remarque est en attente de validation', async () => {
+    renderForm('responsable', 'edit', { mission: MISSION_REMARK_PENDING });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+    expect(screen.getByLabelText(/durée réelle/i)).not.toBeDisabled();
+  });
+
+  test('le champ "Durée réelle" est désactivé pour un responsable quand la mission est terminée', async () => {
+    renderForm('responsable', 'edit', { mission: MISSION_COMPLETED });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+    expect(screen.getByLabelText(/durée réelle/i)).toBeDisabled();
+  });
+
+  test('mission "à faire" : modifier un autre champ enregistre la mission mais n\'envoie aucun appel /actual-duration, même avec une ancienne valeur en mémoire', async () => {
+    const missionWithStaleDuration = { ...MISSION_TO_DO, actual_duration: 8 };
+    renderForm('responsable', 'edit', { mission: missionWithStaleDuration });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+
+    fireEvent.change(screen.getByLabelText(/^titre/i), { target: { value: 'Mission Alpha modifiée' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer les modifications/i }));
+
+    await waitFor(() => {
+      const missionPatchCall = global.fetch.mock.calls.find(
+        ([url, options]) => /\/missions\/[^/]+$/.test(String(url)) && options?.method === 'PATCH'
+      );
+      expect(missionPatchCall).toBeTruthy();
+    });
+
+    const actualDurationCall = global.fetch.mock.calls.find(
+      ([url, options]) => /\/actual-duration/.test(String(url)) && options?.method === 'PATCH'
+    );
+    expect(actualDurationCall).toBeUndefined();
+  });
+
+  test('mission "en cours" : modifier la durée réelle envoie bien l\'appel /actual-duration (responsable)', async () => {
+    renderForm('responsable', 'edit', { mission: MISSION_IN_PROGRESS });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+
+    fireEvent.change(screen.getByLabelText(/durée réelle/i), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer les modifications/i }));
+
+    await waitFor(() => {
+      const actualDurationCall = global.fetch.mock.calls.find(
+        ([url, options]) => /\/actual-duration/.test(String(url)) && options?.method === 'PATCH'
+      );
+      expect(actualDurationCall).toBeTruthy();
+    });
+  });
+
+  test('mission "en cours" : un admin peut aussi modifier la durée réelle', async () => {
+    renderForm('admin', 'edit', { mission: MISSION_IN_PROGRESS });
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+    expect(screen.getByLabelText(/durée réelle/i)).not.toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/durée réelle/i), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer les modifications/i }));
+
+    await waitFor(() => {
+      const actualDurationCall = global.fetch.mock.calls.find(
+        ([url, options]) => /\/actual-duration/.test(String(url)) && options?.method === 'PATCH'
+      );
+      expect(actualDurationCall).toBeTruthy();
+    });
   });
 
   test('un agent assigné et sur une mission "en cours" peut renseigner la durée réelle et la remarque', async () => {

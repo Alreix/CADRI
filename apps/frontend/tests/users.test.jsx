@@ -74,7 +74,7 @@ function mockFetchRoutes({ users = USERS_MOCK, user = USERS_MOCK[0], roles = ROL
     if (path.endsWith('/users') && method === 'POST') {
       return Promise.resolve({ ok: true, json: async () => ({ user: { ...user, id: '99' } }) });
     }
-    if (path.endsWith('/users') && method === 'GET') {
+    if (path.match(/\/users(\?|$)/) && method === 'GET') {
       return Promise.resolve({ ok: true, json: async () => users });
     }
     return Promise.resolve({ ok: true, json: async () => ({}) });
@@ -136,6 +136,68 @@ describe('UserManagementPage — liste', () => {
     );
     await waitFor(() => {
       expect(screen.getByText(/aucun utilisateur ne correspond/i)).toBeInTheDocument();
+    });
+  });
+
+  test('récupère bien tous les utilisateurs au-delà de la première page backend (>100)', async () => {
+    // The real backend caps a single page at 100 and paginates the rest —
+    // this proves getUsers() walks every page instead of only seeing the first 100.
+    const manyUsers = Array.from({ length: 150 }, (_, index) => ({
+      id: String(index + 1),
+      first_name: `Prenom${index + 1}`,
+      last_name: `Nom${index + 1}`,
+      email: `user${index + 1}@cadri.fr`,
+      role: { name: 'agent', label: 'Agent' },
+      service: { id: 'svc1', name: 'electrique', label: 'Électrique' },
+    }));
+
+    global.fetch = vi.fn((url) => {
+      const path = String(url);
+
+      if (path.includes('/metadata/roles')) {
+        return Promise.resolve({ ok: true, json: async () => ROLES_MOCK });
+      }
+      if (path.includes('/metadata/services')) {
+        return Promise.resolve({ ok: true, json: async () => SERVICES_MOCK });
+      }
+      if (path.match(/\/users(\?|$)/)) {
+        const parsedUrl = new URL(path, 'http://localhost');
+        const page = Number(parsedUrl.searchParams.get('page')) || 1;
+        const perPage = Number(parsedUrl.searchParams.get('per_page')) || 10;
+        const start = (page - 1) * perPage;
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            items: manyUsers.slice(start, start + perPage),
+            pagination: {
+              page,
+              per_page: perPage,
+              total_items: manyUsers.length,
+              total_pages: Math.ceil(manyUsers.length / perPage),
+            },
+          }),
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+
+    render(
+      <AuthContext.Provider value={{ user: { role: 'admin', id: '99' } }}>
+        <MemoryRouter><UserManagementPage /></MemoryRouter>
+      </AuthContext.Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/rechercher des utilisateurs/i)).toBeInTheDocument();
+    });
+
+    // "Nom150" only exists on the backend's second page (index 149).
+    fireEvent.change(screen.getByPlaceholderText(/rechercher des utilisateurs/i), {
+      target: { value: 'Nom150' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Nom150')).toBeInTheDocument();
     });
   });
 });
