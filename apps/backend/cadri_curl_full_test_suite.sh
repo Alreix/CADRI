@@ -981,6 +981,12 @@ STATUS=$(request -X POST "$BASE_URL/missions" \
 check "POST /missions creates remark mission returns 201" 201 "$STATUS"
 REMARK_MISSION_ID=$(json_get "mission.id")
 
+STATUS=$(request -X PATCH "$BASE_URL/missions/$REMARK_MISSION_ID/status" \
+    -H "Authorization: Bearer $AGENT_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"status":"in_progress"}')
+check "Start remark mission before tracking returns 200" 200 "$STATUS"
+
 STATUS=$(request -X PATCH "$BASE_URL/missions/$REMARK_MISSION_ID/actual-duration" \
     -H "Authorization: Bearer $AGENT_TOKEN" \
     -H "Content-Type: application/json" \
@@ -1006,6 +1012,12 @@ STATUS=$(request -X POST "$BASE_URL/missions" \
     -d "$RESP_REMARK_PAYLOAD")
 check "POST /missions creates responsable remark mission returns 201" 201 "$STATUS"
 RESP_REMARK_MISSION_ID=$(json_get "mission.id")
+
+STATUS=$(request -X PATCH "$BASE_URL/missions/$RESP_REMARK_MISSION_ID/status" \
+    -H "Authorization: Bearer $RESPONSABLE_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"status":"in_progress"}')
+check "Start responsable remark mission before tracking returns 200" 200 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/missions/$RESP_REMARK_MISSION_ID/remark" \
     -H "Authorization: Bearer $RESPONSABLE_TOKEN" \
@@ -1055,6 +1067,13 @@ STATUS=$(request -X POST "$BASE_URL/missions" \
     -d "$NO_DURATION_PAYLOAD")
 check "POST /missions creates no-duration complete test returns 201" 201 "$STATUS"
 NO_DURATION_MISSION_ID=$(json_get "mission.id")
+
+STATUS=$(request -X PATCH "$BASE_URL/missions/$NO_DURATION_MISSION_ID/status" \
+    -H "Authorization: Bearer $AGENT_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"status":"in_progress"}')
+check "Start mission before checking missing duration returns 200" 200 "$STATUS"
+
 STATUS=$(request -X POST "$BASE_URL/missions/$NO_DURATION_MISSION_ID/complete" \
     -H "Authorization: Bearer $AGENT_TOKEN")
 check "POST /missions/<id>/complete without duration returns 400" 400 "$STATUS"

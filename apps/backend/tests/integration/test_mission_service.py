@@ -10,6 +10,7 @@ from app.models.mission_service_link import MissionServiceLink
 from app.repositories.mission_repository import MissionRepository
 from app.repositories.user_repository import UserRepository
 from app.services.mission_service import MissionService
+from app.utils.constants import MISSION_STATUS_IN_PROGRESS
 from app.utils.exceptions import AuthorizationError, ConflictError, ValidationError
 
 
@@ -102,9 +103,11 @@ def test_agent_assigned_to_mission_can_update_duration(
     agent_user,
     roles_services,
 ):
+    """Verify the service rule after the required mission start."""
     admin = get_user(admin_user)
     agent = get_user(agent_user)
     mission = create_service_mission(admin, roles_services, agent_user)
+    MissionService.update_status(admin, mission.id, MISSION_STATUS_IN_PROGRESS)
 
     updated = MissionService.update_actual_duration(agent, mission.id, 4)
 
@@ -135,9 +138,11 @@ def test_agent_adds_remark_and_mission_waits_for_validation(
     agent_user,
     roles_services,
 ):
+    """Verify the service rule after the required mission start."""
     admin = get_user(admin_user)
     agent = get_user(agent_user)
     mission = create_service_mission(admin, roles_services, agent_user)
+    MissionService.update_status(admin, mission.id, MISSION_STATUS_IN_PROGRESS)
 
     MissionService.update_actual_duration(agent, mission.id, 2)
     updated = MissionService.add_remark(agent, mission.id, "Problem on site")
@@ -152,9 +157,11 @@ def test_assigned_responsable_can_add_remark_and_mission_waits_for_validation(
     responsable_user,
     roles_services,
 ):
+    """Verify the service rule after the required mission start."""
     admin = get_user(admin_user)
     responsable = get_user(responsable_user)
     mission = create_service_mission(admin, roles_services, responsable_user)
+    MissionService.update_status(admin, mission.id, MISSION_STATUS_IN_PROGRESS)
 
     updated = MissionService.add_remark(
         responsable,
@@ -182,9 +189,11 @@ def test_unassigned_responsable_cannot_add_remark(
 
 
 def test_agent_cannot_add_second_remark(admin_user, agent_user, roles_services):
+    """Verify the service rule after the required mission start."""
     admin = get_user(admin_user)
     agent = get_user(agent_user)
     mission = create_service_mission(admin, roles_services, agent_user)
+    MissionService.update_status(admin, mission.id, MISSION_STATUS_IN_PROGRESS)
 
     MissionService.add_remark(agent, mission.id, "First remark")
 
@@ -197,9 +206,11 @@ def test_mission_with_remark_is_completed_after_validation(
     agent_user,
     roles_services,
 ):
+    """Verify the service rule after the required mission start."""
     admin = get_user(admin_user)
     agent = get_user(agent_user)
     mission = create_service_mission(admin, roles_services, agent_user)
+    MissionService.update_status(admin, mission.id, MISSION_STATUS_IN_PROGRESS)
 
     MissionService.update_actual_duration(agent, mission.id, 2)
     MissionService.add_remark(agent, mission.id, "Needs review")
@@ -213,9 +224,11 @@ def test_mission_with_remark_is_completed_after_validation(
 
 
 def test_complete_mission_requires_actual_duration(admin_user, agent_user, roles_services):
+    """Verify the service rule after the required mission start."""
     admin = get_user(admin_user)
     agent = get_user(agent_user)
     mission = create_service_mission(admin, roles_services, agent_user)
+    MissionService.update_status(admin, mission.id, MISSION_STATUS_IN_PROGRESS)
 
     with pytest.raises(ValidationError):
         MissionService.complete_mission(agent, mission.id)
@@ -227,6 +240,7 @@ def test_list_missions_filters_by_assignment_and_remark(
     responsable_user,
     roles_services,
 ):
+    """Verify the service rule after the required mission start."""
     admin = get_user(admin_user)
     agent = get_user(agent_user)
 
@@ -243,6 +257,8 @@ def test_list_missions_filters_by_assignment_and_remark(
         title="Without remark",
         assigned_user_ids=[str(responsable_user.id)],
     )
+
+    MissionService.update_status(admin, mission_with_remark.id, MISSION_STATUS_IN_PROGRESS)
 
     MissionService.update_actual_duration(agent, mission_with_remark.id, 2)
     MissionService.add_remark(agent, mission_with_remark.id, "Remark")
