@@ -3,7 +3,6 @@ from datetime import datetime
 
 from app.utils.exceptions import ValidationError
 
-
 EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 

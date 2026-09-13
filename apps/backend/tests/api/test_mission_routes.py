@@ -5,10 +5,10 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.utils.constants import (
-    MISSION_STATUS_TO_DO,
+    MISSION_STATUS_COMPLETED,
     MISSION_STATUS_IN_PROGRESS,
     MISSION_STATUS_REMARK_PENDING_VALIDATION,
-    MISSION_STATUS_COMPLETED,
+    MISSION_STATUS_TO_DO,
 )
 
 

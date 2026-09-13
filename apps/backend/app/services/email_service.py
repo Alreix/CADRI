@@ -9,6 +9,7 @@ from email.message import EmailMessage
 
 from flask import current_app
 
+
 class EmailService:
     """Utilities for building and sending email notifications.
 

@@ -2,7 +2,6 @@
 
 from typing import Final
 
-
 ADMIN_ROLE: Final[str] = "admin"
 RESPONSABLE_ROLE: Final[str] = "responsable"
 AGENT_ROLE: Final[str] = "agent"

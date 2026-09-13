@@ -3,7 +3,6 @@
 import uuid
 
 from app.repositories.user_repository import UserRepository
-from app.services.auth_service import AuthService
 from tests.helpers.auth_helpers import auth_headers
 
 

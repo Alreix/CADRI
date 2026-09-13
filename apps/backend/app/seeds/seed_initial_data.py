@@ -16,7 +16,6 @@ from app.models.role import Role
 from app.models.service import Service
 from app.models.user import User
 
-
 DEFAULT_ROLES: list[dict[str, str]] = [
     {
         "name": "admin",

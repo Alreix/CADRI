@@ -19,7 +19,6 @@ from app.services.auth_service import AuthService
 from app.utils.constants import (
     ADMIN_ALLOWED_CREATION_ROLES,
     ADMIN_ROLE,
-    AGENT_ROLE,
     ASSIGNABLE_ROLE_NAMES,
     RESPONSABLE_ALLOWED_CREATION_ROLES,
     RESPONSABLE_ROLE,

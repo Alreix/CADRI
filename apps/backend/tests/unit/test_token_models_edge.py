@@ -1,6 +1,5 @@
 """Additional unit tests for token model edge cases."""
 
-from datetime import datetime, timedelta, timezone
 
 from app.models.account_activation_token import AccountActivationToken
 from app.models.password_reset_token import PasswordResetToken
