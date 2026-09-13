@@ -60,7 +60,9 @@ def test_admin_can_create_user(client, admin_token, roles_services, monkeypatch)
     assert sent_activation_emails == ["new.agent@cadri.test"]
 
 
-def test_responsable_can_create_agent_but_not_admin(client, responsable_token, roles_services, monkeypatch):
+def test_responsable_can_create_agent_but_not_admin(
+    client, responsable_token, roles_services, monkeypatch
+):
     monkeypatch.setattr(
         AuthService,
         "send_activation_email_for_user",
@@ -172,7 +174,9 @@ def test_admin_can_update_user(client, admin_token, agent_user, roles_services):
     assert data["service"]["name"] == "roads"
 
 
-def test_admin_and_responsable_can_access_assignable_users(client, admin_token, responsable_token, agent_user):
+def test_admin_and_responsable_can_access_assignable_users(
+    client, admin_token, responsable_token, agent_user
+):
     admin_response = client.get("/users/assignable", headers=auth_headers(admin_token))
     responsable_response = client.get("/users/assignable", headers=auth_headers(responsable_token))
 
@@ -205,9 +209,7 @@ def test_agent_cannot_access_assignable_users(client, agent_token):
 )
 def test_users_reject_invalid_pagination(client, admin_token, field, value, message):
     """Return useful client errors for malformed integers and existing bounds."""
-    response = client.get(
-        "/users", headers=auth_headers(admin_token), query_string={field: value}
-    )
+    response = client.get("/users", headers=auth_headers(admin_token), query_string={field: value})
 
     assert response.status_code == 400
     error = response.get_json()["error"].lower()
@@ -219,7 +221,8 @@ def test_users_reject_invalid_pagination(client, admin_token, field, value, mess
 def test_users_accept_valid_pagination(client, admin_token, admin_user, per_page):
     """Preserve the pagination response shape and inclusive page-size bounds."""
     response = client.get(
-        "/users", headers=auth_headers(admin_token),
+        "/users",
+        headers=auth_headers(admin_token),
         query_string={"page": 1, "per_page": per_page},
     )
 
@@ -227,6 +230,9 @@ def test_users_accept_valid_pagination(client, admin_token, admin_user, per_page
     data = response.get_json()
     assert set(data) == {"items", "pagination"}
     assert data["pagination"] == {
-        "page": 1, "per_page": per_page, "total_items": 1, "total_pages": 1,
+        "page": 1,
+        "per_page": per_page,
+        "total_items": 1,
+        "total_pages": 1,
     }
     assert [item["id"] for item in data["items"]] == [str(admin_user.id)]

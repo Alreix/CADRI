@@ -18,9 +18,7 @@ ADMIN_ALLOWED_CREATION_ROLES: Final[tuple[str, ...]] = (
     AGENT_ROLE,
 )
 
-RESPONSABLE_ALLOWED_CREATION_ROLES: Final[tuple[str, ...]] = (
-    AGENT_ROLE,
-)
+RESPONSABLE_ALLOWED_CREATION_ROLES: Final[tuple[str, ...]] = (AGENT_ROLE,)
 
 ASSIGNABLE_ROLE_NAMES: Final[tuple[str, ...]] = (
     RESPONSABLE_ROLE,

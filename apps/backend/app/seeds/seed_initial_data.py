@@ -371,9 +371,7 @@ def seed_demo_missions():
         db.session.flush()
 
         for service_id in mission_data["service_ids"]:
-            db.session.add(
-                MissionServiceLink(mission_id=mission.id, service_id=service_id)
-            )
+            db.session.add(MissionServiceLink(mission_id=mission.id, service_id=service_id))
 
         for user_id in mission_data["assigned_user_ids"]:
             db.session.add(MissionAssignment(mission_id=mission.id, user_id=user_id))

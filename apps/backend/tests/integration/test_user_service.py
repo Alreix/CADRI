@@ -8,7 +8,9 @@ from app.utils.exceptions import AuthorizationError
 
 
 def test_admin_can_create_admin_responsable_and_agent(admin_user, roles_services, monkeypatch):
-    monkeypatch.setattr(AuthService, "send_activation_email_for_user", staticmethod(lambda user: None))
+    monkeypatch.setattr(
+        AuthService, "send_activation_email_for_user", staticmethod(lambda user: None)
+    )
 
     for role_name in ["admin", "responsable", "agent"]:
         user = UserService.create_user(
@@ -24,7 +26,9 @@ def test_admin_can_create_admin_responsable_and_agent(admin_user, roles_services
 
 
 def test_responsable_can_only_create_agent(responsable_user, roles_services, monkeypatch):
-    monkeypatch.setattr(AuthService, "send_activation_email_for_user", staticmethod(lambda user: None))
+    monkeypatch.setattr(
+        AuthService, "send_activation_email_for_user", staticmethod(lambda user: None)
+    )
 
     created_agent = UserService.create_user(
         current_user=responsable_user,

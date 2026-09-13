@@ -27,9 +27,7 @@ def app():
     with application.app_context():
         database_uri = application.config["SQLALCHEMY_DATABASE_URI"]
         if "test" not in database_uri and "cadri_test_db" not in database_uri:
-            raise RuntimeError(
-                "Tests must run against the test database, not the development DB."
-            )
+            raise RuntimeError("Tests must run against the test database, not the development DB.")
 
         db.drop_all()
         db.create_all()
@@ -83,9 +81,7 @@ def roles_services(app):
             description="Roads service",
         )
 
-        db.session.add_all(
-            [admin_role, responsable_role, agent_role, green_spaces, roads]
-        )
+        db.session.add_all([admin_role, responsable_role, agent_role, green_spaces, roads])
         db.session.commit()
 
         return {

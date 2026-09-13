@@ -17,20 +17,21 @@ class EmailService:
     simple and plain-text; the frontend URL is read from configuration so the
     same code works across environments.
     """
+
     @staticmethod
     def build_activation_link(raw_token: str) -> str:
         """Build the frontend activation URL for a raw token."""
 
         frontend_url = current_app.config["FRONTEND_URL"]
         return f"{frontend_url}/activate?token={raw_token}"
-    
+
     @staticmethod
     def build_reset_link(raw_token: str) -> str:
         """Build the frontend password-reset URL for a raw token."""
 
         frontend_url = current_app.config["FRONTEND_URL"]
         return f"{frontend_url}/reset-password?token={raw_token}"
-    
+
     @staticmethod
     def send_email(to_email: str, subject: str, body: str) -> None:
         """Send a plain-text email using the configured SMTP server."""

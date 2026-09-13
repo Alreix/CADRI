@@ -1,6 +1,5 @@
 """Additional unit tests for token model edge cases."""
 
-
 from app.models.account_activation_token import AccountActivationToken
 from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken

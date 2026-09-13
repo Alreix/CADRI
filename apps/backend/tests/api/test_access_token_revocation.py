@@ -18,9 +18,7 @@ from tests.helpers.auth_helpers import auth_headers
 def _login(client, user, password="StrongPass1"):
     """Log in through the public API and return its decoded JSON payload."""
 
-    response = client.post(
-        "/auth/login", json={"email": user.email, "password": password}
-    )
+    response = client.post("/auth/login", json={"email": user.email, "password": password})
     assert response.status_code == 200
     return response.get_json()
 
@@ -49,9 +47,7 @@ def test_logout_blocklists_access_jti_and_revokes_refresh_token(client, admin_us
     assert client.post("/auth/refresh").status_code == 401
 
 
-def test_logout_is_idempotent_and_does_not_revoke_another_access_token(
-    client, admin_user
-):
+def test_logout_is_idempotent_and_does_not_revoke_another_access_token(client, admin_user):
     """Repeated logout must not violate JTI uniqueness or affect fresh JWTs."""
 
     first_login = _login(client, admin_user)
@@ -61,14 +57,10 @@ def test_logout_is_idempotent_and_does_not_revoke_another_access_token(
     assert TokenBlocklist.query.count() == 1
 
     second_login = _login(client, admin_user)
-    assert client.get(
-        "/me", headers=auth_headers(second_login["access_token"])
-    ).status_code == 200
+    assert client.get("/me", headers=auth_headers(second_login["access_token"])).status_code == 200
 
 
-def test_logout_without_access_token_still_terminates_refresh_session(
-    client, admin_user
-):
+def test_logout_without_access_token_still_terminates_refresh_session(client, admin_user):
     """A missing access JWT must not trap an otherwise revocable session."""
 
     _login(client, admin_user)
@@ -81,9 +73,7 @@ def test_logout_without_access_token_still_terminates_refresh_session(
     assert stored_token.is_revoked()
 
 
-def test_logout_with_expired_access_token_still_revokes_both_credentials(
-    app, client, admin_user
-):
+def test_logout_with_expired_access_token_still_revokes_both_credentials(app, client, admin_user):
     """Logout accepts signed expired JWT metadata while ending the refresh session."""
 
     _login(client, admin_user)
@@ -100,9 +90,7 @@ def test_logout_with_expired_access_token_still_revokes_both_credentials(
     assert client.post("/auth/refresh").status_code == 401
 
 
-def test_password_change_invalidates_old_access_and_refresh_tokens(
-    client, admin_user
-):
+def test_password_change_invalidates_old_access_and_refresh_tokens(client, admin_user):
     """Changing a password globally invalidates credentials issued beforehand."""
 
     login = _login(client, admin_user)
@@ -122,14 +110,10 @@ def test_password_change_invalidates_old_access_and_refresh_tokens(
     assert client.post("/auth/refresh").status_code == 401
 
     new_login = _login(client, admin_user, "ChangedPass1!")
-    assert client.get(
-        "/me", headers=auth_headers(new_login["access_token"])
-    ).status_code == 200
+    assert client.get("/me", headers=auth_headers(new_login["access_token"])).status_code == 200
 
 
-def test_password_reset_invalidates_old_access_and_refresh_tokens(
-    client, admin_user
-):
+def test_password_reset_invalidates_old_access_and_refresh_tokens(client, admin_user):
     """A successful one-time reset globally invalidates existing sessions."""
 
     login = _login(client, admin_user)
@@ -182,9 +166,7 @@ def test_deleted_user_access_token_is_rejected(client, admin_user, admin_token):
     assert client.get("/me", headers=auth_headers(admin_token)).status_code == 401
 
 
-def test_password_change_rolls_back_every_security_mutation(
-    monkeypatch, admin_user
-):
+def test_password_change_rolls_back_every_security_mutation(monkeypatch, admin_user):
     """A late password-change failure must preserve all persisted prior state."""
 
     login = AuthService.login(admin_user.email, "StrongPass1")
@@ -219,9 +201,7 @@ def test_password_change_rolls_back_every_security_mutation(
     assert login["refresh_token"]
 
 
-def test_password_reset_rolls_back_every_security_mutation(
-    monkeypatch, admin_user
-):
+def test_password_reset_rolls_back_every_security_mutation(monkeypatch, admin_user):
     """A late reset failure must leave password, token, and session reusable."""
 
     login = AuthService.login(admin_user.email, "StrongPass1")
@@ -262,9 +242,7 @@ def test_password_reset_rolls_back_every_security_mutation(
     assert login["refresh_token"]
 
 
-def test_logout_rolls_back_both_revocations_after_late_failure(
-    monkeypatch, client, admin_user
-):
+def test_logout_rolls_back_both_revocations_after_late_failure(monkeypatch, client, admin_user):
     """A late logout failure must persist neither credential revocation."""
 
     login = _login(client, admin_user)
@@ -304,9 +282,7 @@ def test_logout_rolls_back_both_revocations_after_late_failure(
     assert RefreshTokenRepository.get_by_id(refresh_id).is_revoked()
 
 
-def test_password_reset_rolls_back_when_final_commit_fails(
-    monkeypatch, admin_user
-):
+def test_password_reset_rolls_back_when_final_commit_fails(monkeypatch, admin_user):
     """A final commit failure must roll back every staged reset mutation."""
 
     AuthService.login(admin_user.email, "StrongPass1")
@@ -342,23 +318,17 @@ def test_password_reset_rolls_back_when_final_commit_fails(
     assert not persisted_refresh.is_revoked()
 
 
-def test_admin_can_delete_user_with_blocklisted_access_token(
-    client, admin_token, user_factory
-):
+def test_admin_can_delete_user_with_blocklisted_access_token(client, admin_token, user_factory):
     """Deleting a user removes existing blocklist rows without ORM errors."""
 
     target_user = user_factory(email="blocked-delete@cadri.test")
     login = _login(client, target_user)
     access_token = login["access_token"]
     jti = decode_token(access_token)["jti"]
-    assert client.post(
-        "/auth/logout", headers=auth_headers(access_token)
-    ).status_code == 200
+    assert client.post("/auth/logout", headers=auth_headers(access_token)).status_code == 200
     assert TokenBlocklist.query.filter_by(jti=jti).one_or_none() is not None
 
-    response = client.delete(
-        f"/users/{target_user.id}", headers=auth_headers(admin_token)
-    )
+    response = client.delete(f"/users/{target_user.id}", headers=auth_headers(admin_token))
 
     assert response.status_code == 200
     assert UserRepository.get_by_id(target_user.id) is None

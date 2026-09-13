@@ -11,9 +11,7 @@ class MissionAssignment(BaseModel):
 
     __tablename__ = "mission_assignments"
 
-    __table_args__ = (
-        db.UniqueConstraint("mission_id", "user_id", name="uq_mission_assignment"),
-    )
+    __table_args__ = (db.UniqueConstraint("mission_id", "user_id", name="uq_mission_assignment"),)
 
     mission_id = db.Column(
         db.ForeignKey("missions.id", ondelete="CASCADE"),

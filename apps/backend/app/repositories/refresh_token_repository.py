@@ -27,20 +27,14 @@ class RefreshTokenRepository:
     def get_by_token_hash_fresh(token_hash):
         """Re-read a refresh token from the database after its user lock is held."""
 
-        return (
-            RefreshToken.query
-            .populate_existing()
-            .filter_by(token_hash=token_hash)
-            .first()
-        )
+        return RefreshToken.query.populate_existing().filter_by(token_hash=token_hash).first()
 
     @staticmethod
     def get_latest_for_user(user_id):
         """Return the most recently created refresh token for a user."""
 
         return (
-            RefreshToken.query
-            .filter_by(user_id=user_id)
+            RefreshToken.query.filter_by(user_id=user_id)
             .order_by(RefreshToken.created_at.desc())
             .first()
         )

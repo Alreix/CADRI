@@ -69,9 +69,7 @@ class AuthService:
                 raise AuthenticationError("Invalid credentials.")
 
             if not user.is_active:
-                raise AuthenticationError(
-                    "Account is not activated.", status_code=403
-                )
+                raise AuthenticationError("Account is not activated.", status_code=403)
 
             if not user.password_hash:
                 raise AuthenticationError(
@@ -124,9 +122,7 @@ class AuthService:
         try:
             token_hash = hash_token(raw_refresh_token) if raw_refresh_token else None
             initial_refresh_token = (
-                RefreshTokenRepository.get_by_token_hash(token_hash)
-                if token_hash
-                else None
+                RefreshTokenRepository.get_by_token_hash(token_hash) if token_hash else None
             )
 
             user_ids = set()
@@ -258,9 +254,7 @@ class AuthService:
         user = UserRepository.get_by_email(email)
 
         if not user or not user.is_active:
-            return {
-                "message": "If the account exists, a reset email has been sent"
-            }
+            return {"message": "If the account exists, a reset email has been sent"}
 
         PasswordResetTokenRepository.invalidate_unused_tokens_for_user(user.id)
 
@@ -338,7 +332,6 @@ class AuthService:
             raise
 
         return {"message": "Password changed successfully"}
-
 
     @staticmethod
     def send_activation_email_for_user(user):
