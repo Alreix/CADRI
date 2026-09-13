@@ -6,6 +6,7 @@ import Sidebar from "./Sidebar";
 import { AuthContext } from "../../contexts/AuthContext";
 import { Menu, X, Home, User, ClipboardList, UserPlus, Users, LogOut } from "lucide-react";
 import logo from "../../assets/logo.png";
+import { useModalAccessibility } from "../../hooks/useModalAccessibility";
 import "../../styles/Layout.css";
 
 // Navigation links visible to every authenticated user.
@@ -27,9 +28,11 @@ const admin_items = [
 
 // Small confirmation modal shown before actually logging the user out.
 function LogoutModal({ onConfirm, onCancel }) {
+  const containerRef = useModalAccessibility(onCancel);
+
   return (
     <div className="logout-modal-overlay" role="dialog" aria-modal="true">
-      <div className="logout-modal">
+      <div className="logout-modal" ref={containerRef} tabIndex={-1}>
         <div className="logout-modal-header">
           <span className="logout-modal-title">Déconnexion</span>
           <button className="logout-modal-close" onClick={onCancel} aria-label="Fermer">
@@ -66,6 +69,8 @@ function Layout({ children }) {
 
   return (
     <div className="intranet-shell">
+
+      <a href="#main-content" className="skip-link">Aller au contenu principal</a>
 
       {logoutOpen && (
         <LogoutModal
@@ -148,7 +153,7 @@ function Layout({ children }) {
         onLogout={() => setLogoutOpen(true)}
       />
 
-      <main className="intranet-main">
+      <main className="intranet-main" id="main-content">
         {/* Actual page content is rendered here, passed down from the route element. */}
         {children}
       </main>

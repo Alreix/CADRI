@@ -19,6 +19,7 @@ import {
   addMissionRemark,
 } from "../api/missionsApi";
 import { getAssignableUsers } from "../api/usersApi";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/MissionFormPage.css";
 import "../styles/ConfirmModals.css";
 
@@ -76,6 +77,8 @@ function MissionFormPage({ mode = "create" }) {
     create: "Créer une mission",
     edit: "Modifier la mission",
   };
+
+  useDocumentTitle(titles[mode]);
 
   // Loads reference data (services, assignable users) and, in edit mode, the
   // mission itself. Assignable users are only fetched for managers since
@@ -260,7 +263,13 @@ function MissionFormPage({ mode = "create" }) {
 
   const canAddRemark = canAgentAddRemark || canAssignedResponsableAddRemark;
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <Layout>
+        <p role="status">Chargement…</p>
+      </Layout>
+    );
+  }
 
   // Splits the pool of assignable users into "already assigned" (shown in the
   // table with a remove button) and "not yet assigned" (shown in the add-users panel).
@@ -299,7 +308,7 @@ function MissionFormPage({ mode = "create" }) {
         )}
 
         <div className="mission-form-card">
-          <p className="mission-form-title">{titles[mode]}</p>
+          <h1 className="mission-form-title">{titles[mode]}</h1>
 
           <form onSubmit={handleSave} noValidate>
             {/* Titre */}
@@ -521,10 +530,10 @@ function MissionFormPage({ mode = "create" }) {
                     <table className="mission-users-table">
                       <thead>
                         <tr>
-                          <th>Nom</th>
-                          <th>Prénom</th>
-                          <th>Service</th>
-                          <th>Action</th>
+                          <th scope="col">Nom</th>
+                          <th scope="col">Prénom</th>
+                          <th scope="col">Service</th>
+                          <th scope="col">Action</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -565,10 +574,10 @@ function MissionFormPage({ mode = "create" }) {
                     <table className="mission-users-table">
                       <thead>
                         <tr>
-                          <th>Nom</th>
-                          <th>Prénom</th>
-                          <th>Service</th>
-                          <th>Assigner</th>
+                          <th scope="col">Nom</th>
+                          <th scope="col">Prénom</th>
+                          <th scope="col">Service</th>
+                          <th scope="col">Assigner</th>
                         </tr>
                       </thead>
                       <tbody>

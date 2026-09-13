@@ -9,12 +9,14 @@ import { AuthContext } from "../contexts/AuthContext";
 import { getProfile, updateProfile } from "../api/profileApi";
 import { changePassword } from "../api/authApi";
 import { useFormState } from "../hooks/useFormState";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordInput from "../components/common/PasswordInput";
 import "../styles/ProfilePage.css";
 import "../styles/ConfirmModals.css";
 
 function ProfilePage() {
+  useDocumentTitle("Profil");
   const { user, logout } = useContext(AuthContext);
 
   const [profile, setProfile] = useState(null);
@@ -104,7 +106,13 @@ function ProfilePage() {
     setEditing(false);
   };
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <Layout>
+        <p role="status">Chargement…</p>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

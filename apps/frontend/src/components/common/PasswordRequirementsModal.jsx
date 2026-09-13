@@ -2,6 +2,7 @@
 // Purely presentational: it does not validate anything itself, the actual
 // validation rules live on the backend.
 import { X, Check } from "lucide-react";
+import { useModalAccessibility } from "../../hooks/useModalAccessibility";
 
 const PASSWORD_REQUIREMENTS = [
   "Au moins 8 caractères",
@@ -12,9 +13,11 @@ const PASSWORD_REQUIREMENTS = [
 ];
 
 function PasswordRequirementsModal({ onClose }) {
+  const containerRef = useModalAccessibility(onClose);
+
   return (
     <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
+      <div className="confirm-modal" ref={containerRef} tabIndex={-1}>
         <div className="confirm-modal-header">
           <span className="confirm-modal-title">Exigences du mot de passe</span>
           <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">

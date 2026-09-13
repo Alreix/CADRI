@@ -6,15 +6,19 @@ import AuthLayout from "../components/layout/AuthLayout";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordFieldWithHint from "../components/common/PasswordFieldWithHint";
 import { usePasswordConfirmation } from "../hooks/usePasswordConfirmation";
+import { useModalAccessibility } from "../hooks/useModalAccessibility";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { activateAccount } from "../api/authApi";
 import { X } from "lucide-react";
 import "../styles/AuthLayout.css";
 
 // One-time welcome modal shown automatically when the page first loads.
 function WelcomeModal({ onClose }) {
+  const containerRef = useModalAccessibility(onClose);
+
   return (
     <div className="auth-modal-overlay" role="dialog" aria-modal="true">
-      <div className="auth-modal">
+      <div className="auth-modal" ref={containerRef} tabIndex={-1}>
         <div className="auth-modal-header">
           <span className="auth-modal-title">Bienvenue sur CADRI !</span>
           <button className="auth-modal-close" onClick={onClose} aria-label="Fermer">
@@ -36,6 +40,7 @@ function WelcomeModal({ onClose }) {
 }
 
 function ActivateAccountPage() {
+  useDocumentTitle("Activer le compte");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -106,7 +111,7 @@ function ActivateAccountPage() {
           />
 
           {error && (
-            <p style={{ color: "var(--auth-required)", fontSize: "0.875rem", marginBottom: "12px" }}>
+            <p role="alert" style={{ color: "var(--auth-required)", fontSize: "0.875rem", marginBottom: "12px" }}>
               {error}
             </p>
           )}

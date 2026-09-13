@@ -7,6 +7,7 @@ import Layout from "../components/layout/Layout";
 import AlertModal from "../components/common/AlertModal";
 import { AuthContext } from "../contexts/AuthContext";
 import { formatDateFR } from "../api/missionsApi";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/MissionDetailPage.css";
 import "../styles/ConfirmModals.css";
 import {
@@ -29,6 +30,8 @@ function MissionDetailPage() {
   const [validating, setValidating] = useState(false);
   const [savingAction, setSavingAction] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
+
+  useDocumentTitle(mission?.title || "Détail de la mission");
 
   // Load the mission whenever the :id route param changes.
   useEffect(() => {
@@ -87,7 +90,13 @@ function MissionDetailPage() {
     }
   };
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <Layout>
+        <p role="status">Chargement…</p>
+      </Layout>
+    );
+  }
   if (!mission) return null;
 
   // Derived permission flags: each action button below is shown only if the

@@ -32,7 +32,7 @@
   --color-success: #057a55;
   /* Success green */
   --color-success-light: #def7ec;
-  --color-warning: #c27803;
+  --color-warning: #8f5802;
   /* Warning orange */
   --color-warning-light: #fdf6b2;
 
@@ -41,7 +41,7 @@
   /* Main text (near black) */
   --color-text-secondary: #52606d;
   /* Secondary text (medium grey) */
-  --color-text-muted: #9aa5b4;
+  --color-text-muted: #5f6f82;
   /* Disabled / light text */
   --color-bg: #e9eef2;
   /* Page background */
@@ -126,6 +126,20 @@
   /* Width includes padding and border */
   margin: 0;
   padding: 0;
+}
+
+/* Visually hidden but still announced by screen readers (e.g. loading status
+   text that would be redundant/noisy on screen for sighted users). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 html {

@@ -7,10 +7,12 @@ import Modal from "../components/common/Modal";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordFieldWithHint from "../components/common/PasswordFieldWithHint";
 import { usePasswordConfirmation } from "../hooks/usePasswordConfirmation";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { resetPassword } from "../api/authApi";
 import "../styles/AuthLayout.css";
 
 function ResetPasswordPage() {
+  useDocumentTitle("Réinitialiser le mot de passe");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 

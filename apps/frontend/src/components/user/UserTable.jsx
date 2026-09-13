@@ -11,11 +11,11 @@ function UserTable({ users }) {
       <table className="users-table">
         <thead>
           <tr>
-            <th>Prénom</th>
-            <th>Nom</th>
-            <th>Service</th>
-            <th>Rôle</th>
-            <th>Action</th>
+            <th scope="col">Prénom</th>
+            <th scope="col">Nom</th>
+            <th scope="col">Service</th>
+            <th scope="col">Rôle</th>
+            <th scope="col">Action</th>
           </tr>
         </thead>
         <tbody>
