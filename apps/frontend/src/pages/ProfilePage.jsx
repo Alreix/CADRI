@@ -18,6 +18,7 @@ import "../styles/ConfirmModals.css";
 
 function ProfilePage() {
   useDocumentTitle("Profil");
+  const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
 
   const [profile, setProfile] = useState(null);
@@ -138,6 +139,18 @@ function ProfilePage() {
   };
 
   if (!profile) {
+    if (profileLoadError) {
+      // A dead session (401) is already handled globally (AuthContext
+      // redirects to /login); this covers other failures (network, 500),
+      // so the page shows something actionable instead of a stuck spinner.
+      return (
+        <Layout>
+          <p role="status">
+            Impossible de charger votre profil pour le moment. Veuillez réessayer plus tard.
+          </p>
+        </Layout>
+      );
+    }
     return (
       <Layout>
         <p role="status">Chargement…</p>
