@@ -1,0 +1,6 @@
+# Production variant of docker-compose.yml.
+# Expected to build/reference the *.prod Dockerfiles (not the dev ones),
+# avoid bind-mounting the source code (the image should be self-contained),
+# add `restart: always` and `healthcheck:` blocks per service, and include
+# the reverse proxy service instead of exposing backend/frontend ports
+# directly to the outside world.

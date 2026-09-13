@@ -1,0 +1,4 @@
+# Continuous integration for the frontend.
+# Expected to trigger on push/PR, install apps/frontend dependencies, run
+# ESLint + Prettier --check, run the Vitest suite, and run `npm run build`
+# to catch build-time errors before they reach develop/main.

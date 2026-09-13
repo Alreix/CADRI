@@ -1,0 +1,6 @@
+# Production image for the backend.
+# Expected to be a multi-stage build that installs dependencies in a builder
+# stage, then copies only the app + installed packages into a slim final
+# stage. Must run the app with a production WSGI server (e.g. Gunicorn),
+# never the Flask development server used in the dev Dockerfile. Should also
+# run as a non-root user.

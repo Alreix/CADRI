@@ -1,0 +1,3 @@
+# Files/directories that must never be copied into the backend Docker image:
+# local virtualenvs, __pycache__, test artifacts, .env files with real
+# secrets, and anything else that only makes sense on a developer machine.

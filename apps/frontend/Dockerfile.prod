@@ -1,0 +1,5 @@
+# Production image for the frontend.
+# Expected to be a multi-stage build: one stage runs `npm run build` to
+# produce the static Vite output, a second (much smaller) stage serves that
+# output with a static file server (e.g. nginx). No Node.js runtime should
+# remain in the final image.

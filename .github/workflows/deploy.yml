@@ -1,0 +1,5 @@
+# Continuous deployment.
+# Expected to trigger on merge to main (after backend-ci/frontend-ci have
+# passed), build the *.prod images, push them to a registry, then trigger
+# scripts/deploy.sh on the target server (e.g. over SSH) to roll out the new
+# version.

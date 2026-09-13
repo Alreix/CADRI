@@ -1,0 +1,5 @@
+# Continuous integration for the backend.
+# Expected to trigger on push/PR, install apps/backend/requirements.txt (+
+# requirements-dev.txt), run `ruff check`/`ruff format --check`, then run the
+# pytest suite against a throwaway Postgres service, so broken code never
+# reaches develop/main.
