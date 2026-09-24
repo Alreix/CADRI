@@ -25,8 +25,12 @@ BACKUP_FILE="$BACKUP_DIR/cadri_db_${TIMESTAMP}.sql.gz"  # full path of the backu
 
 mkdir -p "$BACKUP_DIR"  # create the backup directory if it doesn't already exist
 
-echo "==> Dumping database to $BACKUP_FILE"                                                                      # progress message
-docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > "$BACKUP_FILE"  # dump the DB inside the "db" container, compress it, save it
+echo "==> Dumping database to $BACKUP_FILE"  # progress message
+# --clean adds DROP statements and --if-exists silences "does not exist"
+# errors for objects that aren't there yet, so scripts/restore_db.sh can
+# replay this dump directly onto a database that already has data in it,
+# instead of failing on "relation already exists".
+docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "$POSTGRES_USER" --clean --if-exists "$POSTGRES_DB" | gzip > "$BACKUP_FILE"  # dump the DB inside the "db" container, compress it, save it
 
 echo "==> Removing backups older than $RETENTION_DAYS days"                       # progress message
 find "$BACKUP_DIR" -name 'cadri_db_*.sql.gz' -mtime "+${RETENTION_DAYS}" -delete  # delete backup files past the retention window
