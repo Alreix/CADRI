@@ -23,7 +23,12 @@ from tests.integration.test_mission_service import create_service_mission
 
 @pytest.mark.parametrize("first_action", ["complete", "remark"])
 def test_completion_and_remark_serialize_with_fresh_state(
-    app, admin_user, agent_user, roles_services, monkeypatch, first_action,
+    app,
+    admin_user,
+    agent_user,
+    roles_services,
+    monkeypatch,
+    first_action,
 ):
     """Make the loser wait and reject using refreshed identity-map data."""
     assert db.engine.dialect.name == "postgresql"
@@ -48,9 +53,7 @@ def test_completion_and_remark_serialize_with_fresh_state(
             assert release_first.wait(timeout=15), "First transaction was not released"
         return locked
 
-    monkeypatch.setattr(
-        MissionRepository, "get_by_id_for_update", staticmethod(hold_first_lock)
-    )
+    monkeypatch.setattr(MissionRepository, "get_by_id_for_update", staticmethod(hold_first_lock))
 
     def run_action(action, first):
         """Use an independent context and retain a stale ORM reference."""
@@ -107,7 +110,8 @@ def test_completion_and_remark_serialize_with_fresh_state(
 
     results = {first: (status, value) for first, status, value in list(outcomes.queue)}
     expected = (
-        MISSION_STATUS_COMPLETED if first_action == "complete"
+        MISSION_STATUS_COMPLETED
+        if first_action == "complete"
         else MISSION_STATUS_REMARK_PENDING_VALIDATION
     )
     assert results[True] == ("success", expected)

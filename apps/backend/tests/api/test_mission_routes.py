@@ -5,10 +5,10 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.utils.constants import (
-    MISSION_STATUS_TO_DO,
+    MISSION_STATUS_COMPLETED,
     MISSION_STATUS_IN_PROGRESS,
     MISSION_STATUS_REMARK_PENDING_VALIDATION,
-    MISSION_STATUS_COMPLETED,
+    MISSION_STATUS_TO_DO,
 )
 
 
@@ -95,7 +95,9 @@ def test_admin_can_create_mission(client, admin_access_token, roles_services, ag
     assert len(data["mission"]["assignments"]) == 1
 
 
-def test_responsable_can_create_mission(client, responsable_access_token, roles_services, agent_user):
+def test_responsable_can_create_mission(
+    client, responsable_access_token, roles_services, agent_user
+):
     payload = mission_payload(
         service_ids=[str(roles_services["roads_id"])],
         assigned_user_ids=[str(agent_user.id)],
@@ -437,13 +439,22 @@ def test_admin_can_delete_mission(
 
 @pytest.mark.parametrize(
     "status",
-    [MISSION_STATUS_TO_DO, MISSION_STATUS_IN_PROGRESS,
-     MISSION_STATUS_REMARK_PENDING_VALIDATION, MISSION_STATUS_COMPLETED],
+    [
+        MISSION_STATUS_TO_DO,
+        MISSION_STATUS_IN_PROGRESS,
+        MISSION_STATUS_REMARK_PENDING_VALIDATION,
+        MISSION_STATUS_COMPLETED,
+    ],
 )
 @pytest.mark.parametrize("action", ["actual-duration", "remark", "complete"])
 def test_tracking_actions_enforce_current_status(
-    client, admin_access_token, agent_access_token, roles_services, agent_user,
-    status, action,
+    client,
+    admin_access_token,
+    agent_access_token,
+    roles_services,
+    agent_user,
+    status,
+    action,
 ):
     """Reject invalid direct API actions without changing persisted mission data."""
     mission = create_mission(client, admin_access_token, roles_services, agent_user)
@@ -464,9 +475,7 @@ def test_tracking_actions_enforce_current_status(
     before = client.get(path, headers=headers).get_json()
     assert before["status"] == status
     if action == "actual-duration":
-        response = client.patch(
-            f"{path}/{action}", headers=headers, json={"actual_duration": 3}
-        )
+        response = client.patch(f"{path}/{action}", headers=headers, json={"actual_duration": 3})
         allowed = status in (MISSION_STATUS_IN_PROGRESS, MISSION_STATUS_REMARK_PENDING_VALIDATION)
     elif action == "remark":
         response = client.post(f"{path}/{action}", headers=headers, json={"remark": "New remark"})
@@ -493,7 +502,11 @@ def test_tracking_actions_enforce_current_status(
 
 
 def test_started_mission_requires_duration_before_completion(
-    client, admin_access_token, agent_access_token, roles_services, agent_user,
+    client,
+    admin_access_token,
+    agent_access_token,
+    roles_services,
+    agent_user,
 ):
     """Keep the existing missing-duration error for a started mission."""
     mission = create_mission(client, admin_access_token, roles_services, agent_user)
@@ -507,8 +520,13 @@ def test_started_mission_requires_duration_before_completion(
 
 @pytest.mark.parametrize("validator_role", ["admin", "responsable"])
 def test_remark_can_receive_duration_then_manager_validation(
-    client, admin_access_token, responsable_access_token, agent_access_token,
-    roles_services, agent_user, validator_role,
+    client,
+    admin_access_token,
+    responsable_access_token,
+    agent_access_token,
+    roles_services,
+    agent_user,
+    validator_role,
 ):
     """Allow duration entry and correction while a remark awaits manager validation."""
     mission = create_mission(client, admin_access_token, roles_services, agent_user)
@@ -543,12 +561,20 @@ def test_remark_can_receive_duration_then_manager_validation(
 
 @pytest.mark.parametrize("action", ["status", "actual-duration", "remark", "complete"])
 def test_unassigned_agent_cannot_use_workflow_actions(
-    client, admin_access_token, agent_access_token, roles_services,
-    agent_user, responsable_user, action,
+    client,
+    admin_access_token,
+    agent_access_token,
+    roles_services,
+    agent_user,
+    responsable_user,
+    action,
 ):
     """Preserve assignment checks before evaluating mission state."""
     mission = create_mission(
-        client, admin_access_token, roles_services, agent_user,
+        client,
+        admin_access_token,
+        roles_services,
+        agent_user,
         assigned_user_ids=[str(responsable_user.id)],
     )
     path = f"/missions/{mission['id']}"
@@ -559,19 +585,26 @@ def test_unassigned_agent_cannot_use_workflow_actions(
         "remark": {"remark": "Unauthorized"},
     }
     method = "PATCH" if action in ("status", "actual-duration") else "POST"
-    response = client.open(f"{path}/{action}", method=method, headers=headers, json=payloads.get(action))
+    response = client.open(
+        f"{path}/{action}", method=method, headers=headers, json=payloads.get(action)
+    )
     assert response.status_code == 403
     assert client.get(path, headers=headers).status_code == 403
 
 
 def test_restarting_mission_keeps_existing_validation_error(
-    client, admin_access_token, agent_access_token, roles_services, agent_user,
+    client,
+    admin_access_token,
+    agent_access_token,
+    roles_services,
+    agent_user,
 ):
     """Preserve the public 400 error for an invalid repeated start."""
     mission = create_mission(client, admin_access_token, roles_services, agent_user)
     start_mission(client, agent_access_token, mission)
     response = client.patch(
-        f"/missions/{mission['id']}/status", headers=auth_headers(agent_access_token),
+        f"/missions/{mission['id']}/status",
+        headers=auth_headers(agent_access_token),
         json={"status": MISSION_STATUS_IN_PROGRESS},
     )
     assert response.status_code == 400

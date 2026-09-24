@@ -35,13 +35,12 @@ class MissionService:
         """Ensure the current user can perform field-level mission actions."""
         if current_user.role.name not in (AGENT_ROLE, RESPONSABLE_ROLE, ADMIN_ROLE):
             raise AuthorizationError("You are not allowed to access this mission action.")
-        
+
     @staticmethod
     def _is_user_assigned_to_mission(current_user, mission: Mission) -> bool:
         """Return whether the current user is assigned to the mission."""
         return any(
-            str(assignment.user_id) == str(current_user.id)
-            for assignment in mission.assignments
+            str(assignment.user_id) == str(current_user.id) for assignment in mission.assignments
         )
 
     @staticmethod
@@ -76,9 +75,25 @@ class MissionService:
 
     @staticmethod
     def _validate_dates(start_date, end_date) -> None:
-        """Ensure the mission end date is not before the start date."""
-        if end_date < start_date:
+        """Require compatible timezone information and an ordered mission date range."""
+        try:
+            end_before_start = end_date < start_date
+        except TypeError as exc:
+            raise ValidationError(
+                "Start date and end date must use compatible timezone information."
+            ) from exc
+        if end_before_start:
             raise ValidationError("End date must be greater than or equal to start date.")
+
+    @staticmethod
+    def _validate_pagination(page: int, per_page: int) -> None:
+        """Validate mission pagination bounds before querying the repository."""
+        if page < 1:
+            raise ValidationError("Page must be greater than or equal to 1.")
+        if per_page < 1:
+            raise ValidationError("Per page must be greater than or equal to 1.")
+        if per_page > 100:
+            raise ValidationError("Per page must be less than or equal to 100.")
 
     @staticmethod
     def _validate_services(service_ids: list[str]) -> None:
@@ -149,6 +164,10 @@ class MissionService:
     @staticmethod
     def list_missions(current_user, **filters) -> tuple[list[Mission], int]:
         """Return missions with filters, search, and pagination."""
+        page = filters.get("page", 1)
+        per_page = filters.get("per_page", 10)
+        MissionService._validate_pagination(page, per_page)
+
         assigned_to_user_id = None
         if current_user.role.name == AGENT_ROLE:
             assigned_to_user_id = str(current_user.id)
@@ -164,8 +183,8 @@ class MissionService:
             has_remark=filters.get("has_remark"),
             start_date=filters.get("start_date"),
             end_date=filters.get("end_date"),
-            page=filters.get("page", 1),
-            per_page=filters.get("per_page", 10),
+            page=page,
+            per_page=per_page,
         )
 
     @staticmethod
@@ -264,9 +283,7 @@ class MissionService:
     def add_remark(current_user, mission_id, remark: str) -> Mission:
         """Add an assigned agent or responsable remark and apply business effects."""
         if current_user.role.name not in (AGENT_ROLE, RESPONSABLE_ROLE):
-            raise AuthorizationError(
-                "Only an assigned agent or responsable can add a remark."
-            )
+            raise AuthorizationError("Only an assigned agent or responsable can add a remark.")
 
         mission = MissionService._get_mission_for_workflow(current_user, mission_id)
 
@@ -284,7 +301,7 @@ class MissionService:
         mission.update_status(MISSION_STATUS_REMARK_PENDING_VALIDATION)
         MissionRepository.update()
         return mission
-    
+
     @staticmethod
     def _validate_estimated_duration(estimated_duration) -> None:
         """Ensure the planned mission duration is at least one hour."""

@@ -19,4 +19,3 @@ class MissionServiceLinkRepository:
         """Remove all services linked to a mission."""
         MissionServiceLink.query.filter_by(mission_id=mission_id).delete()
         db.session.flush()
-

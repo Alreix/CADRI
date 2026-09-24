@@ -28,12 +28,11 @@ class AccountActivationTokenRepository:
         """Return the most recently created activation token for a user."""
 
         return (
-            AccountActivationToken.query
-            .filter_by(user_id=user_id)
+            AccountActivationToken.query.filter_by(user_id=user_id)
             .order_by(AccountActivationToken.created_at.desc())
             .first()
         )
-    
+
     @staticmethod
     def invalidate_unused_tokens_for_user(user_id):
         """Invalidate unused tokens for user"""

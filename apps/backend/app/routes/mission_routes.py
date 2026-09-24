@@ -1,7 +1,5 @@
 """RESTX routes for mission operations."""
 
-from datetime import datetime
-
 from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace, Resource, fields
@@ -9,6 +7,7 @@ from flask_restx import Namespace, Resource, fields
 from app.facades.mission_facade import MissionFacade
 from app.repositories.user_repository import UserRepository
 from app.utils.exceptions import AppError, NotFoundError, ValidationError
+from app.utils.validators import parse_integer, parse_iso_datetime
 
 missions_ns = Namespace("missions", description="Mission operations")
 
@@ -81,8 +80,8 @@ def parse_mission_payload(payload: dict) -> dict:
         "description": payload["description"],
         "planned_agents_count": payload["planned_agents_count"],
         "estimated_duration": payload["estimated_duration"],
-        "start_date": datetime.fromisoformat(payload["start_date"]),
-        "end_date": datetime.fromisoformat(payload["end_date"]),
+        "start_date": parse_iso_datetime(payload["start_date"], "start_date"),
+        "end_date": parse_iso_datetime(payload["end_date"], "end_date"),
         "priority": payload["priority"],
         "required_equipment": payload.get("required_equipment"),
         "signage_required": payload.get("signage_required", False),
@@ -110,17 +109,19 @@ class MissionCollectionResource(Resource):
         try:
             current_user = get_current_user()
 
-            page = int(request.args.get("page", 1))
-            per_page = int(request.args.get("per_page", 10))
+            page = parse_integer(request.args.get("page", 1), "page")
+            per_page = parse_integer(request.args.get("per_page", 10), "per_page")
 
             start_date_raw = request.args.get("start_date")
             end_date_raw = request.args.get("end_date")
 
             start_date = (
-                datetime.fromisoformat(start_date_raw) if start_date_raw else None
+                parse_iso_datetime(start_date_raw, "start_date")
+                if start_date_raw is not None
+                else None
             )
             end_date = (
-                datetime.fromisoformat(end_date_raw) if end_date_raw else None
+                parse_iso_datetime(end_date_raw, "end_date") if end_date_raw is not None else None
             )
 
             has_remark_raw = request.args.get("has_remark")
@@ -175,7 +176,7 @@ class MissionCollectionResource(Resource):
             return {
                 "message": "Mission created successfully",
                 "mission": mission.to_dict(include_relations=True),
-                }, 201
+            }, 201
 
         except AppError as error:
             return error.to_dict(), error.status_code
@@ -338,9 +339,7 @@ class MissionCompleteResource(Resource):
 
             return {
                 "message": "Mission completed successfully",
-                "completed_at": mission.completed_at.isoformat()
-                if mission.completed_at
-                else None,
+                "completed_at": mission.completed_at.isoformat() if mission.completed_at else None,
             }, 200
 
         except AppError as error:

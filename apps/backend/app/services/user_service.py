@@ -19,7 +19,6 @@ from app.services.auth_service import AuthService
 from app.utils.constants import (
     ADMIN_ALLOWED_CREATION_ROLES,
     ADMIN_ROLE,
-    AGENT_ROLE,
     ASSIGNABLE_ROLE_NAMES,
     RESPONSABLE_ALLOWED_CREATION_ROLES,
     RESPONSABLE_ROLE,
@@ -100,7 +99,7 @@ class UserService:
         """Ensure only admins can list all users."""
         if current_user.role.name != ADMIN_ROLE:
             raise AuthorizationError("Only admin can list users.")
-        
+
     @staticmethod
     def _check_user_details_permissions(current_user, user_id):
         """Ensure users can only access allowed user details."""
