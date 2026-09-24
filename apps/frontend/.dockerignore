@@ -1,3 +1,17 @@
-# Files/directories that must never be copied into the frontend Docker image:
-# node_modules, the dev build output, .env files with real secrets, and
-# anything else that only makes sense on a developer machine.
+node_modules
+dist
+coverage
+
+.env
+.env.*
+!.env.example
+
+tests
+*.test.js
+*.test.jsx
+
+.git
+.gitignore
+README.md
+.vscode
+.DS_Store

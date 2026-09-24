@@ -1,5 +1,51 @@
-# Production image for the frontend.
-# Expected to be a multi-stage build: one stage runs `npm run build` to
-# produce the static Vite output, a second (much smaller) stage serves that
-# output with a static file server (e.g. nginx). No Node.js runtime should
-# remain in the final image.
+# syntax=docker/dockerfile:1
+
+# ---- Build stage: compile the Vite app into static files ----
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+# Vite bakes every VITE_* variable into the bundle at build time (unlike the
+# backend, which reads its config from the environment at container start),
+# so the API URL has to be supplied as a build argument here.
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
+RUN npm run build
+
+# ---- Serve stage: a tiny image with only nginx + the built files ----
+FROM nginx:1.27-alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+
+RUN <<'EOF' cat > /etc/nginx/conf.d/default.conf
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Hashed filenames (index-<hash>.js) change on every build, so these
+    # can be cached aggressively without risking a stale asset.
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # React Router handles routing client-side: unknown paths (e.g. a
+    # refresh on /missions/1) must fall back to index.html instead of
+    # getting a 404 from nginx.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+EOF
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
