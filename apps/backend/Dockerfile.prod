@@ -1,6 +1,111 @@
-# Production image for the backend.
-# Expected to be a multi-stage build that installs dependencies in a builder
-# stage, then copies only the app + installed packages into a slim final
-# stage. Must run the app with a production WSGI server (e.g. Gunicorn),
-# never the Flask development server used in the dev Dockerfile. Should also
-# run as a non-root user.
+# =============================================================================
+# CADRI backend - Production Docker image
+# =============================================================================
+#
+# This image runs the Flask backend in a production-oriented environment.
+#
+# Main differences from the development image:
+# - dependencies are prepared in a separate build stage;
+# - Gunicorn replaces Flask's development server;
+# - the application runs as a non-root user;
+# - local development files are excluded through .dockerignore.
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Stage 1 - Build Python environment
+# -----------------------------------------------------------------------------
+
+FROM python:3.12-slim AS builder
+
+# Create an isolated Python environment that can be copied into the final image.
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+
+RUN python -m venv "${VIRTUAL_ENV}"
+
+WORKDIR /build
+
+# Copy the dependency file first so Docker can reuse this layer when only
+# application source code changes.
+COPY requirements.txt .
+
+# Install CADRI dependencies and the production WSGI server.
+#
+# Gunicorn is installed explicitly here because it is currently not declared
+# in CADRI's requirements.txt.
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt gunicorn==23.0.0
+
+
+# -----------------------------------------------------------------------------
+# Stage 2 - Production runtime
+# -----------------------------------------------------------------------------
+
+FROM python:3.12-slim AS runtime
+
+# Prevent Python from generating .pyc files inside the container.
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Send Python output directly to Docker logs.
+ENV PYTHONUNBUFFERED=1
+
+# Make the copied virtual environment available in the runtime image.
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+
+# Ensure CADRI loads ProductionConfig.
+ENV FLASK_ENV=production
+
+WORKDIR /app
+
+
+# -----------------------------------------------------------------------------
+# Create a dedicated non-root user
+# -----------------------------------------------------------------------------
+
+RUN addgroup --system cadri \
+    && adduser --system --ingroup cadri cadri
+
+
+# -----------------------------------------------------------------------------
+# Copy Python dependencies from the build stage
+# -----------------------------------------------------------------------------
+
+COPY --from=builder /opt/venv /opt/venv
+
+
+# -----------------------------------------------------------------------------
+# Copy CADRI backend source code
+# -----------------------------------------------------------------------------
+
+COPY --chown=cadri:cadri . .
+
+
+# Run the application without root privileges.
+USER cadri
+
+
+# -----------------------------------------------------------------------------
+# Backend port
+# -----------------------------------------------------------------------------
+# EXPOSE documents the internal container port.
+# Public access should be controlled by Docker Compose and the reverse proxy.
+
+EXPOSE 5000
+
+
+# -----------------------------------------------------------------------------
+# Production WSGI server
+# -----------------------------------------------------------------------------
+#
+# run.py exposes the Flask application as:
+#
+#   app = create_app()
+#
+# Gunicorn can therefore import it through "run:app".
+#
+# Access and error logs are written to stdout/stderr so Docker can collect
+# them through its normal logging system.
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-", "run:app"]

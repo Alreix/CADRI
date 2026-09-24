@@ -1,3 +1,57 @@
-# Files/directories that must never be copied into the backend Docker image:
-# local virtualenvs, __pycache__, test artifacts, .env files with real
-# secrets, and anything else that only makes sense on a developer machine.
+# =============================================================================
+# CADRI backend - Docker ignore rules
+# =============================================================================
+#
+# These files are excluded from the Docker build context because they are
+# unnecessary at runtime, generated locally, or may contain sensitive data.
+# =============================================================================
+
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+
+# Local Python virtual environments
+.venv/
+venv/
+env/
+
+
+# Environment files may contain real secrets.
+.env
+.env.*
+
+
+# Test and quality-tool artifacts
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage/
+
+
+# Automated tests are not required inside the production container.
+tests/
+
+
+# Local build artifacts
+build/
+dist/
+*.egg-info/
+
+
+# IDE configuration
+.vscode/
+.idea/
+
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+
+# Local logs
+*.log

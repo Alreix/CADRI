@@ -1,5 +1,181 @@
-# Continuous integration for the backend.
-# Expected to trigger on push/PR, install apps/backend/requirements.txt (+
-# requirements-dev.txt), run `ruff check`/`ruff format --check`, then run the
-# pytest suite against a throwaway Postgres service, so broken code never
-# reaches develop/main.
+# =============================================================================
+# CADRI - Backend Continuous Integration
+# =============================================================================
+#
+# This workflow automatically validates backend changes.
+#
+# It performs:
+#   1. repository checkout;
+#   2. Python 3.12 setup;
+#   3. dependency installation;
+#   4. Ruff linting;
+#   5. Ruff formatting validation;
+#   6. automated Pytest tests against a temporary PostgreSQL database.
+#
+# The database and SMTP server created here only exist for the CI run.
+# No development or production data is used.
+# =============================================================================
+
+name: Backend CI
+
+
+# -----------------------------------------------------------------------------
+# Triggers
+# -----------------------------------------------------------------------------
+
+on:
+  push:
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+  pull_request:
+    branches:
+      - develop
+      - main
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+  # Allows the workflow to be started manually from GitHub Actions.
+  workflow_dispatch:
+
+
+# -----------------------------------------------------------------------------
+# Permissions
+# -----------------------------------------------------------------------------
+# CI only needs permission to read repository contents.
+
+permissions:
+  contents: read
+
+
+# -----------------------------------------------------------------------------
+# Concurrency
+# -----------------------------------------------------------------------------
+# If a new commit is pushed while an older CI run is still running on the
+# same branch, the previous run is cancelled.
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+  backend-tests:
+    name: Backend quality and tests
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+
+
+    # -------------------------------------------------------------------------
+    # Temporary services
+    # -------------------------------------------------------------------------
+
+    services:
+
+      postgres:
+        image: postgres:16
+
+        env:
+          POSTGRES_DB: cadri_test_db
+          POSTGRES_USER: cadri_user
+          POSTGRES_PASSWORD: cadri_password
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd "pg_isready -U cadri_user -d cadri_test_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+
+      # Some CADRI authentication flows send emails.
+      # Mailpit provides a disposable SMTP server during CI.
+      mailpit:
+        image: axllent/mailpit:latest
+
+        ports:
+          - 1025:1025
+
+
+    # -------------------------------------------------------------------------
+    # Test environment
+    # -------------------------------------------------------------------------
+
+    env:
+      FLASK_ENV: testing
+
+      TEST_DATABASE_URL: postgresql://cadri_user:cadri_password@localhost:5432/cadri_test_db
+
+      SECRET_KEY: ci-test-secret
+      JWT_SECRET_KEY: ci-test-jwt-secret
+
+      FRONTEND_URL: http://localhost:5173
+
+      MAIL_SERVER: localhost
+      MAIL_PORT: 1025
+      MAIL_DEFAULT_SENDER: no-reply@cadri.test
+
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+
+    steps:
+
+      # -----------------------------------------------------------------------
+      # Repository
+      # -----------------------------------------------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # -----------------------------------------------------------------------
+      # Python
+      # -----------------------------------------------------------------------
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            apps/backend/requirements.txt
+            apps/backend/requirements-dev.txt
+
+
+      # -----------------------------------------------------------------------
+      # Dependencies
+      # -----------------------------------------------------------------------
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+
+      # -----------------------------------------------------------------------
+      # Code quality
+      # -----------------------------------------------------------------------
+
+      - name: Run Ruff lint checks
+        run: ruff check .
+
+
+      - name: Check Ruff formatting
+        run: ruff format --check .
+
+
+      # -----------------------------------------------------------------------
+      # Automated tests
+      # -----------------------------------------------------------------------
+
+      - name: Run backend tests
+        run: python -m pytest -q

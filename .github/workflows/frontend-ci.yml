@@ -1,4 +1,139 @@
-# Continuous integration for the frontend.
-# Expected to trigger on push/PR, install apps/frontend dependencies, run
-# ESLint + Prettier --check, run the Vitest suite, and run `npm run build`
-# to catch build-time errors before they reach develop/main.
+# =============================================================================
+# CADRI - Frontend Continuous Integration
+# =============================================================================
+#
+# This workflow automatically validates frontend changes.
+#
+# It performs:
+#   1. repository checkout;
+#   2. Node.js 20 setup;
+#   3. reproducible dependency installation with npm ci;
+#   4. ESLint static analysis;
+#   5. Prettier formatting validation;
+#   6. Vitest automated tests;
+#   7. a production Vite build.
+#
+# The build step ensures that tested source code can also be compiled into
+# the static files required by the production frontend container.
+# =============================================================================
+
+name: Frontend CI
+
+
+# -----------------------------------------------------------------------------
+# Triggers
+# -----------------------------------------------------------------------------
+
+on:
+  push:
+    paths:
+      - "apps/frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+
+  pull_request:
+    branches:
+      - develop
+      - main
+    paths:
+      - "apps/frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+
+  # Allows manual execution from GitHub Actions.
+  workflow_dispatch:
+
+
+# -----------------------------------------------------------------------------
+# Permissions
+# -----------------------------------------------------------------------------
+
+permissions:
+  contents: read
+
+
+# -----------------------------------------------------------------------------
+# Concurrency
+# -----------------------------------------------------------------------------
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+  frontend-tests:
+    name: Frontend quality, tests and build
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+
+
+    # This URL is only used while validating the frontend build.
+    # CI does not need a real production backend.
+    env:
+      VITE_API_BASE_URL: http://localhost:5000
+
+
+    defaults:
+      run:
+        working-directory: apps/frontend
+
+
+    steps:
+
+      # -----------------------------------------------------------------------
+      # Repository
+      # -----------------------------------------------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # -----------------------------------------------------------------------
+      # Node.js
+      # -----------------------------------------------------------------------
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+
+      # -----------------------------------------------------------------------
+      # Dependencies
+      # -----------------------------------------------------------------------
+      # npm ci follows package-lock.json exactly, making CI installations
+      # reproducible.
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+
+      # -----------------------------------------------------------------------
+      # Code quality
+      # -----------------------------------------------------------------------
+
+      - name: Run ESLint
+        run: npm run lint
+
+
+      - name: Check Prettier formatting
+        run: npm run format:check
+
+
+      # -----------------------------------------------------------------------
+      # Automated tests
+      # -----------------------------------------------------------------------
+
+      - name: Run frontend tests
+        run: npm test
+
+
+      # -----------------------------------------------------------------------
+      # Production build validation
+      # -----------------------------------------------------------------------
+
+      - name: Build frontend
+        run: npm run build

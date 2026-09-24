@@ -1,5 +1,166 @@
-# Continuous deployment.
-# Expected to trigger on merge to main (after backend-ci/frontend-ci have
-# passed), build the *.prod images, push them to a registry, then trigger
-# scripts/deploy.sh on the target server (e.g. over SSH) to roll out the new
-# version.
+# =============================================================================
+# CADRI - Manual production deployment
+# =============================================================================
+#
+# CADRI is not currently hosted on a real production server.
+#
+# This workflow documents and prepares the deployment process that could be
+# used once a production server is available.
+#
+# Deployment is deliberately manual through workflow_dispatch.
+#
+# A real production deployment would require the following GitHub secrets:
+#
+#   DEPLOY_HOST
+#   DEPLOY_PORT
+#   DEPLOY_USER
+#   DEPLOY_SSH_KEY
+#   DEPLOY_KNOWN_HOSTS
+#   DEPLOY_PATH
+#
+# The server is expected to contain a CADRI Git working copy.
+#
+# Once connected to the server, GitHub Actions delegates the actual rollout
+# to scripts/deploy.sh instead of duplicating the deployment logic here.
+# =============================================================================
+
+name: Manual Production Deployment
+
+
+# -----------------------------------------------------------------------------
+# Trigger
+# -----------------------------------------------------------------------------
+# No automatic deployment is configured because CADRI currently has no real
+# production infrastructure.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type DEPLOY to confirm the production deployment"
+        required: true
+        type: string
+
+
+# -----------------------------------------------------------------------------
+# Permissions
+# -----------------------------------------------------------------------------
+
+permissions:
+  contents: read
+
+
+# -----------------------------------------------------------------------------
+# Concurrency
+# -----------------------------------------------------------------------------
+# Two production deployments must never run at the same time.
+
+concurrency:
+  group: cadri-production-deployment
+  cancel-in-progress: false
+
+
+jobs:
+  deploy:
+    name: Deploy CADRI to production
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+
+    # A GitHub Environment can later be configured with approval rules and
+    # production-specific secrets.
+    environment: production
+
+    # Prevent accidental execution.
+    if: ${{ inputs.confirm == 'DEPLOY' }}
+
+
+    steps:
+
+      # -----------------------------------------------------------------------
+      # Validate required deployment configuration
+      # -----------------------------------------------------------------------
+
+      - name: Validate deployment secrets
+        shell: bash
+
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+
+        run: |
+          missing=0
+
+          for variable in \
+            DEPLOY_HOST \
+            DEPLOY_USER \
+            DEPLOY_SSH_KEY \
+            DEPLOY_KNOWN_HOSTS \
+            DEPLOY_PATH
+          do
+            if [ -z "${!variable}" ]; then
+              echo "::error::$variable is not configured."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            echo "Deployment configuration is incomplete."
+            exit 1
+          fi
+
+
+      # -----------------------------------------------------------------------
+      # Configure SSH authentication
+      # -----------------------------------------------------------------------
+
+      - name: Configure SSH
+        shell: bash
+
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+        run: |
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+
+      # -----------------------------------------------------------------------
+      # Run the deployment procedure on the server
+      # -----------------------------------------------------------------------
+      #
+      # GitHub Actions only handles the secure connection to the target server.
+      #
+      # The server-side deployment sequence remains centralized in
+      # scripts/deploy.sh.
+
+      - name: Run deployment on server
+        shell: bash
+
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+
+        run: |
+          printf -v REMOTE_COMMAND \
+            'cd %q && ./scripts/deploy.sh' \
+            "$DEPLOY_PATH"
+
+          ssh \
+            -o StrictHostKeyChecking=yes \
+            -p "$DEPLOY_PORT" \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "$REMOTE_COMMAND"
