@@ -26,6 +26,11 @@ fi
 echo "==> Rolling back code to $PREVIOUS_REF"  # progress message
 git checkout "$PREVIOUS_REF"                   # move the working tree to the previous known-good commit
 
+# Checking out a specific commit (rather than a branch) leaves Git in
+# "detached HEAD": normal to do here, but easy to forget about afterwards.
+echo "NOTE: this checkout left the repository in 'detached HEAD' state (not on a branch)." >&2
+echo "Once the incident is resolved, run 'git checkout main' to return to the tracked branch." >&2
+
 echo "==> Rebuilding and restarting containers at that version"  # progress message
 docker compose -f "$COMPOSE_FILE" build  # rebuild images from the rolled-back code
 docker compose -f "$COMPOSE_FILE" up -d  # restart the containers using those images
