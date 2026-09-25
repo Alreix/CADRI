@@ -19,7 +19,7 @@ import "../styles/ConfirmModals.css";
 function ProfilePage() {
   useDocumentTitle("Profil");
   const navigate = useNavigate();
-  const { user, logout } = useContext(AuthContext);
+  const { logout } = useContext(AuthContext);
 
   const [profile, setProfile] = useState(null);
   const [profileLoadError, setProfileLoadError] = useState(false);
@@ -59,7 +59,7 @@ function ProfilePage() {
         // so the page shows something actionable instead of staying blank.
         setProfileLoadError(true);
       });
-  }, []);
+  }, [setForm]);
 
   const clearPasswordFields = () => {
     setForm((prevForm) => ({
@@ -171,13 +171,9 @@ function ProfilePage() {
         />
       )}
 
-      {alertMessage && (
-        <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
-      )}
+      {alertMessage && <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />}
 
-      {showPasswordHint && (
-        <PasswordRequirementsModal onClose={() => setShowPasswordHint(false)} />
-      )}
+      {showPasswordHint && <PasswordRequirementsModal onClose={() => setShowPasswordHint(false)} />}
 
       <div className="profile-page">
         <div className="profile-title">
@@ -217,16 +213,10 @@ function ProfilePage() {
               <hr className="profile-divider" />
 
               <div className="profile-actions">
-                <button
-                  className="profile-btn-primary"
-                  onClick={() => setEditing(true)}
-                >
+                <button className="profile-btn-primary" onClick={() => setEditing(true)}>
                   Modifier le profil
                 </button>
-                <button
-                  className="profile-btn-cancel"
-                  onClick={() => setShowLogout(true)}
-                >
+                <button className="profile-btn-cancel" onClick={() => setShowLogout(true)}>
                   Déconnexion
                 </button>
               </div>
@@ -385,4 +375,4 @@ function ProfilePage() {
   );
 }
 
-  export default ProfilePage;
+export default ProfilePage;
