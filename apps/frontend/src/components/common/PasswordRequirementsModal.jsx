@@ -38,7 +38,9 @@ function PasswordRequirementsModal({ onClose }) {
           </ul>
         </div>
         <div className="confirm-modal-footer">
-          <button className="profile-btn-primary" onClick={onClose}>Compris</button>
+          <button className="profile-btn-primary" onClick={onClose}>
+            Compris
+          </button>
         </div>
       </div>
     </div>

@@ -108,11 +108,7 @@ export async function apiRequest(path, options = {}, retryOnUnauthorized = true)
 
   const data = await parseResponse(response);
 
-  if (
-    response.status === 401 &&
-    retryOnUnauthorized &&
-    shouldRefresh(path)
-  ) {
+  if (response.status === 401 && retryOnUnauthorized && shouldRefresh(path)) {
     const refreshedToken = await refreshAccessToken();
 
     if (refreshedToken) {

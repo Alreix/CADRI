@@ -23,6 +23,7 @@ frontend/
 ```
 
 ## Setup
+
 ### Install dependencies
 
 ```bash
@@ -56,21 +57,21 @@ npm run test:ui
 
 The tests assume the following structure in your project:
 
-| Test import                        | Expected path in your project       |
-|------------------------------------|-------------------------------------|
-| `../src/pages/LoginPage`           | `src/pages/LoginPage.jsx`           |
-| `../src/pages/ForgotPasswordPage`  | `src/pages/ForgotPasswordPage.jsx`  |
-| `../src/pages/ResetPasswordPage`   | `src/pages/ResetPasswordPage.jsx`   |
-| `../src/pages/ActivateAccountPage` | `src/pages/ActivateAccountPage.jsx` |
-| `../src/pages/DashboardPage`       | `src/pages/DashboardPage.jsx`       |
-| `../src/pages/MissionDetailPage`   | `src/pages/MissionDetailPage.jsx`   |
-| `../src/pages/MissionFormPage`     | `src/pages/MissionFormPage.jsx`     |
-| `../src/pages/UserManagementPage`  | `src/pages/UserManagementPage.jsx`  |
-| `../src/pages/UserFormPage`        | `src/pages/UserFormPage.jsx`        |
-| `../src/pages/ProfilePage`         | `src/pages/ProfilePage.jsx`         |
-| `../src/pages/ErrorPage`           | `src/pages/ErrorPage.jsx`           |
+| Test import                               | Expected path in your project              |
+| ----------------------------------------- | ------------------------------------------ |
+| `../src/pages/LoginPage`                  | `src/pages/LoginPage.jsx`                  |
+| `../src/pages/ForgotPasswordPage`         | `src/pages/ForgotPasswordPage.jsx`         |
+| `../src/pages/ResetPasswordPage`          | `src/pages/ResetPasswordPage.jsx`          |
+| `../src/pages/ActivateAccountPage`        | `src/pages/ActivateAccountPage.jsx`        |
+| `../src/pages/DashboardPage`              | `src/pages/DashboardPage.jsx`              |
+| `../src/pages/MissionDetailPage`          | `src/pages/MissionDetailPage.jsx`          |
+| `../src/pages/MissionFormPage`            | `src/pages/MissionFormPage.jsx`            |
+| `../src/pages/UserManagementPage`         | `src/pages/UserManagementPage.jsx`         |
+| `../src/pages/UserFormPage`               | `src/pages/UserFormPage.jsx`               |
+| `../src/pages/ProfilePage`                | `src/pages/ProfilePage.jsx`                |
+| `../src/pages/ErrorPage`                  | `src/pages/ErrorPage.jsx`                  |
 | `../src/components/common/ProtectedRoute` | `src/components/common/ProtectedRoute.jsx` |
-| `../src/contexts/AuthContext`      | `src/contexts/AuthContext.jsx`      |
+| `../src/contexts/AuthContext`             | `src/contexts/AuthContext.jsx`             |
 
 Update the import paths if your folder structure differs.
 
@@ -80,12 +81,12 @@ labels and button text rendered by the app (e.g. "Se connecter", "Titre",
 
 ## Coverage
 
-| File                         | Tests | Scope                                                   |
-|------------------------------|-------|---------------------------------------------------------|
-| `auth.test.jsx`              | 13    | Login, error states, forgot/reset password, activation  |
-| `dashboard.test.jsx`         | 9     | Rendering, filters, navigation, pagination, badges       |
-| `missions.test.jsx`          | 16    | Detail view, create/edit form, role restrictions, delete |
-| `users.test.jsx`             | 15    | List, filters, create/view/edit/delete, role restrictions |
-| `profile.test.jsx`           | 12    | Rendering, settings, password change, logout            |
-| `errorAndRouting.test.jsx`   | 9     | 404/403 pages, ProtectedRoute, unknown routes           |
-| **Total**                    | **74**|                                                         |
+| File                       | Tests  | Scope                                                     |
+| -------------------------- | ------ | --------------------------------------------------------- |
+| `auth.test.jsx`            | 13     | Login, error states, forgot/reset password, activation    |
+| `dashboard.test.jsx`       | 9      | Rendering, filters, navigation, pagination, badges        |
+| `missions.test.jsx`        | 16     | Detail view, create/edit form, role restrictions, delete  |
+| `users.test.jsx`           | 15     | List, filters, create/view/edit/delete, role restrictions |
+| `profile.test.jsx`         | 12     | Rendering, settings, password change, logout              |
+| `errorAndRouting.test.jsx` | 9      | 404/403 pages, ProtectedRoute, unknown routes             |
+| **Total**                  | **74** |                                                           |

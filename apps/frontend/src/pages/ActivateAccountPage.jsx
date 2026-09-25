@@ -27,12 +27,13 @@ function WelcomeModal({ onClose }) {
         </div>
         <div className="auth-modal-body" style={{ display: "block", padding: "20px 24px" }}>
           <p style={{ fontSize: "0.9rem", color: "#1a2332", lineHeight: "1.6" }}>
-            Veuillez définir un mot de passe sécurisé pour
-            activer votre compte et commencer.
+            Veuillez définir un mot de passe sécurisé pour activer votre compte et commencer.
           </p>
         </div>
         <div className="auth-modal-footer">
-          <button className="auth-modal-btn-ok" onClick={onClose}>Continuer</button>
+          <button className="auth-modal-btn-ok" onClick={onClose}>
+            Continuer
+          </button>
         </div>
       </div>
     </div>
@@ -86,9 +87,7 @@ function ActivateAccountPage() {
     <AuthLayout>
       {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
 
-      {showHint && (
-        <PasswordRequirementsModal onClose={closeHint} />
-      )}
+      {showHint && <PasswordRequirementsModal onClose={closeHint} />}
 
       <div className="auth-card">
         <h1 className="auth-card-title">Activer votre compte</h1>
@@ -111,7 +110,10 @@ function ActivateAccountPage() {
           />
 
           {error && (
-            <p role="alert" style={{ color: "var(--auth-required)", fontSize: "0.875rem", marginBottom: "12px" }}>
+            <p
+              role="alert"
+              style={{ color: "var(--auth-required)", fontSize: "0.875rem", marginBottom: "12px" }}
+            >
               {error}
             </p>
           )}

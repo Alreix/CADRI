@@ -7,7 +7,8 @@ function PasswordFieldWithHint({ id, label, value, onChange, onShowHint }) {
   return (
     <div className="auth-field">
       <label className="auth-label" htmlFor={id}>
-        {label}<span className="auth-label-required">*</span>
+        {label}
+        <span className="auth-label-required">*</span>
       </label>
       <PasswordInput
         id={id}

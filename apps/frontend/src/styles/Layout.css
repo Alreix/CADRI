@@ -3,9 +3,9 @@
    ============================================================================= */
 
 :root {
-  --intranet-header-bg:      #234e70;
-  --intranet-nav-active-bg:  #6fa58a;
-  --intranet-sidebar-bg:     #234e70;
+  --intranet-header-bg: #234e70;
+  --intranet-nav-active-bg: #6fa58a;
+  --intranet-sidebar-bg: #234e70;
   --intranet-sidebar-active: #6fa58a;
 }
 
@@ -105,7 +105,9 @@
   border: none;
   background: none;
   cursor: pointer;
-  transition: background-color 150ms, color 150ms;
+  transition:
+    background-color 150ms,
+    color 150ms;
   white-space: nowrap;
 }
 
@@ -245,7 +247,9 @@
   background: none;
   cursor: pointer;
   width: 100%;
-  transition: background-color 150ms, color 150ms;
+  transition:
+    background-color 150ms,
+    color 150ms;
 }
 
 .sidebar-link:hover {

@@ -115,24 +115,13 @@ function MissionDetailPage() {
     mission.actualDuration !== null &&
     mission.actualDuration !== undefined &&
     mission.actualDuration !== "";
-  const canStartMission =
-    canActOnMission &&
-    mission.status === "to_do";
+  const canStartMission = canActOnMission && mission.status === "to_do";
   const canEditMission =
     mission.status !== "completed" &&
-    (
-      isManager ||
-      (
-        isAgent &&
-        isAssignedToMission &&
-        mission.status === "in_progress" &&
-        !mission.remark
-      )
-    );
+    (isManager ||
+      (isAgent && isAssignedToMission && mission.status === "in_progress" && !mission.remark));
   const canRequestCompleteMission =
-    canActOnMission &&
-    mission.status === "in_progress" &&
-    !mission.remark;
+    canActOnMission && mission.status === "in_progress" && !mission.remark;
   const canValidateMission =
     isManager &&
     mission.status === "remark_pending_validation" &&
@@ -141,12 +130,7 @@ function MissionDetailPage() {
 
   return (
     <>
-      {alertMessage && (
-        <AlertModal
-          message={alertMessage}
-          onClose={() => setAlertMessage(null)}
-        />
-      )}
+      {alertMessage && <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />}
       <Layout>
         <div className="mission-detail-page">
           <button className="back-link" onClick={() => navigate("/missions")}>
@@ -162,8 +146,9 @@ function MissionDetailPage() {
               )}
               {mission.status && (
                 <span
-                  className={`mission-badge mission-badge--status${mission.statusLabel === "En cours" ? " mission-badge--in-progress" : ""
-                    }`}
+                  className={`mission-badge mission-badge--status${
+                    mission.statusLabel === "En cours" ? " mission-badge--in-progress" : ""
+                  }`}
                 >
                   {mission.statusLabel}
                 </span>
