@@ -22,9 +22,7 @@ const manager_items = [
 ];
 
 // Extra links only shown to "admin".
-const admin_items = [
-  { to: "/users", label: "Liste des utilisateurs", icon: Users, end: true },
-];
+const admin_items = [{ to: "/users", label: "Liste des utilisateurs", icon: Users, end: true }];
 
 // Small confirmation modal shown before actually logging the user out.
 function LogoutModal({ onConfirm, onCancel }) {
@@ -39,12 +37,14 @@ function LogoutModal({ onConfirm, onCancel }) {
             <X size={18} />
           </button>
         </div>
-        <div className="logout-modal-body">
-          Êtes-vous sûr de vouloir vous déconnecter ?
-        </div>
+        <div className="logout-modal-body">Êtes-vous sûr de vouloir vous déconnecter ?</div>
         <div className="logout-modal-footer">
-          <button className="logout-modal-cancel" onClick={onCancel}>Non</button>
-          <button className="logout-modal-confirm" onClick={onConfirm}>Oui</button>
+          <button className="logout-modal-cancel" onClick={onCancel}>
+            Non
+          </button>
+          <button className="logout-modal-confirm" onClick={onConfirm}>
+            Oui
+          </button>
         </div>
       </div>
     </div>
@@ -69,14 +69,12 @@ function Layout({ children }) {
 
   return (
     <div className="intranet-shell">
-
-      <a href="#main-content" className="skip-link">Aller au contenu principal</a>
+      <a href="#main-content" className="skip-link">
+        Aller au contenu principal
+      </a>
 
       {logoutOpen && (
-        <LogoutModal
-          onConfirm={handleLogoutConfirm}
-          onCancel={() => setLogoutOpen(false)}
-        />
+        <LogoutModal onConfirm={handleLogoutConfirm} onCancel={() => setLogoutOpen(false)} />
       )}
 
       <header className="intranet-header">
@@ -109,38 +107,37 @@ function Layout({ children }) {
             </NavLink>
           ))}
 
-          {isManager && manager_items.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
-              }
-            >
-              <Icon size={16} aria-hidden="true" />
-              {label}
-            </NavLink>
-          ))}
+          {isManager &&
+            manager_items.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
+                }
+              >
+                <Icon size={16} aria-hidden="true" />
+                {label}
+              </NavLink>
+            ))}
 
-          {isAdmin && admin_items.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
-              }
-            >
-              <Icon size={16} aria-hidden="true" />
-              {label}
-            </NavLink>
-          ))}
+          {isAdmin &&
+            admin_items.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  "intranet-nav-link" + (isActive ? " intranet-nav-link--active" : "")
+                }
+              >
+                <Icon size={16} aria-hidden="true" />
+                {label}
+              </NavLink>
+            ))}
 
-          <button
-            className="intranet-nav-link intranet-logout"
-            onClick={() => setLogoutOpen(true)}
-          >
+          <button className="intranet-nav-link intranet-logout" onClick={() => setLogoutOpen(true)}>
             <LogOut size={16} aria-hidden="true" />
             Déconnexion
           </button>
@@ -163,7 +160,6 @@ function Layout({ children }) {
         <span className="intranet-footer-dot" aria-hidden="true" />
         <span>© 2026 CADRI. Tous droits réservés.</span>
       </footer>
-
     </div>
   );
 }

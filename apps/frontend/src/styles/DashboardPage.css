@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
 }
 
 .stat-card-label {
@@ -28,7 +28,9 @@
   line-height: 1;
 }
 
-.stat-card-value--urgent { color: #d4183d; }
+.stat-card-value--urgent {
+  color: #d4183d;
+}
 
 .stat-card-icon {
   width: 48px;
@@ -40,8 +42,14 @@
   flex-shrink: 0;
 }
 
-.stat-card-icon--blue { background-color: #ebf0ff; color: #234e70; }
-.stat-card-icon--red  { background-color: #f6d1d8; color: #d4183d; }
+.stat-card-icon--blue {
+  background-color: #ebf0ff;
+  color: #234e70;
+}
+.stat-card-icon--red {
+  background-color: #f6d1d8;
+  color: #d4183d;
+}
 
 .mission-list {
   display: flex;
@@ -58,7 +66,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
 }
 
 .mission-card-body {
@@ -123,7 +131,9 @@
 }
 
 @media (max-width: 768px) {
-  .stat-grid { grid-template-columns: 1fr; }
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
 
   .mission-card {
     flex-direction: column;

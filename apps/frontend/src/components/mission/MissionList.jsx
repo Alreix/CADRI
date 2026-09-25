@@ -4,14 +4,9 @@ import { Link } from "react-router-dom";
 import StatusBadge from "./StatusBadge";
 import { formatDateFR } from "../../api/missionsApi";
 
-
 function MissionList({ missions }) {
   if (missions.length === 0) {
-    return (
-      <p className="mission-empty">
-        Aucune mission ne correspond à votre recherche.
-      </p>
-    );
+    return <p className="mission-empty">Aucune mission ne correspond à votre recherche.</p>;
   }
 
   return (
@@ -22,12 +17,8 @@ function MissionList({ missions }) {
             <p className="mission-card-title">{mission.title}</p>
             <div className="mission-card-tags">
               <StatusBadge priority={mission.priorityLabel} status={mission.statusLabel} />
-              {mission.interventionType && (
-                <span className="tag">{mission.interventionType}</span>
-              )}
-              {mission.service && (
-                <span className="tag">{mission.service}</span>
-              )}
+              {mission.interventionType && <span className="tag">{mission.interventionType}</span>}
+              {mission.service && <span className="tag">{mission.service}</span>}
             </div>
             <p className="mission-card-dates">
               {formatDateFR(mission.startDate)} - {formatDateFR(mission.endDate)}

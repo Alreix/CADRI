@@ -2,17 +2,8 @@
 // in Layout. Mirrors the same nav items as the desktop header.
 import { useContext } from "react";
 import { NavLink } from "react-router-dom";
-import {
-  Home,
-  User,
-  ClipboardList,
-  UserPlus,
-  Users,
-  LogOut,
-  X,
-} from "lucide-react";
+import { Home, User, ClipboardList, UserPlus, Users, LogOut, X } from "lucide-react";
 import { AuthContext } from "../../contexts/AuthContext";
-
 
 const nav_items = [
   { to: "/", label: "Accueil", icon: Home, end: true },
@@ -24,9 +15,7 @@ const manager_items = [
   { to: "/users/new", label: "Création d'utilisateur", icon: UserPlus, end: true },
 ];
 
-const admin_items = [
-  { to: "/users", label: "Liste des utilisateurs", icon: Users, end: true },
-];
+const admin_items = [{ to: "/users", label: "Liste des utilisateurs", icon: Users, end: true }];
 
 // isOpen/onClose are controlled by the parent Layout; this component holds no open/close state itself.
 function Sidebar({ isOpen, onClose, onLogout }) {
@@ -49,11 +38,12 @@ function Sidebar({ isOpen, onClose, onLogout }) {
 
   return (
     <>
-      {isOpen && (
-        <div className="sidebar-overlay" onClick={onClose} aria-hidden="true" />
-      )}
+      {isOpen && <div className="sidebar-overlay" onClick={onClose} aria-hidden="true" />}
 
-      <nav className={`sidebar ${isOpen ? "sidebar--open" : ""}`} aria-label="Navigation principale">
+      <nav
+        className={`sidebar ${isOpen ? "sidebar--open" : ""}`}
+        aria-label="Navigation principale"
+      >
         <div className="sidebar-header">
           <button className="sidebar-close" onClick={onClose} aria-label="Fermer le menu">
             <X size={18} />

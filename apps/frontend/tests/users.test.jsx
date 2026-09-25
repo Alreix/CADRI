@@ -1,10 +1,10 @@
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { vi } from 'vitest';
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { vi } from "vitest";
 
-import UserManagementPage from '../src/pages/UserManagementPage';
-import UserFormPage from '../src/pages/UserFormPage';
-import { AuthContext } from '../src/contexts/AuthContext';
+import UserManagementPage from "../src/pages/UserManagementPage";
+import UserFormPage from "../src/pages/UserFormPage";
+import { AuthContext } from "../src/contexts/AuthContext";
 
 // ---------------------------------------------------------------------------
 // Mock data — raw backend shapes (snake_case), as returned by the API and
@@ -12,69 +12,74 @@ import { AuthContext } from '../src/contexts/AuthContext';
 // ---------------------------------------------------------------------------
 const USERS_MOCK = [
   {
-    id: '1',
-    first_name: 'Jean',
-    last_name: 'Dupont',
-    email: 'jean.dupont@cadri.fr',
-    role: { name: 'agent', label: 'Agent' },
-    service: { id: 'svc1', name: 'electrique', label: 'Électrique' },
+    id: "1",
+    first_name: "Jean",
+    last_name: "Dupont",
+    email: "jean.dupont@cadri.fr",
+    role: { name: "agent", label: "Agent" },
+    service: { id: "svc1", name: "electrique", label: "Électrique" },
   },
   {
-    id: '2',
-    first_name: 'Claire',
-    last_name: 'Martin',
-    email: 'claire.martin@cadri.fr',
-    role: { name: 'responsable', label: 'Responsable' },
-    service: { id: 'svc2', name: 'travaux_publics', label: 'Travaux Publics' },
+    id: "2",
+    first_name: "Claire",
+    last_name: "Martin",
+    email: "claire.martin@cadri.fr",
+    role: { name: "responsable", label: "Responsable" },
+    service: { id: "svc2", name: "travaux_publics", label: "Travaux Publics" },
   },
   {
-    id: '3',
-    first_name: 'Paul',
-    last_name: 'Durand',
-    email: 'paul.durand@cadri.fr',
-    role: { name: 'admin', label: 'Admin' },
-    service: { id: 'svc1', name: 'electrique', label: 'Électrique' },
+    id: "3",
+    first_name: "Paul",
+    last_name: "Durand",
+    email: "paul.durand@cadri.fr",
+    role: { name: "admin", label: "Admin" },
+    service: { id: "svc1", name: "electrique", label: "Électrique" },
   },
 ];
 
 const ROLES_MOCK = [
-  { id: 'r1', name: 'agent', label: 'Agent' },
-  { id: 'r2', name: 'responsable', label: 'Responsable' },
-  { id: 'r3', name: 'admin', label: 'Admin' },
+  { id: "r1", name: "agent", label: "Agent" },
+  { id: "r2", name: "responsable", label: "Responsable" },
+  { id: "r3", name: "admin", label: "Admin" },
 ];
 
 const SERVICES_MOCK = [
-  { id: 'svc1', name: 'electrique', label: 'Électrique' },
-  { id: 'svc2', name: 'travaux_publics', label: 'Travaux Publics' },
+  { id: "svc1", name: "electrique", label: "Électrique" },
+  { id: "svc2", name: "travaux_publics", label: "Travaux Publics" },
 ];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-function mockFetchRoutes({ users = USERS_MOCK, user = USERS_MOCK[0], roles = ROLES_MOCK, services = SERVICES_MOCK } = {}) {
+function mockFetchRoutes({
+  users = USERS_MOCK,
+  user = USERS_MOCK[0],
+  roles = ROLES_MOCK,
+  services = SERVICES_MOCK,
+} = {}) {
   global.fetch = vi.fn((url, options = {}) => {
     const path = String(url);
-    const method = options.method || 'GET';
+    const method = options.method || "GET";
 
-    if (path.includes('/metadata/roles')) {
+    if (path.includes("/metadata/roles")) {
       return Promise.resolve({ ok: true, json: async () => roles });
     }
-    if (path.includes('/metadata/services')) {
+    if (path.includes("/metadata/services")) {
       return Promise.resolve({ ok: true, json: async () => services });
     }
-    if (path.match(/\/users\/[^/]+$/) && method === 'DELETE') {
+    if (path.match(/\/users\/[^/]+$/) && method === "DELETE") {
       return Promise.resolve({ ok: true, json: async () => ({}) });
     }
-    if (path.match(/\/users\/[^/]+$/) && method === 'PATCH') {
+    if (path.match(/\/users\/[^/]+$/) && method === "PATCH") {
       return Promise.resolve({ ok: true, json: async () => ({ user }) });
     }
-    if (path.match(/\/users\/[^/]+$/) && method === 'GET') {
+    if (path.match(/\/users\/[^/]+$/) && method === "GET") {
       return Promise.resolve({ ok: true, json: async () => user });
     }
-    if (path.endsWith('/users') && method === 'POST') {
-      return Promise.resolve({ ok: true, json: async () => ({ user: { ...user, id: '99' } }) });
+    if (path.endsWith("/users") && method === "POST") {
+      return Promise.resolve({ ok: true, json: async () => ({ user: { ...user, id: "99" } }) });
     }
-    if (path.match(/\/users(\?|$)/) && method === 'GET') {
+    if (path.match(/\/users(\?|$)/) && method === "GET") {
       return Promise.resolve({ ok: true, json: async () => users });
     }
     return Promise.resolve({ ok: true, json: async () => ({}) });
@@ -84,62 +89,66 @@ function mockFetchRoutes({ users = USERS_MOCK, user = USERS_MOCK[0], roles = ROL
 const renderManagement = (role) => {
   mockFetchRoutes();
   return render(
-    <AuthContext.Provider value={{ user: { role, id: '99' } }}>
-      <MemoryRouter><UserManagementPage /></MemoryRouter>
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ user: { role, id: "99" } }}>
+      <MemoryRouter>
+        <UserManagementPage />
+      </MemoryRouter>
+    </AuthContext.Provider>,
   );
 };
 
-const renderForm = (role, mode = 'create', userId = null, { user } = {}) => {
+const renderForm = (role, mode = "create", userId = null, { user } = {}) => {
   mockFetchRoutes(user ? { user } : {});
-  const route = userId ? `/users/${userId}/${mode}` : '/users/create';
-  const path = userId ? `/users/:id/${mode}` : '/users/create';
+  const route = userId ? `/users/${userId}/${mode}` : "/users/create";
+  const path = userId ? `/users/:id/${mode}` : "/users/create";
   return render(
-    <AuthContext.Provider value={{ user: { role, id: '99' } }}>
+    <AuthContext.Provider value={{ user: { role, id: "99" } }}>
       <MemoryRouter initialEntries={[route]}>
         <Routes>
           <Route path={path} element={<UserFormPage mode={mode} />} />
         </Routes>
       </MemoryRouter>
-    </AuthContext.Provider>
+    </AuthContext.Provider>,
   );
 };
 
 // ---------------------------------------------------------------------------
 // UserManagementPage — list
 // ---------------------------------------------------------------------------
-describe('UserManagementPage — liste', () => {
-  test('affiche la liste des utilisateurs', async () => {
-    renderManagement('admin');
+describe("UserManagementPage — liste", () => {
+  test("affiche la liste des utilisateurs", async () => {
+    renderManagement("admin");
     await waitFor(() => {
-      expect(screen.getByText('Jean')).toBeInTheDocument();
-      expect(screen.getByText('Dupont')).toBeInTheDocument();
-      expect(screen.getByText('Claire')).toBeInTheDocument();
-      expect(screen.getByText('Martin')).toBeInTheDocument();
+      expect(screen.getByText("Jean")).toBeInTheDocument();
+      expect(screen.getByText("Dupont")).toBeInTheDocument();
+      expect(screen.getByText("Claire")).toBeInTheDocument();
+      expect(screen.getByText("Martin")).toBeInTheDocument();
     });
   });
 
-  test('affiche le rôle de chaque utilisateur, capitalisé', async () => {
-    renderManagement('admin');
+  test("affiche le rôle de chaque utilisateur, capitalisé", async () => {
+    renderManagement("admin");
     await waitFor(() => {
-      expect(screen.getByText('Agent')).toBeInTheDocument();
-      expect(screen.getByText('Responsable')).toBeInTheDocument();
+      expect(screen.getByText("Agent")).toBeInTheDocument();
+      expect(screen.getByText("Responsable")).toBeInTheDocument();
     });
   });
 
-  test('affiche un message quand aucun utilisateur ne correspond', async () => {
+  test("affiche un message quand aucun utilisateur ne correspond", async () => {
     mockFetchRoutes({ users: [] });
     render(
-      <AuthContext.Provider value={{ user: { role: 'admin', id: '99' } }}>
-        <MemoryRouter><UserManagementPage /></MemoryRouter>
-      </AuthContext.Provider>
+      <AuthContext.Provider value={{ user: { role: "admin", id: "99" } }}>
+        <MemoryRouter>
+          <UserManagementPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
     );
     await waitFor(() => {
       expect(screen.getByText(/aucun utilisateur ne correspond/i)).toBeInTheDocument();
     });
   });
 
-  test('récupère bien tous les utilisateurs au-delà de la première page backend (>100)', async () => {
+  test("récupère bien tous les utilisateurs au-delà de la première page backend (>100)", async () => {
     // The real backend caps a single page at 100 and paginates the rest —
     // this proves getUsers() walks every page instead of only seeing the first 100.
     const manyUsers = Array.from({ length: 150 }, (_, index) => ({
@@ -147,23 +156,23 @@ describe('UserManagementPage — liste', () => {
       first_name: `Prenom${index + 1}`,
       last_name: `Nom${index + 1}`,
       email: `user${index + 1}@cadri.fr`,
-      role: { name: 'agent', label: 'Agent' },
-      service: { id: 'svc1', name: 'electrique', label: 'Électrique' },
+      role: { name: "agent", label: "Agent" },
+      service: { id: "svc1", name: "electrique", label: "Électrique" },
     }));
 
     global.fetch = vi.fn((url) => {
       const path = String(url);
 
-      if (path.includes('/metadata/roles')) {
+      if (path.includes("/metadata/roles")) {
         return Promise.resolve({ ok: true, json: async () => ROLES_MOCK });
       }
-      if (path.includes('/metadata/services')) {
+      if (path.includes("/metadata/services")) {
         return Promise.resolve({ ok: true, json: async () => SERVICES_MOCK });
       }
       if (path.match(/\/users(\?|$)/)) {
-        const parsedUrl = new URL(path, 'http://localhost');
-        const page = Number(parsedUrl.searchParams.get('page')) || 1;
-        const perPage = Number(parsedUrl.searchParams.get('per_page')) || 10;
+        const parsedUrl = new URL(path, "http://localhost");
+        const page = Number(parsedUrl.searchParams.get("page")) || 1;
+        const perPage = Number(parsedUrl.searchParams.get("per_page")) || 10;
         const start = (page - 1) * perPage;
         return Promise.resolve({
           ok: true,
@@ -182,9 +191,11 @@ describe('UserManagementPage — liste', () => {
     });
 
     render(
-      <AuthContext.Provider value={{ user: { role: 'admin', id: '99' } }}>
-        <MemoryRouter><UserManagementPage /></MemoryRouter>
-      </AuthContext.Provider>
+      <AuthContext.Provider value={{ user: { role: "admin", id: "99" } }}>
+        <MemoryRouter>
+          <UserManagementPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
     );
 
     await waitFor(() => {
@@ -193,11 +204,11 @@ describe('UserManagementPage — liste', () => {
 
     // "Nom150" only exists on the backend's second page (index 149).
     fireEvent.change(screen.getByPlaceholderText(/rechercher des utilisateurs/i), {
-      target: { value: 'Nom150' },
+      target: { value: "Nom150" },
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Nom150')).toBeInTheDocument();
+      expect(screen.getByText("Nom150")).toBeInTheDocument();
     });
   });
 });
@@ -205,41 +216,41 @@ describe('UserManagementPage — liste', () => {
 // ---------------------------------------------------------------------------
 // UserManagementPage — filters
 // ---------------------------------------------------------------------------
-describe('UserManagementPage — filtres', () => {
-  test('cliquer sur le bouton Filtres ouvre le panneau de filtres', async () => {
-    renderManagement('admin');
-    await waitFor(() => screen.getByText('Jean'));
-    fireEvent.click(screen.getByRole('button', { name: /filtres/i }));
-    expect(screen.getByText('Filtrer les utilisateurs')).toBeInTheDocument();
+describe("UserManagementPage — filtres", () => {
+  test("cliquer sur le bouton Filtres ouvre le panneau de filtres", async () => {
+    renderManagement("admin");
+    await waitFor(() => screen.getByText("Jean"));
+    fireEvent.click(screen.getByRole("button", { name: /filtres/i }));
+    expect(screen.getByText("Filtrer les utilisateurs")).toBeInTheDocument();
   });
 
   test('filtrer par rôle "Agent" masque les autres rôles', async () => {
-    renderManagement('admin');
-    await waitFor(() => screen.getByText('Claire'));
-    fireEvent.click(screen.getByRole('button', { name: /filtres/i }));
-    fireEvent.change(screen.getByLabelText(/^rôle/i), { target: { value: 'agent' } });
+    renderManagement("admin");
+    await waitFor(() => screen.getByText("Claire"));
+    fireEvent.click(screen.getByRole("button", { name: /filtres/i }));
+    fireEvent.change(screen.getByLabelText(/^rôle/i), { target: { value: "agent" } });
 
-    expect(screen.getByText('Jean')).toBeInTheDocument();
-    expect(screen.queryByText('Claire')).not.toBeInTheDocument();
+    expect(screen.getByText("Jean")).toBeInTheDocument();
+    expect(screen.queryByText("Claire")).not.toBeInTheDocument();
   });
 
-  test('la recherche filtre par prénom ou nom', async () => {
-    renderManagement('admin');
-    await waitFor(() => screen.getByText('Jean'));
+  test("la recherche filtre par prénom ou nom", async () => {
+    renderManagement("admin");
+    await waitFor(() => screen.getByText("Jean"));
     fireEvent.change(screen.getByPlaceholderText(/rechercher des utilisateurs/i), {
-      target: { value: 'martin' },
+      target: { value: "martin" },
     });
-    expect(screen.getByText('Claire')).toBeInTheDocument();
-    expect(screen.queryByText('Jean')).not.toBeInTheDocument();
+    expect(screen.getByText("Claire")).toBeInTheDocument();
+    expect(screen.queryByText("Jean")).not.toBeInTheDocument();
   });
 });
 
 // ---------------------------------------------------------------------------
 // UserFormPage — create
 // ---------------------------------------------------------------------------
-describe('UserFormPage — création (admin)', () => {
-  test('affiche tous les champs requis', async () => {
-    renderForm('admin', 'create');
+describe("UserFormPage — création (admin)", () => {
+  test("affiche tous les champs requis", async () => {
+    renderForm("admin", "create");
     await waitFor(() => {
       expect(screen.getByLabelText(/^nom/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/prénom/i)).toBeInTheDocument();
@@ -249,43 +260,45 @@ describe('UserFormPage — création (admin)', () => {
   });
 
   test('le rôle "Admin" est disponible dans la liste', async () => {
-    renderForm('admin', 'create');
+    renderForm("admin", "create");
     await waitFor(() => screen.getByLabelText(/^rôle/i));
     const select = screen.getByLabelText(/^rôle/i);
     const options = Array.from(select.options).map((option) => option.value);
-    expect(options).toContain('admin');
+    expect(options).toContain("admin");
   });
 });
 
-describe('UserFormPage — création (responsable)', () => {
+describe("UserFormPage — création (responsable)", () => {
   test('le champ rôle ne propose pas "admin" et le titre devient "Créer un nouvel agent"', async () => {
-    renderForm('responsable', 'create');
+    renderForm("responsable", "create");
     await waitFor(() => {
-      expect(screen.getByText('Créer un nouvel agent')).toBeInTheDocument();
+      expect(screen.getByText("Créer un nouvel agent")).toBeInTheDocument();
     });
     // For a manager, the role field is locked to "agent" (read-only input),
     // not a <select>, so there is no list of options to assert against here.
-    expect(screen.getByLabelText(/^rôle/i)).toHaveValue('Agent');
+    expect(screen.getByLabelText(/^rôle/i)).toHaveValue("Agent");
   });
 });
 
 // ---------------------------------------------------------------------------
 // UserFormPage — view
 // ---------------------------------------------------------------------------
-describe('UserFormPage — profil utilisateur (lecture seule)', () => {
-  test('affiche les informations utilisateur en lecture seule', async () => {
-    renderForm('admin', 'view', '1', { user: USERS_MOCK[1] });
+describe("UserFormPage — profil utilisateur (lecture seule)", () => {
+  test("affiche les informations utilisateur en lecture seule", async () => {
+    renderForm("admin", "view", "1", { user: USERS_MOCK[1] });
     await waitFor(() => {
-      expect(screen.getByText('Profil utilisateur')).toBeInTheDocument();
-      expect(screen.getByLabelText(/prénom/i)).toHaveValue('Claire');
+      expect(screen.getByText("Profil utilisateur")).toBeInTheDocument();
+      expect(screen.getByLabelText(/prénom/i)).toHaveValue("Claire");
     });
-    expect(screen.queryByRole('button', { name: /valider|mettre à jour|créer/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /valider|mettre à jour|créer/i }),
+    ).not.toBeInTheDocument();
   });
 
-  test('le rôle est affiché avec son libellé capitalisé, pas la valeur technique brute', async () => {
-    renderForm('admin', 'view', '2', { user: USERS_MOCK[1] });
+  test("le rôle est affiché avec son libellé capitalisé, pas la valeur technique brute", async () => {
+    renderForm("admin", "view", "2", { user: USERS_MOCK[1] });
     await waitFor(() => {
-      expect(screen.getByLabelText(/^rôle/i)).toHaveValue('Responsable');
+      expect(screen.getByLabelText(/^rôle/i)).toHaveValue("Responsable");
     });
   });
 });
@@ -293,45 +306,47 @@ describe('UserFormPage — profil utilisateur (lecture seule)', () => {
 // ---------------------------------------------------------------------------
 // UserFormPage — edit
 // ---------------------------------------------------------------------------
-describe('UserFormPage — édition', () => {
-  test('les champs sont pré-remplis avec les données existantes de l\'utilisateur', async () => {
-    renderForm('admin', 'edit', '1', { user: USERS_MOCK[0] });
+describe("UserFormPage — édition", () => {
+  test("les champs sont pré-remplis avec les données existantes de l'utilisateur", async () => {
+    renderForm("admin", "edit", "1", { user: USERS_MOCK[0] });
     await waitFor(() => {
-      expect(screen.getByLabelText(/^nom/i)).toHaveValue('Dupont');
-      expect(screen.getByLabelText(/^email/i)).toHaveValue('jean.dupont@cadri.fr');
+      expect(screen.getByLabelText(/^nom/i)).toHaveValue("Dupont");
+      expect(screen.getByLabelText(/^email/i)).toHaveValue("jean.dupont@cadri.fr");
     });
   });
 
   test('le bouton "Supprimer l\'utilisateur" est visible', async () => {
-    renderForm('admin', 'edit', '1', { user: USERS_MOCK[0] });
+    renderForm("admin", "edit", "1", { user: USERS_MOCK[0] });
     await waitFor(() => screen.getByLabelText(/^nom/i));
-    expect(screen.getByRole('button', { name: /supprimer l'utilisateur/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /supprimer l'utilisateur/i })).toBeInTheDocument();
   });
 });
 
 // ---------------------------------------------------------------------------
 // UserFormPage — delete
 // ---------------------------------------------------------------------------
-describe('UserFormPage — suppression', () => {
-  test('cliquer sur Supprimer ouvre la pop-up de confirmation', async () => {
-    renderForm('admin', 'edit', '1', { user: USERS_MOCK[0] });
+describe("UserFormPage — suppression", () => {
+  test("cliquer sur Supprimer ouvre la pop-up de confirmation", async () => {
+    renderForm("admin", "edit", "1", { user: USERS_MOCK[0] });
     await waitFor(() => screen.getByLabelText(/^nom/i));
-    fireEvent.click(screen.getByRole('button', { name: /supprimer l'utilisateur/i }));
-    const dialog = screen.getByRole('dialog');
+    fireEvent.click(screen.getByRole("button", { name: /supprimer l'utilisateur/i }));
+    const dialog = screen.getByRole("dialog");
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByText("Supprimer l'utilisateur")).toBeInTheDocument();
   });
 
-  test('confirmer la suppression appelle l\'API DELETE', async () => {
-    renderForm('admin', 'edit', '1', { user: USERS_MOCK[0] });
+  test("confirmer la suppression appelle l'API DELETE", async () => {
+    renderForm("admin", "edit", "1", { user: USERS_MOCK[0] });
     await waitFor(() => screen.getByLabelText(/^nom/i));
-    fireEvent.click(screen.getByRole('button', { name: /supprimer l'utilisateur/i }));
+    fireEvent.click(screen.getByRole("button", { name: /supprimer l'utilisateur/i }));
 
-    const dialog = screen.getByRole('dialog');
-    fireEvent.click(within(dialog).getByRole('button', { name: /oui, supprimer/i }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /oui, supprimer/i }));
 
     await waitFor(() => {
-      const deleteCall = global.fetch.mock.calls.find(([, options]) => options?.method === 'DELETE');
+      const deleteCall = global.fetch.mock.calls.find(
+        ([, options]) => options?.method === "DELETE",
+      );
       expect(deleteCall).toBeTruthy();
     });
   });

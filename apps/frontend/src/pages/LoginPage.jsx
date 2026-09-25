@@ -41,11 +41,7 @@ function LoginPage() {
   return (
     <AuthLayout>
       {modal && (
-        <Modal
-          title={modal.title}
-          message={modal.message}
-          onClose={() => setModal(null)}
-        />
+        <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />
       )}
 
       <div className="auth-card">
