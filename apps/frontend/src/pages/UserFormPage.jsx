@@ -6,6 +6,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import ConfirmModal from "../components/common/ConfirmModal";
+import AlertModal from "../components/common/AlertModal";
 import { AuthContext } from "../contexts/AuthContext";
 import { getUser, createUser, updateUser, deleteUser } from "../api/usersApi";
 import { getRoles, getServices } from "../api/metadataApi";
@@ -49,6 +50,7 @@ function UserFormPage({ mode = "create" }) {
   const [loadedRoleLabel, setLoadedRoleLabel] = useState("");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Loads the target user in view/edit mode.
@@ -83,8 +85,23 @@ function UserFormPage({ mode = "create" }) {
   };
 
   const handleDelete = async () => {
-    await deleteUser(id);
-    navigate("/users");
+    try {
+      await deleteUser(id);
+      navigate("/users");
+    } catch (error) {
+      setShowDeleteModal(false);
+      if (error?.status === 409) {
+        setDeleteError(
+          "Impossible de supprimer cet utilisateur car il a créé une ou plusieurs missions.",
+        );
+      } else {
+        setDeleteError(
+          error?.message && error.message !== "API request failed."
+            ? error.message
+            : "Une erreur est survenue lors de la suppression de l'utilisateur.",
+        );
+      }
+    }
   };
 
   // A "responsable" can never assign the "admin" role, even when editing.
@@ -121,6 +138,8 @@ function UserFormPage({ mode = "create" }) {
           onCancel={() => setShowDeleteModal(false)}
         />
       )}
+
+      {deleteError && <AlertModal message={deleteError} onClose={() => setDeleteError(null)} />}
 
       <div className="user-form-page">
         <button className="back-link" onClick={() => navigate(-1)}>

@@ -15,6 +15,12 @@ class MissionRepository:
         return db.session.get(Mission, mission_id)
 
     @staticmethod
+    def exists_by_creator(user_id) -> bool:
+        """Return whether at least one mission was created by the user."""
+        query = db.session.query(Mission.id).filter(Mission.created_by == user_id)
+        return query.first() is not None
+
+    @staticmethod
     def get_by_id_for_update(mission_id):
         """Lock and refresh a mission in the current transaction, if it exists."""
         return (

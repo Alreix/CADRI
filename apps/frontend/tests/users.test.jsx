@@ -56,6 +56,7 @@ function mockFetchRoutes({
   user = USERS_MOCK[0],
   roles = ROLES_MOCK,
   services = SERVICES_MOCK,
+  deleteResponse = { ok: true, json: async () => ({}) },
 } = {}) {
   global.fetch = vi.fn((url, options = {}) => {
     const path = String(url);
@@ -68,7 +69,7 @@ function mockFetchRoutes({
       return Promise.resolve({ ok: true, json: async () => services });
     }
     if (path.match(/\/users\/[^/]+$/) && method === "DELETE") {
-      return Promise.resolve({ ok: true, json: async () => ({}) });
+      return Promise.resolve(deleteResponse);
     }
     if (path.match(/\/users\/[^/]+$/) && method === "PATCH") {
       return Promise.resolve({ ok: true, json: async () => ({ user }) });
@@ -97,8 +98,8 @@ const renderManagement = (role) => {
   );
 };
 
-const renderForm = (role, mode = "create", userId = null, { user } = {}) => {
-  mockFetchRoutes(user ? { user } : {});
+const renderForm = (role, mode = "create", userId = null, options = {}) => {
+  mockFetchRoutes(options);
   const route = userId ? `/users/${userId}/${mode}` : "/users/create";
   const path = userId ? `/users/:id/${mode}` : "/users/create";
   return render(
@@ -106,6 +107,7 @@ const renderForm = (role, mode = "create", userId = null, { user } = {}) => {
       <MemoryRouter initialEntries={[route]}>
         <Routes>
           <Route path={path} element={<UserFormPage mode={mode} />} />
+          <Route path="/users" element={<h1>Liste des utilisateurs</h1>} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>,
@@ -335,7 +337,7 @@ describe("UserFormPage — suppression", () => {
     expect(within(dialog).getByText("Supprimer l'utilisateur")).toBeInTheDocument();
   });
 
-  test("confirmer la suppression appelle l'API DELETE", async () => {
+  test("confirmer la suppression appelle l'API DELETE et ouvre la liste", async () => {
     renderForm("admin", "edit", "1", { user: USERS_MOCK[0] });
     await waitFor(() => screen.getByLabelText(/^nom/i));
     fireEvent.click(screen.getByRole("button", { name: /supprimer l'utilisateur/i }));
@@ -348,6 +350,73 @@ describe("UserFormPage — suppression", () => {
         ([, options]) => options?.method === "DELETE",
       );
       expect(deleteCall).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Liste des utilisateurs" })).toBeInTheDocument();
     });
+  });
+
+  test("affiche une alerte en français si l'utilisateur a créé une mission", async () => {
+    renderForm("admin", "edit", "1", {
+      deleteResponse: {
+        ok: false,
+        status: 409,
+        json: async () => ({
+          error: "User cannot be deleted because they created one or more missions.",
+        }),
+      },
+    });
+    await waitFor(() => screen.getByLabelText(/^nom/i));
+    fireEvent.click(screen.getByRole("button", { name: /supprimer l'utilisateur/i }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: /oui, supprimer/i }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Êtes-vous sûr de vouloir supprimer cet utilisateur/),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toHaveTextContent(
+        "Impossible de supprimer cet utilisateur car il a créé une ou plusieurs missions.",
+      );
+    });
+    expect(
+      screen.getByRole("heading", { name: "Modifier le profil utilisateur" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Liste des utilisateurs" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  test.each([
+    ["message de l'API", { error: "Le serveur est indisponible." }, "Le serveur est indisponible."],
+    ["message de secours", {}, "Une erreur est survenue lors de la suppression de l'utilisateur."],
+  ])("affiche le %s sans quitter la page", async (_, responseBody, expectedMessage) => {
+    renderForm("admin", "edit", "1", {
+      deleteResponse: {
+        ok: false,
+        status: 500,
+        json: async () => responseBody,
+      },
+    });
+    await waitFor(() => screen.getByLabelText(/^nom/i));
+    fireEvent.click(screen.getByRole("button", { name: /supprimer l'utilisateur/i }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: /oui, supprimer/i }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toHaveTextContent(expectedMessage);
+      expect(
+        screen.queryByText(/Êtes-vous sûr de vouloir supprimer cet utilisateur/),
+      ).not.toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("heading", { name: "Modifier le profil utilisateur" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Liste des utilisateurs" }),
+    ).not.toBeInTheDocument();
   });
 });
