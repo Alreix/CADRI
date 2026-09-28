@@ -1,0 +1,17 @@
+node_modules
+dist
+coverage
+
+.env
+.env.*
+!.env.example
+
+tests
+*.test.js
+*.test.jsx
+
+.git
+.gitignore
+README.md
+.vscode
+.DS_Store

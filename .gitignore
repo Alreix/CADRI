@@ -32,3 +32,9 @@ coverage/
 
 # Logs
 *.log
+
+# Production database backups
+/backups/
+
+# Production TLS certificates and privates keys
+/deploy/nginx/certs/
