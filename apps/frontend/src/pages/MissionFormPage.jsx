@@ -85,14 +85,16 @@ function MissionFormPage({ mode = "create" }) {
   // agents can't reassign a mission.
   useEffect(() => {
     const requests = [
-      getServices().then(setServiceOptions).catch(() => { }),
+      getServices()
+        .then(setServiceOptions)
+        .catch(() => {}),
     ];
 
     if (isManager) {
       requests.push(
         getAssignableUsers()
           .then(setAssignableUsers)
-          .catch(() => { })
+          .catch(() => {}),
       );
     }
 
@@ -166,11 +168,7 @@ function MissionFormPage({ mode = "create" }) {
       return;
     }
 
-    if (
-      isAgentEdit &&
-      (!form.actualDuration ||
-        Number(form.actualDuration) <= 0)
-    ) {
+    if (isAgentEdit && (!form.actualDuration || Number(form.actualDuration) <= 0)) {
       setAlertMessage("La durée réelle doit être supérieure à 0.");
       return;
     }
@@ -195,23 +193,13 @@ function MissionFormPage({ mode = "create" }) {
         ) {
           await updateMissionActualDuration(id, form.actualDuration);
         }
-        if (
-          canAddRemark &&
-          form.remark.trim()
-        ) {
-          await addMissionRemark(
-            id,
-            form.remark.trim()
-          );
+        if (canAddRemark && form.remark.trim()) {
+          await addMissionRemark(id, form.remark.trim());
         }
       } else {
         await createMission(form);
       }
-      navigate(
-        isEdit
-          ? `/missions/${id}`
-          : "/"
-      );
+      navigate(isEdit ? `/missions/${id}` : "/");
     } catch (err) {
       setAlertMessage(err.message || "Impossible d'enregistrer la mission.");
     } finally {
@@ -237,33 +225,27 @@ function MissionFormPage({ mode = "create" }) {
   const isAgentEdit = isEdit && isAgent && !isManager;
   const lockMissionFields = isAgentEdit;
 
-  const isAssignedToMission =
-    (loadedMission?.assignedUsers || []).some(
-      (assignedUserId) =>
-        String(assignedUserId) === String(currentUser?.id)
-    );
+  const isAssignedToMission = (loadedMission?.assignedUsers || []).some(
+    (assignedUserId) => String(assignedUserId) === String(currentUser?.id),
+  );
 
   // Actual duration can only be touched while the mission is in progress or
   // has a remark pending validation — matches the backend's own restriction
   // (MissionService._require_mission_status), for every role including
   // managers, who used to bypass this check entirely.
   const isActualDurationEditableStatus = ["in_progress", "remark_pending_validation"].includes(
-    loadedMission?.status
+    loadedMission?.status,
   );
 
   // Remarks are limited by the backend to an assigned agent or assigned responsable.
   const canAgentUpdateTracking =
-    isAgentEdit &&
-    isAssignedToMission &&
-    isActualDurationEditableStatus;
+    isAgentEdit && isAssignedToMission && isActualDurationEditableStatus;
 
   const canEditActualDuration =
     (isManager && isActualDurationEditableStatus) || canAgentUpdateTracking;
 
   const canAgentAddRemark =
-    canAgentUpdateTracking &&
-    loadedMission?.status === "in_progress" &&
-    !loadedMission?.remark;
+    canAgentUpdateTracking && loadedMission?.status === "in_progress" && !loadedMission?.remark;
 
   const canAssignedResponsableAddRemark =
     isResponsable &&
@@ -284,10 +266,10 @@ function MissionFormPage({ mode = "create" }) {
   // Splits the pool of assignable users into "already assigned" (shown in the
   // table with a remove button) and "not yet assigned" (shown in the add-users panel).
   const assignedUserDetails = assignableUsers.filter((candidate) =>
-    form.assignedUsers.includes(candidate.id)
+    form.assignedUsers.includes(candidate.id),
   );
   const unassignedUsers = assignableUsers.filter(
-    (candidate) => !form.assignedUsers.includes(candidate.id)
+    (candidate) => !form.assignedUsers.includes(candidate.id),
   );
 
   return (
@@ -311,10 +293,7 @@ function MissionFormPage({ mode = "create" }) {
         )}
 
         {alertMessage && (
-          <AlertModal
-            message={alertMessage}
-            onClose={() => setAlertMessage(null)}
-          />
+          <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
         )}
 
         <div className="mission-form-card">
@@ -379,7 +358,9 @@ function MissionFormPage({ mode = "create" }) {
                 >
                   <option value="" />
                   {priorityOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -661,11 +642,7 @@ function MissionFormPage({ mode = "create" }) {
               <button
                 type="submit"
                 className="profile-btn-primary"
-                disabled={
-                  saving ||
-                  (isAgentEdit &&
-                    !canAgentUpdateTracking)
-                }
+                disabled={saving || (isAgentEdit && !canAgentUpdateTracking)}
               >
                 {saving
                   ? "Enregistrement…"

@@ -37,12 +37,12 @@ const MAX_PAGE_SIZE = 100;
 // response and a paginated { items, pagination } response from the backend.
 export async function getUsers() {
   let page = 1;
-  let totalPages = 1;
+  let totalPages;
   let allUsers = [];
 
   do {
     const data = await apiRequest(`/users?page=${page}&per_page=${MAX_PAGE_SIZE}`);
-    const items = Array.isArray(data) ? data : data.items ?? [];
+    const items = Array.isArray(data) ? data : (data.items ?? []);
     allUsers = allUsers.concat(items);
     totalPages = data?.pagination?.total_pages ?? 1;
     page += 1;

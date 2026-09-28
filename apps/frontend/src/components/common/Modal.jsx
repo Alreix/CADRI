@@ -17,16 +17,14 @@ function Modal({ title, message, onClose }) {
         </div>
         <div className="auth-modal-body">
           <span className="auth-modal-icon-error" aria-hidden="true">
-            <CircleX
-              size={20}
-              className="auth-modal-icon-error"
-              aria-hidden="true"
-            />
+            <CircleX size={20} className="auth-modal-icon-error" aria-hidden="true" />
           </span>
           <span>{message}</span>
         </div>
         <div className="auth-modal-footer">
-          <button className="auth-modal-btn-ok" onClick={onClose}>OK</button>
+          <button className="auth-modal-btn-ok" onClick={onClose}>
+            OK
+          </button>
         </div>
       </div>
     </div>

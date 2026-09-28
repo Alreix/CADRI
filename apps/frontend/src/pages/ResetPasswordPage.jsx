@@ -54,16 +54,10 @@ function ResetPasswordPage() {
   return (
     <AuthLayout>
       {modal && (
-        <Modal
-          title={modal.title}
-          message={modal.message}
-          onClose={() => setModal(null)}
-        />
+        <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />
       )}
 
-      {showHint && (
-        <PasswordRequirementsModal onClose={closeHint} />
-      )}
+      {showHint && <PasswordRequirementsModal onClose={closeHint} />}
 
       <div className="auth-card">
         <h1 className="auth-card-title">Réinitialiser le mot de passe</h1>

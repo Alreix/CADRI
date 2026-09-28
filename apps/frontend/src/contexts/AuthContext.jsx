@@ -14,8 +14,8 @@ import { logout as logoutApi } from "../api/authApi";
 export const AuthContext = createContext({
   user: null,
   loading: true,
-  login: () => { },
-  logout: () => { },
+  login: () => {},
+  logout: () => {},
 });
 
 // Key used to persist the user object in localStorage between page reloads.
@@ -147,9 +147,7 @@ function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
   );
 }
 

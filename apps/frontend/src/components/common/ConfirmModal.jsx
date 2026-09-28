@@ -25,7 +25,9 @@ function ConfirmModal({
         </div>
         <div className="confirm-modal-body">{message}</div>
         <div className="confirm-modal-footer">
-          <button className="confirm-modal-cancel" onClick={onCancel}>{cancelLabel}</button>
+          <button className="confirm-modal-cancel" onClick={onCancel}>
+            {cancelLabel}
+          </button>
           <button
             className={danger ? "confirm-modal-confirm-danger" : "confirm-modal-confirm-primary"}
             onClick={onConfirm}

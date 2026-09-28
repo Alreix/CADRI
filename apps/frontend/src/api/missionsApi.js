@@ -64,9 +64,7 @@ function mapMissionFromBackend(mission) {
 // Converts a frontend mission form object into the snake_case payload the backend expects.
 function mapMissionToBackend(mission) {
   const assignedUserIds = mission.assignedUsers ?? mission.assigned_user_ids ?? [];
-  const serviceIds = mission.serviceIds ?? (
-    mission.service ? [mission.service] : []
-  );
+  const serviceIds = mission.serviceIds ?? (mission.service ? [mission.service] : []);
 
   return {
     title: mission.title,
@@ -145,7 +143,7 @@ export async function getMissions(filters = {}) {
   const queryString = queryParams.toString();
   const data = await apiRequest(`/missions${queryString ? `?${queryString}` : ""}`);
   // Handles both a plain array and a paginated { items: [...] } response.
-  const missions = Array.isArray(data) ? data : data.items ?? [];
+  const missions = Array.isArray(data) ? data : (data.items ?? []);
   return missions.map(mapMissionFromBackend);
 }
 

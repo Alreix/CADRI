@@ -19,7 +19,12 @@ function ProtectedRoute({ children, requiredRole = null }) {
   // Still checking the session (see AuthContext): render nothing visible yet
   // to avoid a flash, but still announce it for screen reader users in case
   // the check takes a moment (e.g. a slow network).
-  if (loading) return <p role="status" className="sr-only">Chargement…</p>;
+  if (loading)
+    return (
+      <p role="status" className="sr-only">
+        Chargement…
+      </p>
+    );
 
   if (!user) {
     return <Navigate to="/login" replace />;

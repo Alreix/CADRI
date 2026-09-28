@@ -31,7 +31,7 @@ function UserFormPage({ mode = "create" }) {
       { value: "agent", label: "Agent" },
       { value: "responsable", label: "Responsable" },
       { value: "admin", label: "Admin" },
-    ]
+    ],
   );
 
   const [form, setForm, setField] = useFormState({
@@ -65,7 +65,7 @@ function UserFormPage({ mode = "create" }) {
         setLoadedRoleLabel(data.roleLabel || "");
       });
     }
-  }, [mode, id]);
+  }, [mode, id, setForm]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -91,9 +91,8 @@ function UserFormPage({ mode = "create" }) {
   const roleOptions = isAdmin
     ? roleOptionsSource
     : roleOptionsSource.filter((role) => role.value !== "admin");
-  const selectedServiceLabel = (
-    serviceOptions.find((service) => service.id === form.service)?.label || form.service
-  );
+  const selectedServiceLabel =
+    serviceOptions.find((service) => service.id === form.service)?.label || form.service;
   const selectedRoleLabel =
     loadedRoleLabel ||
     roleOptionsSource.find((role) => role.value === form.role)?.label ||
@@ -133,7 +132,6 @@ function UserFormPage({ mode = "create" }) {
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="profile-form-grid">
-
               <div className="profile-field">
                 <label className="profile-field-label" htmlFor="role">
                   Rôle
@@ -157,7 +155,9 @@ function UserFormPage({ mode = "create" }) {
                   >
                     <option value="" />
                     {roleOptions.map((roleOption) => (
-                      <option key={roleOption.value} value={roleOption.value}>{roleOption.label}</option>
+                      <option key={roleOption.value} value={roleOption.value}>
+                        {roleOption.label}
+                      </option>
                     ))}
                   </select>
                 )}
@@ -185,7 +185,9 @@ function UserFormPage({ mode = "create" }) {
                   >
                     <option value="" />
                     {serviceOptions.map((service) => (
-                      <option key={service.id} value={service.id}>{service.label}</option>
+                      <option key={service.id} value={service.id}>
+                        {service.label}
+                      </option>
                     ))}
                   </select>
                 )}
@@ -243,8 +245,8 @@ function UserFormPage({ mode = "create" }) {
 
             {mode === "create" && (
               <p className="form-note">
-                <strong>Note :</strong> Le compte sera créé sans mot de passe.
-                Un email d'activation sera envoyé automatiquement à l'adresse email de l'utilisateur.
+                <strong>Note :</strong> Le compte sera créé sans mot de passe. Un email d'activation
+                sera envoyé automatiquement à l'adresse email de l'utilisateur.
               </p>
             )}
 

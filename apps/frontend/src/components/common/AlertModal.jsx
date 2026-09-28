@@ -16,7 +16,9 @@ function AlertModal({ message, onClose }) {
         </div>
         <div className="confirm-modal-body">{message}</div>
         <div className="confirm-modal-footer">
-          <button className="confirm-modal-confirm-primary" onClick={onClose}>OK</button>
+          <button className="confirm-modal-confirm-primary" onClick={onClose}>
+            OK
+          </button>
         </div>
       </div>
     </div>

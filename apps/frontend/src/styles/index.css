@@ -13,7 +13,6 @@
   5. Shared page components
 */
 
-
 /* --- 1. CSS VARIABLES (design tokens) --- */
 
 :root {
@@ -116,7 +115,6 @@
   --transition: 150ms ease;
 }
 
-
 /* --- 2. RESET & BASE --- */
 
 *,
@@ -192,7 +190,6 @@ a:hover {
   text-decoration: underline;
 }
 
-
 /* --- 3. TYPOGRAPHY --- */
 
 .page-title {
@@ -221,7 +218,6 @@ a:hover {
   font-size: var(--text-sm);
 }
 
-
 /* --- 4. REUSABLE COMPONENTS --- */
 
 /* --- Card / Panel --- */
@@ -243,7 +239,10 @@ a:hover {
   font-weight: var(--font-medium);
   border-radius: var(--radius);
   border: 1px solid transparent;
-  transition: background-color var(--transition), color var(--transition), border-color var(--transition);
+  transition:
+    background-color var(--transition),
+    color var(--transition),
+    border-color var(--transition);
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
@@ -342,7 +341,9 @@ a:hover {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .form-input:focus,
@@ -357,7 +358,6 @@ a:hover {
   font-size: var(--text-xs);
   color: var(--color-danger);
 }
-
 
 /* --- 5. SHARED PAGE COMPONENTS --- */
 
@@ -411,7 +411,9 @@ a:hover {
   background: #ffffff;
   border: 1px solid #d1d9e0;
   border-radius: 8px;
-  transition: border-color 150ms, box-shadow 150ms;
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
   box-sizing: border-box;
 }
 
