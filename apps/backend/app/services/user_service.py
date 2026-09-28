@@ -12,6 +12,7 @@ from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
 from app.models.token_blocklist import TokenBlocklist
 from app.models.user import User
+from app.repositories.mission_repository import MissionRepository
 from app.repositories.role_repository import RoleRepository
 from app.repositories.service_repository import ServiceRepository
 from app.repositories.user_repository import UserRepository
@@ -243,6 +244,11 @@ class UserService:
             user = UserRepository.get_by_id_for_update(user_id)
             if not user:
                 raise NotFoundError("User not found.")
+
+            if MissionRepository.exists_by_creator(user.id):
+                raise ConflictError(
+                    "User cannot be deleted because they created one or more missions."
+                )
 
             AccountActivationToken.query.filter_by(user_id=user.id).delete()
             PasswordResetToken.query.filter_by(user_id=user.id).delete()

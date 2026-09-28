@@ -1,7 +1,10 @@
 """Additional API tests for user administration routes."""
 
 import uuid
+from datetime import datetime, timedelta, timezone
 
+from app.models.mission import Mission
+from app.repositories.mission_repository import MissionRepository
 from app.repositories.user_repository import UserRepository
 from tests.helpers.auth_helpers import auth_headers
 
@@ -183,6 +186,44 @@ def test_admin_can_delete_user(client, admin_token, user_factory, roles_services
 
     assert response.status_code == 200
     assert UserRepository.get_by_id(user.id) is None
+
+
+def test_admin_cannot_delete_user_who_created_mission(
+    client, admin_token, user_factory, roles_services
+):
+    user = user_factory(
+        email="mission.creator@cadri.test",
+        role=roles_services["agent_role"],
+        service=roles_services["roads"],
+    )
+    start_date = datetime.now(timezone.utc) + timedelta(days=1)
+    mission = MissionRepository.create(
+        Mission(
+            title="Test mission",
+            intervention_type="Maintenance",
+            location="Town hall",
+            description="Mission created by the user",
+            planned_agents_count=1,
+            estimated_duration=1.0,
+            start_date=start_date,
+            end_date=start_date + timedelta(hours=2),
+            priority="high",
+            signage_required=False,
+            created_by=user.id,
+        )
+    )
+
+    response = client.delete(
+        f"/users/{user.id}",
+        headers=auth_headers(admin_token),
+    )
+
+    assert response.status_code == 409
+    assert response.get_json()["error"] == (
+        "User cannot be deleted because they created one or more missions."
+    )
+    assert UserRepository.get_by_id(user.id) is not None
+    assert MissionRepository.get_by_id(mission.id) is not None
 
 
 def test_non_admin_cannot_delete_user(client, responsable_token, agent_user):
