@@ -13,6 +13,7 @@ import { useFormState } from "../hooks/useFormState";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordInput from "../components/common/PasswordInput";
+import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
 import "../styles/ProfilePage.css";
 import "../styles/ConfirmModals.css";
 
@@ -212,7 +213,7 @@ function ProfilePage() {
 
               <hr className="profile-divider" />
 
-              <div className="profile-actions">
+              <div className="profile-actions profile-actions--center">
                 <button className="profile-btn-primary" onClick={() => setEditing(true)}>
                   Modifier le profil
                 </button>
@@ -225,6 +226,7 @@ function ProfilePage() {
 
           {editing && (
             <form onSubmit={handleSave} autoComplete="off" noValidate>
+              <RequiredFieldsNote />
               <p className="profile-section-title">Informations personnelles</p>
 
               <div className="profile-form-grid">
@@ -359,7 +361,7 @@ function ProfilePage() {
                 </div>
               </div>
 
-              <div className="profile-actions">
+              <div className="profile-actions profile-actions--center">
                 <button type="submit" className="profile-btn-primary">
                   Mettre à jour le profil
                 </button>

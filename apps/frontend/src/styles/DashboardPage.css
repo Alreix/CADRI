@@ -94,36 +94,6 @@
   color: #52606d;
 }
 
-.tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  border: 1px solid transparent;
-  color: #1f2933;
-  background: #e9eef2;
-}
-
-.tag--urgent {
-  background: #f6d1d8;
-  border-color: #e5748a;
-  color: #b01230;
-}
-
-.tag--validation {
-  background: #fdf6b2;
-  border-color: #fcd34d;
-  color: #92400e;
-}
-
-.tag--in-progress {
-  background: #d3dce2;
-  border-color: #aebdc9;
-  color: #234e70;
-}
-
 .search-input-icon {
   width: 18px;
   height: 18px;

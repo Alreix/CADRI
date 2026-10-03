@@ -5,6 +5,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordFieldWithHint from "../components/common/PasswordFieldWithHint";
+import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
 import { usePasswordConfirmation } from "../hooks/usePasswordConfirmation";
 import { useModalAccessibility } from "../hooks/useModalAccessibility";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -93,6 +94,7 @@ function ActivateAccountPage() {
         <h1 className="auth-card-title">Activer votre compte</h1>
 
         <form onSubmit={handleSubmit} autoComplete="off" noValidate>
+          <RequiredFieldsNote />
           <PasswordFieldWithHint
             id="activation-new-password"
             label="Mot de passe"

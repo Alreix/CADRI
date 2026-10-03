@@ -6,6 +6,7 @@ import AuthLayout from "../components/layout/AuthLayout";
 import Modal from "../components/common/Modal";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordFieldWithHint from "../components/common/PasswordFieldWithHint";
+import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
 import { usePasswordConfirmation } from "../hooks/usePasswordConfirmation";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { resetPassword } from "../api/authApi";
@@ -63,6 +64,7 @@ function ResetPasswordPage() {
         <h1 className="auth-card-title">Réinitialiser le mot de passe</h1>
 
         <form onSubmit={handleSubmit} autoComplete="off" noValidate>
+          <RequiredFieldsNote />
           <PasswordFieldWithHint
             id="reset-new-password"
             label="Nouveau mot de passe"

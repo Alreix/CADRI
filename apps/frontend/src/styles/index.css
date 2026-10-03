@@ -359,6 +359,18 @@ a:hover {
   color: var(--color-danger);
 }
 
+/* "Fields marked with * are required" legend (RequiredFieldsNote.jsx). */
+.required-fields-note {
+  font-size: 0.85rem;
+  color: #52606d;
+  margin: 0 0 20px;
+}
+
+.required-fields-note-star {
+  color: #d4183d;
+  font-weight: 600;
+}
+
 /* --- 5. SHARED PAGE COMPONENTS --- */
 
 /* Used across multiple pages (DashboardPage, UserManagementPage, etc.)
@@ -467,7 +479,8 @@ a:hover {
 }
 
 /* Active state: filter panel is open */
-.filter-btn--active {
+.filter-btn--active,
+.filter-btn--active:hover {
   background-color: #234e70;
   color: #ffffff;
   border-color: #234e70;

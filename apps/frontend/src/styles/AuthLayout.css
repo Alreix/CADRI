@@ -32,12 +32,14 @@
   letter-spacing: 0.02em;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 3px;
 }
 
 .auth-logo-image {
-  width: 70px;
-  height: 70px;
+  width: 48px;
+  height: 48px;
+  margin-left: -14px;
+  margin-right: -4px;
   object-fit: contain;
 }
 
@@ -130,6 +132,7 @@
   font-size: 1rem;
   user-select: none;
 }
+
 .auth-password-info-btn {
   position: absolute;
   right: 12px;
@@ -359,14 +362,19 @@
   top: 50%;
   right: 15px;
   transform: translateY(-50%);
-
   border: none;
   background: transparent;
   cursor: pointer;
-
+  color: #9aa5b4;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.password-toggle:hover,
+.password-toggle:focus {
+  color: #234e70;
+  outline: none;
 }
 
 .password-toggle-with-info {
@@ -375,6 +383,10 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+  .auth-header {
+    padding: 0 12px;
+  }
+
   .auth-body {
     padding: 24px 16px;
   }

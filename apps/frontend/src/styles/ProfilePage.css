@@ -214,8 +214,8 @@
   flex-wrap: wrap;
 }
 
-.profile-actions--spread {
-  justify-content: space-between;
+.profile-actions--center {
+  justify-content: center;
 }
 
 /* ── Note box (used in UserFormPage create) ── */
@@ -247,9 +247,5 @@
 
   .profile-title h1 {
     font-size: 1.25rem;
-  }
-
-  .profile-actions--spread {
-    flex-wrap: wrap;
   }
 }

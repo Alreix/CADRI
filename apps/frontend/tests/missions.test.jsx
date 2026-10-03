@@ -271,6 +271,7 @@ describe("MissionFormPage — création", () => {
     });
     fireEvent.change(screen.getByLabelText(/date de début/i), { target: { value: "2026-07-01" } });
     fireEvent.change(screen.getByLabelText(/date de fin/i), { target: { value: "2026-07-31" } });
+    fireEvent.change(screen.getByLabelText(/durée estimée/i), { target: { value: "16" } });
     fireEvent.click(screen.getByRole("button", { name: /créer la mission/i }));
 
     await waitFor(() => {
@@ -279,6 +280,36 @@ describe("MissionFormPage — création", () => {
       );
       expect(postCall).toBeTruthy();
     });
+  });
+
+  test("une durée estimée inférieure à 1 heure bloque la création", async () => {
+    renderForm("responsable", "create");
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+
+    fireEvent.change(screen.getByLabelText(/^titre/i), { target: { value: "New mission" } });
+    fireEvent.change(screen.getByLabelText(/durée estimée/i), { target: { value: "-3" } });
+    fireEvent.click(screen.getByRole("button", { name: /créer la mission/i }));
+
+    expect(await screen.findByText(/au moins 1 heure/i)).toBeInTheDocument();
+    const postCall = global.fetch.mock.calls.find(
+      ([url, options]) => options?.method === "POST" && String(url).includes("/missions"),
+    );
+    expect(postCall).toBeUndefined();
+  });
+
+  test("une durée estimée non entière bloque la création", async () => {
+    renderForm("responsable", "create");
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+
+    fireEvent.change(screen.getByLabelText(/^titre/i), { target: { value: "New mission" } });
+    fireEvent.change(screen.getByLabelText(/durée estimée/i), { target: { value: "1.5" } });
+    fireEvent.click(screen.getByRole("button", { name: /créer la mission/i }));
+
+    expect(await screen.findByText(/nombre entier/i)).toBeInTheDocument();
+    const postCall = global.fetch.mock.calls.find(
+      ([url, options]) => options?.method === "POST" && String(url).includes("/missions"),
+    );
+    expect(postCall).toBeUndefined();
   });
 });
 

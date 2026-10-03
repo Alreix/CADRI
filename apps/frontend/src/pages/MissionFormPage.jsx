@@ -8,6 +8,7 @@ import { ArrowLeft, Trash2, X, UserPlus } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AlertModal from "../components/common/AlertModal";
+import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
 import { AuthContext } from "../contexts/AuthContext";
 import { getServices } from "../api/metadataApi";
 import {
@@ -173,6 +174,15 @@ function MissionFormPage({ mode = "create" }) {
       return;
     }
 
+    // Whole hours only, at least 1 (the backend enforces the >= 1 part in
+    // MissionService._validate_estimated_duration); the form uses noValidate,
+    // so the input's min/step attributes alone don't block submission.
+    const estimatedDuration = Number(form.estimatedDuration);
+    if (!isAgent && (!Number.isInteger(estimatedDuration) || estimatedDuration < 1)) {
+      setAlertMessage("La durée estimée doit être un nombre entier d'au moins 1 heure.");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -300,6 +310,7 @@ function MissionFormPage({ mode = "create" }) {
           <h1 className="mission-form-title">{titles[mode]}</h1>
 
           <form onSubmit={handleSave} noValidate>
+            <RequiredFieldsNote />
             {/* Titre */}
             <div className="mission-field">
               <label className="mission-field-label" htmlFor="title">
@@ -470,6 +481,8 @@ function MissionFormPage({ mode = "create" }) {
                 type="number"
                 id="estimatedDuration"
                 name="estimatedDuration"
+                min="1"
+                step="1"
                 placeholder="ex : 16"
                 value={form.estimatedDuration}
                 onChange={handleChange}
@@ -638,7 +651,7 @@ function MissionFormPage({ mode = "create" }) {
             <hr className="mission-divider" />
 
             {/* Actions */}
-            <div className={`mission-form-actions${isEdit ? "" : " mission-form-actions--center"}`}>
+            <div className="mission-form-actions mission-form-actions--center">
               <button
                 type="submit"
                 className="profile-btn-primary"
