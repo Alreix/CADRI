@@ -141,7 +141,7 @@ function DashboardPage() {
           />
         </div>
         <button
-          className="filter-btn"
+          className={`filter-btn${showFilters ? " filter-btn--active" : ""}`}
           onClick={() => setShowFilters((isVisible) => !isVisible)}
           aria-expanded={showFilters}
         >
