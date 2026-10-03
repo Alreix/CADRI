@@ -54,17 +54,23 @@
 .intranet-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.125rem;
+  gap: 3px;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.02em;
   margin-right: auto;
 }
 
+/* Fits inside the 56px header. The negative margins cancel the transparent
+   padding baked into logo.png (~30% of its width on the left, ~23% on the
+   right), which otherwise pushes the logo away from the edge and from the
+   "CADRI" text. */
 .intranet-logo-image {
-  height: 70px;
-  width: 70px;
+  height: 48px;
+  width: 48px;
+  margin-left: -14px;
+  margin-right: -4px;
   object-fit: contain;
   display: block;
   flex-shrink: 0;
@@ -88,16 +94,16 @@
 .intranet-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .intranet-nav-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 8px 12px;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: #cdd8e3;
   text-decoration: none;
@@ -278,12 +284,14 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .intranet-hamburger {
-    display: block;
+  .intranet-header {
+    padding: 0 12px;
+    gap: 8px;
   }
 
-  .intranet-logo {
-    margin-right: auto;
+  .intranet-hamburger {
+    display: block;
+    padding: 4px;
   }
 
   .intranet-nav {
