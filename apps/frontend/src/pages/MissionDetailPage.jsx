@@ -9,6 +9,7 @@ import { AuthContext } from "../contexts/AuthContext";
 import { formatDateFR } from "../api/missionsApi";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/MissionDetailPage.css";
+import "../styles/StatusBadge.css";
 import "../styles/ConfirmModals.css";
 import {
   getMission,
@@ -16,6 +17,14 @@ import {
   updateMissionStatus,
   completeMission,
 } from "../api/missionsApi";
+
+// Status -> color variant of the status badge (see MissionDetailPage.css).
+const statusBadgeModifiers = {
+  to_do: " mission-badge--to-do",
+  in_progress: " mission-badge--in-progress",
+  remark_pending_validation: " mission-badge--validation",
+  completed: " mission-badge--completed",
+};
 
 function MissionDetailPage() {
   const { id } = useParams();
@@ -50,8 +59,11 @@ function MissionDetailPage() {
   const handleStartMission = async () => {
     setSavingAction(true);
     try {
-      const updatedMission = await updateMissionStatus(id, "in_progress");
-      setMission(updatedMission);
+      // The /status endpoint returns the mission without its relations
+      // (services, assignments): re-fetch it instead of using that response,
+      // otherwise the service badges disappear once the mission is started.
+      await updateMissionStatus(id, "in_progress");
+      await refreshMission();
     } catch (err) {
       setAlertMessage(err.message || "Impossible de démarrer la mission.");
     } finally {
@@ -157,8 +169,7 @@ function MissionDetailPage() {
               )}
               {mission.status && (
                 <span
-                  className={`mission-badge mission-badge--status${mission.statusLabel === "En cours" ? " mission-badge--in-progress" : ""
-                    }`}
+                  className={`mission-badge mission-badge--status${statusBadgeModifiers[mission.status] ?? ""}`}
                 >
                   {mission.statusLabel}
                 </span>
