@@ -6,6 +6,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import ConfirmModal from "../components/common/ConfirmModal";
+import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
 import { AuthContext } from "../contexts/AuthContext";
 import { getUser, createUser, updateUser, deleteUser } from "../api/usersApi";
 import { getRoles, getServices } from "../api/metadataApi";
@@ -132,6 +133,7 @@ function UserFormPage({ mode = "create" }) {
           <h1 className="profile-section-title">{titles[mode]}</h1>
 
           <form onSubmit={handleSubmit} noValidate>
+            {!isReadOnly && <RequiredFieldsNote />}
             <div className="profile-form-grid">
 
               <div className="profile-field">
@@ -249,7 +251,7 @@ function UserFormPage({ mode = "create" }) {
             )}
 
             {mode === "view" && (
-              <div className="profile-actions">
+              <div className="profile-actions profile-actions--center">
                 <button
                   type="button"
                   className="profile-btn-primary"
@@ -261,7 +263,7 @@ function UserFormPage({ mode = "create" }) {
             )}
 
             {mode === "create" && (
-              <div className="profile-actions">
+              <div className="profile-actions profile-actions--center">
                 <button type="submit" className="profile-btn-primary" disabled={loading}>
                   {loading ? "Création…" : "Créer un nouvel utilisateur"}
                 </button>
@@ -269,9 +271,9 @@ function UserFormPage({ mode = "create" }) {
             )}
 
             {mode === "edit" && (
-              <div className="profile-actions profile-actions--spread">
+              <div className="profile-actions profile-actions--center">
                 <button type="submit" className="profile-btn-primary" disabled={loading}>
-                  {loading ? "Enregistrement…" : "Valider la modification"}
+                  {loading ? "Enregistrement…" : "Sauvegarder les modifications"}
                 </button>
                 <button
                   type="button"
