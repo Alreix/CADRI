@@ -87,6 +87,7 @@
 
 .mission-field-input[readonly],
 .mission-field-input:disabled,
+.mission-field-textarea:disabled,
 .mission-field-textarea[readonly],
 .mission-field-select:disabled {
   background-color: #f5f7fa;
