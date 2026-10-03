@@ -6,20 +6,14 @@ const statusModifiers = {
   "À faire": " tag--to-do",
   "En cours": " tag--in-progress",
   "En attente de validation": " tag--validation",
-  "Terminée": " tag--completed",
+  Terminée: " tag--completed",
 };
 
 function StatusBadge({ priority, status }) {
   return (
     <>
-      {priority === "Urgente" && (
-        <span className="tag tag--urgent">Urgente</span>
-      )}
-      {status && (
-        <span className={`tag${statusModifiers[status] ?? ""}`}>
-          {status}
-        </span>
-      )}
+      {priority === "Urgente" && <span className="tag tag--urgent">Urgente</span>}
+      {status && <span className={`tag${statusModifiers[status] ?? ""}`}>{status}</span>}
     </>
   );
 }

@@ -13,6 +13,7 @@ from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
 from app.models.role import Role
 from app.models.service import Service
+from app.models.token_blocklist import TokenBlocklist
 from app.models.user import User
 
 
@@ -26,9 +27,7 @@ def app():
     with application.app_context():
         database_uri = application.config["SQLALCHEMY_DATABASE_URI"]
         if "test" not in database_uri and "cadri_test_db" not in database_uri:
-            raise RuntimeError(
-                "Tests must run against the test database, not the development DB."
-            )
+            raise RuntimeError("Tests must run against the test database, not the development DB.")
 
         db.drop_all()
         db.create_all()
@@ -51,6 +50,7 @@ def clean_db(app):
         db.session.query(AccountActivationToken).delete()
         db.session.query(PasswordResetToken).delete()
         db.session.query(RefreshToken).delete()
+        db.session.query(TokenBlocklist).delete()
         db.session.query(User).delete()
         db.session.query(Role).delete()
         db.session.query(Service).delete()
@@ -81,9 +81,7 @@ def roles_services(app):
             description="Roads service",
         )
 
-        db.session.add_all(
-            [admin_role, responsable_role, agent_role, green_spaces, roads]
-        )
+        db.session.add_all([admin_role, responsable_role, agent_role, green_spaces, roads])
         db.session.commit()
 
         return {

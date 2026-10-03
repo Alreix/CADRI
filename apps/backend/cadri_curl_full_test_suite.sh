@@ -11,9 +11,9 @@
 #   - backend reachable on BASE_URL, default: http://127.0.0.1:5000
 #   - python3 and curl installed on the host
 #   - seeded local users available:
-#       admin@cadri.local / StrongPass1
-#       responsable@cadri.local / StrongPass1
-#       agent@cadri.local / StrongPass1
+#       admin@cadri.local / StrongPass1*
+#       responsable@cadri.local / StrongPass1*
+#       agent@cadri.local / StrongPass1*
 #
 # Usage from apps/backend or project root:
 #   chmod +x cadri_curl_full_test_suite.sh
@@ -33,6 +33,7 @@ MAILPIT_URL="${MAILPIT_URL:-http://127.0.0.1:8025}"
 TMP_DIR="$(mktemp -d)"
 COOKIE_ADMIN="$TMP_DIR/admin.cookies"
 COOKIE_RESPONSABLE="$TMP_DIR/responsable.cookies"
+COOKIE_RESPONSABLE_REVOKED="$TMP_DIR/responsable.revoked.cookies"
 COOKIE_AGENT="$TMP_DIR/agent.cookies"
 COOKIE_TEMP="$TMP_DIR/temp.cookies"
 COOKIE_PREVIOUS="$TMP_DIR/previous.cookies"
@@ -42,8 +43,83 @@ FAIL=0
 SKIP=0
 RUN_ID="$(date +%s)"
 
+cleanup_curl_test_data() {
+    # Keep the development dashboard readable by removing records owned by this suite.
+    if ! command -v docker >/dev/null 2>&1 || ! docker compose ps backend >/dev/null 2>&1; then
+        return 0
+    fi
+
+    docker compose exec -T backend python - <<'PY' 2>/dev/null || true
+from app import create_app
+from app.extensions import db
+from app.models.account_activation_token import AccountActivationToken
+from app.models.mission import Mission
+from app.models.mission_assignment import MissionAssignment
+from app.models.mission_service_link import MissionServiceLink
+from app.models.password_reset_token import PasswordResetToken
+from app.models.refresh_token import RefreshToken
+from app.models.user import User
+
+app = create_app()
+
+with app.app_context():
+    mission_ids = [
+        mission_id
+        for (mission_id,) in db.session.query(Mission.id)
+        .filter(Mission.title.like("Curl %"))
+        .all()
+    ]
+    deleted_missions = len(mission_ids)
+
+    if mission_ids:
+        MissionAssignment.query.filter(
+            MissionAssignment.mission_id.in_(mission_ids)
+        ).delete(synchronize_session=False)
+        MissionServiceLink.query.filter(
+            MissionServiceLink.mission_id.in_(mission_ids)
+        ).delete(synchronize_session=False)
+        Mission.query.filter(Mission.id.in_(mission_ids)).delete(
+            synchronize_session=False
+        )
+
+    user_ids = [
+        user_id
+        for (user_id,) in db.session.query(User.id)
+        .filter(User.email.like("curl.%@cadri.test"))
+        .all()
+    ]
+    deleted_users = len(user_ids)
+
+    if user_ids:
+        MissionAssignment.query.filter(MissionAssignment.user_id.in_(user_ids)).delete(
+            synchronize_session=False
+        )
+        AccountActivationToken.query.filter(
+            AccountActivationToken.user_id.in_(user_ids)
+        ).delete(synchronize_session=False)
+        PasswordResetToken.query.filter(
+            PasswordResetToken.user_id.in_(user_ids)
+        ).delete(synchronize_session=False)
+        RefreshToken.query.filter(RefreshToken.user_id.in_(user_ids)).delete(
+            synchronize_session=False
+        )
+        User.query.filter(User.id.in_(user_ids)).delete(synchronize_session=False)
+
+    db.session.commit()
+
+    if deleted_missions or deleted_users:
+        print(
+            f"INFO — cleaned cURL test data: "
+            f"missions={deleted_missions}, users={deleted_users}"
+        )
+PY
+}
+
 cleanup() {
+    local exit_code=$?
+    cleanup_curl_test_data
     rm -rf "$TMP_DIR"
+    exit "$exit_code"
 }
 trap cleanup EXIT
 
@@ -307,7 +383,7 @@ with app.app_context():
     for email in ("admin@cadri.local", "responsable@cadri.local", "agent@cadri.local"):
         user = User.query.filter_by(email=email).first()
         if user:
-            user.set_password("StrongPass1")
+            user.set_password("StrongPass1*")
             user.is_active = True
     db.session.commit()
 PY
@@ -323,6 +399,7 @@ echo "Run ID: $RUN_ID"
 echo ""
 echo "This script is destructive for test data. Use only on local/dev DB."
 
+cleanup_curl_test_data
 ensure_seed_data
 reset_test_passwords
 
@@ -341,9 +418,9 @@ STATUS=$(request -X GET "$BASE_URL/docs")
 check_one_of "GET /docs is reachable" "$STATUS" 200 308 301
 
 section "Authentication setup"
-login_and_capture "admin@cadri.local" "StrongPass1" "$COOKIE_ADMIN" ADMIN_TOKEN "Admin login returns 200"
-login_and_capture "responsable@cadri.local" "StrongPass1" "$COOKIE_RESPONSABLE" RESPONSABLE_TOKEN "Responsable login returns 200"
-login_and_capture "agent@cadri.local" "StrongPass1" "$COOKIE_AGENT" AGENT_TOKEN "Agent login returns 200"
+login_and_capture "admin@cadri.local" "StrongPass1*" "$COOKIE_ADMIN" ADMIN_TOKEN "Admin login returns 200"
+login_and_capture "responsable@cadri.local" "StrongPass1*" "$COOKIE_RESPONSABLE" RESPONSABLE_TOKEN "Responsable login returns 200"
+login_and_capture "agent@cadri.local" "StrongPass1*" "$COOKIE_AGENT" AGENT_TOKEN "Agent login returns 200"
 
 STATUS=$(request -X POST "$BASE_URL/auth/login" \
     -H "Content-Type: application/json" \
@@ -352,12 +429,12 @@ check "POST /auth/login wrong password returns 401" 401 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/login" \
     -H "Content-Type: application/json" \
-    -d '{"email":"unknown@cadri.local","password":"StrongPass1"}')
+    -d '{"email":"unknown@cadri.local","password":"StrongPass1*"}')
 check "POST /auth/login unknown email returns 401" 401 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/login" \
     -H "Content-Type: application/json" \
-    -d '{"email":"invalid-email","password":"StrongPass1"}')
+    -d '{"email":"invalid-email","password":"StrongPass1*"}')
 check "POST /auth/login invalid email returns 400" 400 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/login" \
@@ -461,6 +538,9 @@ check "GET /users?service_id=<id> returns 200" 200 "$STATUS"
 STATUS=$(request -X GET "$BASE_URL/users?page=1&per_page=2" -H "Authorization: Bearer $ADMIN_TOKEN")
 check "GET /users pagination returns 200" 200 "$STATUS"
 
+STATUS=$(request -X GET "$BASE_URL/users?page=not-an-integer" -H "Authorization: Bearer $ADMIN_TOKEN")
+check "GET /users non-integer page returns 400" 400 "$STATUS"
+
 STATUS=$(request -X GET "$BASE_URL/users?page=0&per_page=10" -H "Authorization: Bearer $ADMIN_TOKEN")
 check "GET /users page=0 returns 400" 400 "$STATUS"
 
@@ -547,27 +627,27 @@ TEMP_ACTIVATION_TOKEN=$(get_activation_token_from_db "$TEMP_AGENT_EMAIL")
 if [ -n "$TEMP_ACTIVATION_TOKEN" ]; then
     STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$TEMP_ACTIVATION_TOKEN\",\"password\":\"TempStrongPass1\"}")
+        -d "{\"token\":\"$TEMP_ACTIVATION_TOKEN\",\"password\":\"TempStrongPass1!\"}")
     check "POST /auth/activate-account valid token returns 200" 200 "$STATUS"
 
     STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$TEMP_ACTIVATION_TOKEN\",\"password\":\"TempStrongPass1\"}")
+        -d "{\"token\":\"$TEMP_ACTIVATION_TOKEN\",\"password\":\"TempStrongPass1!\"}")
     check "POST /auth/activate-account reused token returns 410" 410 "$STATUS"
 
-    login_and_capture "$TEMP_AGENT_EMAIL" "TempStrongPass1" "$COOKIE_TEMP" TEMP_AGENT_TOKEN "Activated temp agent login returns 200"
+    login_and_capture "$TEMP_AGENT_EMAIL" "TempStrongPass1!" "$COOKIE_TEMP" TEMP_AGENT_TOKEN "Activated temp agent login returns 200"
 else
     skip_check "Activation token tests" "docker compose backend setup not available"
 fi
 
 STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
     -H "Content-Type: application/json" \
-    -d '{"token":"unknown-token","password":"StrongPass1"}')
+    -d '{"token":"unknown-token","password":"StrongPass1!"}')
 check "POST /auth/activate-account unknown token returns 404" 404 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
     -H "Content-Type: application/json" \
-    -d '{"token":"","password":"StrongPass1"}')
+    -d '{"token":"","password":"StrongPass1*"}')
 check "POST /auth/activate-account missing token returns 400" 400 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
@@ -603,18 +683,18 @@ RESET_ACTIVATION_TOKEN=$(get_activation_token_from_db "$RESET_USER_EMAIL")
 if [ -n "$RESET_ACTIVATION_TOKEN" ]; then
     STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$RESET_ACTIVATION_TOKEN\",\"password\":\"ResetOldPass1\"}")
+        -d "{\"token\":\"$RESET_ACTIVATION_TOKEN\",\"password\":\"ResetOldPass1!\"}")
     check "Activate reset test user returns 200" 200 "$STATUS"
 
     RESET_TOKEN=$(get_reset_token_from_db "$RESET_USER_EMAIL")
     STATUS=$(request -X POST "$BASE_URL/auth/reset-password" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$RESET_TOKEN\",\"password\":\"ResetNewPass1\"}")
+        -d "{\"token\":\"$RESET_TOKEN\",\"password\":\"ResetNewPass1!\"}")
     check "POST /auth/reset-password valid token returns 200" 200 "$STATUS"
 
     STATUS=$(request -X POST "$BASE_URL/auth/reset-password" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$RESET_TOKEN\",\"password\":\"ResetNewPass2\"}")
+        -d "{\"token\":\"$RESET_TOKEN\",\"password\":\"ResetNewPass2!\"}")
     check "POST /auth/reset-password reused token returns 410" 410 "$STATUS"
 else
     skip_check "Reset-password valid/reused token tests" "docker compose backend setup not available"
@@ -622,7 +702,7 @@ fi
 
 STATUS=$(request -X POST "$BASE_URL/auth/reset-password" \
     -H "Content-Type: application/json" \
-    -d '{"token":"unknown-token","password":"ResetNewPass1"}')
+    -d '{"token":"unknown-token","password":"ResetNewPass1!"}')
 check "POST /auth/reset-password unknown token returns 404" 404 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/auth/reset-password" \
@@ -638,12 +718,25 @@ check "POST /auth/refresh with cookie returns 200" 200 "$STATUS"
 AGENT_TOKEN=$(json_get "access_token")
 
 STATUS=$(request -X POST "$BASE_URL/auth/logout")
-check "POST /auth/logout without cookie returns 401" 401 "$STATUS"
+check "POST /auth/logout without credentials is idempotent and returns 200" 200 "$STATUS"
 
-STATUS=$(request -X POST "$BASE_URL/auth/logout" -b "$COOKIE_RESPONSABLE")
-check "POST /auth/logout with cookie returns 200" 200 "$STATUS"
-# Login responsable again because logout revoked cookie/token session record only, access token remains valid until expiry but refresh cookie is cleared.
-login_and_capture "responsable@cadri.local" "StrongPass1" "$COOKIE_RESPONSABLE" RESPONSABLE_TOKEN "Responsable re-login after logout returns 200"
+cp "$COOKIE_RESPONSABLE" "$COOKIE_RESPONSABLE_REVOKED"
+STATUS=$(request -X POST "$BASE_URL/auth/logout" \
+    -H "Authorization: Bearer $RESPONSABLE_TOKEN" \
+    -b "$COOKIE_RESPONSABLE_REVOKED")
+check "POST /auth/logout with access and refresh credentials returns 200" 200 "$STATUS"
+
+STATUS=$(request -X GET "$BASE_URL/me" -H "Authorization: Bearer $RESPONSABLE_TOKEN")
+check "GET /me rejects the old access token after logout" 401 "$STATUS"
+
+STATUS=$(request -X POST "$BASE_URL/auth/refresh" -b "$COOKIE_RESPONSABLE_REVOKED")
+check "POST /auth/refresh rejects the old refresh token after logout" 401 "$STATUS"
+
+# Log in again with fresh credentials after verifying that the previous
+# access and refresh credentials were both revoked by logout.
+login_and_capture "responsable@cadri.local" "StrongPass1*" "$COOKIE_RESPONSABLE" RESPONSABLE_TOKEN "Responsable re-login after logout returns 200"
+STATUS=$(request -X GET "$BASE_URL/me" -H "Authorization: Bearer $RESPONSABLE_TOKEN")
+check "GET /me accepts the fresh access token after re-login" 200 "$STATUS"
 
 CHANGE_EMAIL="curl.change.$RUN_ID@cadri.test"
 STATUS=$(create_user_api "$ADMIN_TOKEN" "Change" "Password" "$CHANGE_EMAIL" "agent" "$GREEN_SERVICE_ID")
@@ -652,32 +745,32 @@ CHANGE_ACTIVATION_TOKEN=$(get_activation_token_from_db "$CHANGE_EMAIL")
 if [ -n "$CHANGE_ACTIVATION_TOKEN" ]; then
     STATUS=$(request -X POST "$BASE_URL/auth/activate-account" \
         -H "Content-Type: application/json" \
-        -d "{\"token\":\"$CHANGE_ACTIVATION_TOKEN\",\"password\":\"ChangeOldPass1\"}")
+        -d "{\"token\":\"$CHANGE_ACTIVATION_TOKEN\",\"password\":\"ChangeOldPass1!\"}")
     check "Activate password-change user returns 200" 200 "$STATUS"
-    login_and_capture "$CHANGE_EMAIL" "ChangeOldPass1" "$COOKIE_PREVIOUS" CHANGE_TOKEN "Password-change user login returns 200"
+    login_and_capture "$CHANGE_EMAIL" "ChangeOldPass1!" "$COOKIE_PREVIOUS" CHANGE_TOKEN "Password-change user login returns 200"
 
     STATUS=$(request -X PATCH "$BASE_URL/auth/change-password" \
         -H "Authorization: Bearer $CHANGE_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"current_password":"WrongPassword1","new_password":"ChangeNewPass1"}')
+        -d '{"current_password":"WrongPassword1","new_password":"ChangeNewPass1!"}')
     check "PATCH /auth/change-password wrong current password returns 403" 403 "$STATUS"
 
     STATUS=$(request -X PATCH "$BASE_URL/auth/change-password" \
         -H "Authorization: Bearer $CHANGE_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"current_password":"ChangeOldPass1","new_password":"short"}')
+        -d '{"current_password":"ChangeOldPass1!","new_password":"short"}')
     check "PATCH /auth/change-password weak new password returns 400" 400 "$STATUS"
 
     STATUS=$(request -X PATCH "$BASE_URL/auth/change-password" \
         -H "Authorization: Bearer $CHANGE_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"current_password":"ChangeOldPass1","new_password":"ChangeNewPass1"}')
+        -d '{"current_password":"ChangeOldPass1!","new_password":"ChangeNewPass1!"}')
     check "PATCH /auth/change-password valid returns 200" 200 "$STATUS"
 
     STATUS=$(request -X POST "$BASE_URL/auth/login" \
         -c "$COOKIE_PREVIOUS" \
         -H "Content-Type: application/json" \
-        -d "{\"email\":\"$CHANGE_EMAIL\",\"password\":\"ChangeNewPass1\"}")
+        -d "{\"email\":\"$CHANGE_EMAIL\",\"password\":\"ChangeNewPass1!\"}")
     check "Login with changed password returns 200" 200 "$STATUS"
 else
     skip_check "Change-password valid flow" "docker compose backend setup not available"
@@ -727,6 +820,13 @@ STATUS=$(request -X POST "$BASE_URL/missions" \
     -H "Content-Type: application/json" \
     -d "$BAD_DATE_PAYLOAD")
 check "POST /missions invalid date order returns 400" 400 "$STATUS"
+
+MALFORMED_DATE_PAYLOAD=$(make_mission_payload "Curl malformed date $RUN_ID" "medium" "$GREEN_SERVICE_ID" "$AGENT_ID" "not-a-date")
+STATUS=$(request -X POST "$BASE_URL/missions" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$MALFORMED_DATE_PAYLOAD")
+check "POST /missions malformed start_date returns 400" 400 "$STATUS"
 
 UNKNOWN_SERVICE_PAYLOAD=$(make_mission_payload "Curl unknown service $RUN_ID" "medium" "$UNKNOWN_UUID" "$AGENT_ID")
 STATUS=$(request -X POST "$BASE_URL/missions" \
@@ -784,6 +884,12 @@ check "GET /missions date filters return 200" 200 "$STATUS"
 
 STATUS=$(request -X GET "$BASE_URL/missions?page=1&per_page=2" -H "Authorization: Bearer $ADMIN_TOKEN")
 check "GET /missions pagination returns 200" 200 "$STATUS"
+
+STATUS=$(request -X GET "$BASE_URL/missions?per_page=0" -H "Authorization: Bearer $ADMIN_TOKEN")
+check "GET /missions per_page=0 returns 400" 400 "$STATUS"
+
+STATUS=$(request -X GET "$BASE_URL/missions?start_date=not-a-date" -H "Authorization: Bearer $ADMIN_TOKEN")
+check "GET /missions malformed start_date returns 400" 400 "$STATUS"
 
 STATUS=$(request -X GET "$BASE_URL/missions/$MISSION_ID" -H "Authorization: Bearer $ADMIN_TOKEN")
 check "GET /missions/<id> returns 200" 200 "$STATUS"
@@ -891,6 +997,12 @@ STATUS=$(request -X POST "$BASE_URL/missions" \
 check "POST /missions creates remark mission returns 201" 201 "$STATUS"
 REMARK_MISSION_ID=$(json_get "mission.id")
 
+STATUS=$(request -X PATCH "$BASE_URL/missions/$REMARK_MISSION_ID/status" \
+    -H "Authorization: Bearer $AGENT_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"status":"in_progress"}')
+check "Start remark mission before tracking returns 200" 200 "$STATUS"
+
 STATUS=$(request -X PATCH "$BASE_URL/missions/$REMARK_MISSION_ID/actual-duration" \
     -H "Authorization: Bearer $AGENT_TOKEN" \
     -H "Content-Type: application/json" \
@@ -916,6 +1028,12 @@ STATUS=$(request -X POST "$BASE_URL/missions" \
     -d "$RESP_REMARK_PAYLOAD")
 check "POST /missions creates responsable remark mission returns 201" 201 "$STATUS"
 RESP_REMARK_MISSION_ID=$(json_get "mission.id")
+
+STATUS=$(request -X PATCH "$BASE_URL/missions/$RESP_REMARK_MISSION_ID/status" \
+    -H "Authorization: Bearer $RESPONSABLE_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"status":"in_progress"}')
+check "Start responsable remark mission before tracking returns 200" 200 "$STATUS"
 
 STATUS=$(request -X POST "$BASE_URL/missions/$RESP_REMARK_MISSION_ID/remark" \
     -H "Authorization: Bearer $RESPONSABLE_TOKEN" \
@@ -965,6 +1083,13 @@ STATUS=$(request -X POST "$BASE_URL/missions" \
     -d "$NO_DURATION_PAYLOAD")
 check "POST /missions creates no-duration complete test returns 201" 201 "$STATUS"
 NO_DURATION_MISSION_ID=$(json_get "mission.id")
+
+STATUS=$(request -X PATCH "$BASE_URL/missions/$NO_DURATION_MISSION_ID/status" \
+    -H "Authorization: Bearer $AGENT_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"status":"in_progress"}')
+check "Start mission before checking missing duration returns 200" 200 "$STATUS"
+
 STATUS=$(request -X POST "$BASE_URL/missions/$NO_DURATION_MISSION_ID/complete" \
     -H "Authorization: Bearer $AGENT_TOKEN")
 check "POST /missions/<id>/complete without duration returns 400" 400 "$STATUS"

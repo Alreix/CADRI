@@ -32,16 +32,16 @@ echo "$PROJECT_ROOT"
 echo ""
 
 # ---------------------------------------------------------------------------
-# Start containers
+# Start database and mail service
 # ---------------------------------------------------------------------------
 
-echo "Starting Docker containers..."
-docker compose up --build -d
+echo "Starting database and mail containers..."
+docker compose up -d db mailpit
 
 echo ""
 echo "Waiting for PostgreSQL to be ready..."
 
-until docker compose exec -T db pg_isready -U cadri_user -d cadri_db > /dev/null 2>&1; do
+until docker compose exec -T db pg_isready -U cadri_user -d postgres > /dev/null 2>&1; do
     echo "PostgreSQL is not ready yet. Waiting..."
     sleep 2
 done
@@ -50,19 +50,26 @@ echo "PostgreSQL is ready."
 echo ""
 
 # ---------------------------------------------------------------------------
-# Create test database if missing
+# Reset development and test databases
 # ---------------------------------------------------------------------------
 
-echo "Checking test database..."
+echo "Resetting development database..."
+docker compose exec -T db psql -U cadri_user -d postgres -c "DROP DATABASE IF EXISTS cadri_db WITH (FORCE);"
+docker compose exec -T db psql -U cadri_user -d postgres -c "CREATE DATABASE cadri_db;"
 
-TEST_DB_EXISTS=$(docker compose exec -T db psql -U cadri_user -d cadri_db -tAc "SELECT 1 FROM pg_database WHERE datname='cadri_test_db';")
+echo ""
+echo "Resetting test database..."
+docker compose exec -T db psql -U cadri_user -d postgres -c "DROP DATABASE IF EXISTS cadri_test_db WITH (FORCE);"
+docker compose exec -T db psql -U cadri_user -d postgres -c "CREATE DATABASE cadri_test_db;"
 
-if [ "$TEST_DB_EXISTS" != "1" ]; then
-    echo "cadri_test_db does not exist. Creating it..."
-    docker compose exec -T db psql -U cadri_user -d cadri_db -c "CREATE DATABASE cadri_test_db;"
-else
-    echo "cadri_test_db already exists."
-fi
+echo ""
+
+# ---------------------------------------------------------------------------
+# Build and start application containers
+# ---------------------------------------------------------------------------
+
+echo "Starting application containers..."
+docker compose up --build -d backend frontend
 
 echo ""
 
@@ -206,9 +213,9 @@ echo "Mailpit:"
 echo "http://localhost:8025"
 echo ""
 echo "Default users:"
-echo "Admin:        admin@cadri.local / StrongPass1"
-echo "Responsable:  responsable@cadri.local / StrongPass1"
-echo "Agent:        agent@cadri.local / StrongPass1"
+echo "Admin:        admin@cadri.local / StrongPass1*"
+echo "Responsable:  responsable@cadri.local / StrongPass1*"
+echo "Agent:        agent@cadri.local / StrongPass1*"
 echo ""
 echo "To run backend tests:"
 echo "docker compose exec backend pytest -v"

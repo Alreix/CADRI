@@ -1,12 +1,9 @@
-import { useRouteError, useNavigate, isRouteErrorResponse } from "react-router-dom";
+import { useRouteError, isRouteErrorResponse } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/ErrorPage.css";
 
-
 function ErrorPage({ code }) {
-  const navigate = useNavigate();
-
   let routeError;
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -25,7 +22,7 @@ function ErrorPage({ code }) {
     "La page que vous cherchez a peut-être été déplacée, renommée ou supprimée. " +
     "Vérifiez l'adresse ou retournez à l'accueil.";
 
-    // Maps an HTTP status code to the matching title/message displayed to the user.
+  // Maps an HTTP status code to the matching title/message displayed to the user.
   const applyStatus = (status) => {
     errorCode = String(status);
     if (status === 403) {
@@ -57,9 +54,13 @@ function ErrorPage({ code }) {
   }
 
   const errorLabel = `ERREUR ${errorCode} — ${
-    errorCode === "404" ? "PAGE INTROUVABLE" :
-    errorCode === "403" ? "ACCÈS REFUSÉ" :
-    errorCode === "500" ? "ERREUR SERVEUR" : "ERREUR"
+    errorCode === "404"
+      ? "PAGE INTROUVABLE"
+      : errorCode === "403"
+        ? "ACCÈS REFUSÉ"
+        : errorCode === "500"
+          ? "ERREUR SERVEUR"
+          : "ERREUR"
   }`;
 
   useDocumentTitle(errorTitle);
@@ -71,7 +72,9 @@ function ErrorPage({ code }) {
         <p className="error-label">{errorLabel}</p>
         <h1 className="error-title">{errorTitle}</h1>
         <p className="error-message">{errorMessage}</p>
-        <a href="/" className="error-btn">Retour à l'accueil</a>
+        <a href="/" className="error-btn">
+          Retour à l'accueil
+        </a>
       </div>
     </AuthLayout>
   );

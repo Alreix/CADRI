@@ -17,6 +17,7 @@ node_modules/
 .pytest_cache/
 .coverage
 htmlcov/
+coverage/
 
 # Databases
 *.db
@@ -31,3 +32,9 @@ htmlcov/
 
 # Logs
 *.log
+
+# Production database backups
+/backups/
+
+# Production TLS certificates and privates keys
+/deploy/nginx/certs/

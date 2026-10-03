@@ -1,9 +1,25 @@
 import re
+from datetime import datetime
 
 from app.utils.exceptions import ValidationError
 
-
 EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def parse_integer(value, field_name: str) -> int:
+    """Parse a client-provided integer or raise a field-specific validation error."""
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(f"{field_name} must be an integer.") from exc
+
+
+def parse_iso_datetime(value, field_name: str) -> datetime:
+    """Parse an ISO datetime without changing the formats accepted by Python."""
+    try:
+        return datetime.fromisoformat(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(f"{field_name} must be a valid ISO datetime.") from exc
 
 
 def validate_email(email):
@@ -35,5 +51,8 @@ def validate_password(password):
 
     if not re.search(r"\d", password):
         raise ValidationError("Password must contain at least one number.")
+
+    if not re.search(r"[^A-Za-z0-9\s]", password):
+        raise ValidationError("Password must contain at least one special character.")
 
     return password

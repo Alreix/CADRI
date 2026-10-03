@@ -26,21 +26,101 @@ const router = createBrowserRouter([
   { path: "/activate", element: <ActivateAccountPage />, errorElement: <ErrorPage /> },
 
   // Routes available to any authenticated user, regardless of role.
-  { path: "/", element: <ProtectedRoute><DashboardPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
-  { path: "/missions", element: <ProtectedRoute><DashboardPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
-  { path: "/profile", element: <ProtectedRoute><ProfilePage /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/missions",
+    element: (
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <ProfilePage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
 
   // Mission routes: creation requires "responsable", edit only requires being logged in
   // (the page itself further restricts which fields an agent vs a manager can change).
-  { path: "/missions/new", element: <ProtectedRoute requiredRole="responsable"><MissionFormPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
-  { path: "/missions/:id", element: <ProtectedRoute><MissionDetailPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
-  { path: "/missions/:id/edit", element: <ProtectedRoute requiredRole="agent"><MissionFormPage mode="edit" /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  {
+    path: "/missions/new",
+    element: (
+      <ProtectedRoute requiredRole="responsable">
+        <MissionFormPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/missions/:id",
+    element: (
+      <ProtectedRoute>
+        <MissionDetailPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/missions/:id/edit",
+    element: (
+      <ProtectedRoute requiredRole="agent">
+        <MissionFormPage mode="edit" />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
 
   // User management routes: listing and viewing require "admin", creation only requires "responsable".
-  { path: "/users", element: <ProtectedRoute requiredRole="admin"><UserManagementPage /></ProtectedRoute>, errorElement: <ErrorPage /> },
-  { path: "/users/new", element: <ProtectedRoute requiredRole="responsable"><UserFormPage mode="create" /></ProtectedRoute>, errorElement: <ErrorPage /> },
-  { path: "/users/:id", element: <ProtectedRoute requiredRole="admin"><UserFormPage mode="view" /></ProtectedRoute>, errorElement: <ErrorPage /> },
-  { path: "/users/:id/edit", element: <ProtectedRoute requiredRole="admin"><UserFormPage mode="edit" /></ProtectedRoute>, errorElement: <ErrorPage /> },
+  {
+    path: "/users",
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <UserManagementPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/users/new",
+    element: (
+      <ProtectedRoute requiredRole="responsable">
+        <UserFormPage mode="create" />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/users/:id",
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <UserFormPage mode="view" />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/users/:id/edit",
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <UserFormPage mode="edit" />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
 
   // Fallback route: anything that doesn't match above renders the error page.
   { path: "*", element: <ErrorPage />, errorElement: <ErrorPage /> },

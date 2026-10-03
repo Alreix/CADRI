@@ -27,4 +27,3 @@ class ServiceRepository:
         """Return the service with the given technical name, if any."""
 
         return Service.query.filter_by(name=name).first()
-

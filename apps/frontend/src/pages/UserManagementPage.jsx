@@ -10,8 +10,7 @@ import { getUsers } from "../api/usersApi";
 import { usePagination } from "../hooks/usePagination";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
-import '../styles/UserManagementPage.css';
-
+import "../styles/UserManagementPage.css";
 
 const items_per_page = 10;
 
@@ -43,7 +42,12 @@ function UserManagementPage() {
 
   const filtered = users.filter((user) => {
     const term = search.toLowerCase();
-    if (term && !user.firstName.toLowerCase().includes(term) && !user.lastName.toLowerCase().includes(term)) return false;
+    if (
+      term &&
+      !user.firstName.toLowerCase().includes(term) &&
+      !user.lastName.toLowerCase().includes(term)
+    )
+      return false;
     if (filters.role && user.role !== filters.role) return false;
     if (filters.service && user.service !== filters.service) return false;
     return true;
@@ -62,11 +66,7 @@ function UserManagementPage() {
 
       <div className="search-bar">
         <div className="search-input-wrapper">
-          <Search
-            className="search-input-icon"
-            size={18}
-            aria-hidden="true"
-          />
+          <Search className="search-input-icon" size={18} aria-hidden="true" />
           <input
             type="search"
             className="search-input"
@@ -90,11 +90,7 @@ function UserManagementPage() {
       </div>
 
       {showFilters && (
-        <UserFilters
-          filters={filters}
-          services={services}
-          onChange={handleFiltersChange}
-        />
+        <UserFilters filters={filters} services={services} onChange={handleFiltersChange} />
       )}
 
       <UserTable users={paginated} />

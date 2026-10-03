@@ -22,10 +22,10 @@ class AuthFacade:
         return AuthService.login(email, password)
 
     @staticmethod
-    def logout(raw_refresh_token):
-        """Invalidate the current refresh token."""
+    def logout(raw_refresh_token, access_token_data=None):
+        """Invalidate access and refresh credentials supplied by the route."""
 
-        return AuthService.logout(raw_refresh_token)
+        return AuthService.logout(raw_refresh_token, access_token_data)
 
     @staticmethod
     def refresh_session(raw_refresh_token):

@@ -3,7 +3,8 @@
 function RequiredFieldsNote() {
   return (
     <p className="required-fields-note">
-      Les champs marqués d'un <span className="required-fields-note-star">*</span> sont obligatoires.
+      Les champs marqués d'un <span className="required-fields-note-star">*</span> sont
+      obligatoires.
     </p>
   );
 }

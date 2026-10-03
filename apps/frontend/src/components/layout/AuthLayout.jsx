@@ -12,9 +12,7 @@ function AuthLayout({ children }) {
         </span>
       </header>
 
-      <main className="auth-body">
-        {children}
-      </main>
+      <main className="auth-body">{children}</main>
 
       <footer className="auth-footer">
         <a href="/mentions-legales">Mentions légales</a>

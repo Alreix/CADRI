@@ -6,7 +6,7 @@
   background: #ffffff;
   border-radius: 10px;
   overflow-x: auto;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
   margin-bottom: 24px;
 }
 
@@ -33,7 +33,9 @@
   border-bottom: 1px solid #f0f2f5;
 }
 
-.users-table tr:last-child td { border-bottom: none; }
+.users-table tr:last-child td {
+  border-bottom: none;
+}
 
 /* Borders are a darker shade of each badge's fill with at least a 3:1
    contrast against the white table behind them (WCAG 1.4.11). */
@@ -72,4 +74,6 @@
   font-family: inherit;
 }
 
-.table-action-link:hover { text-decoration: underline; }
+.table-action-link:hover {
+  text-decoration: underline;
+}

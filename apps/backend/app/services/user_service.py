@@ -10,7 +10,9 @@ from app.extensions import db
 from app.models.account_activation_token import AccountActivationToken
 from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
+from app.models.token_blocklist import TokenBlocklist
 from app.models.user import User
+from app.repositories.mission_repository import MissionRepository
 from app.repositories.role_repository import RoleRepository
 from app.repositories.service_repository import ServiceRepository
 from app.repositories.user_repository import UserRepository
@@ -18,7 +20,6 @@ from app.services.auth_service import AuthService
 from app.utils.constants import (
     ADMIN_ALLOWED_CREATION_ROLES,
     ADMIN_ROLE,
-    AGENT_ROLE,
     ASSIGNABLE_ROLE_NAMES,
     RESPONSABLE_ALLOWED_CREATION_ROLES,
     RESPONSABLE_ROLE,
@@ -99,7 +100,13 @@ class UserService:
         """Ensure only admins can list all users."""
         if current_user.role.name != ADMIN_ROLE:
             raise AuthorizationError("Only admin can list users.")
-        
+
+    @staticmethod
+    def _check_user_details_permissions(current_user, user_id):
+        """Ensure users can only access allowed user details."""
+        if current_user.role.name != ADMIN_ROLE and str(current_user.id) != str(user_id):
+            raise AuthorizationError("You are not allowed to access this user.")
+
     @staticmethod
     def _check_assignable_users_permissions(current_user):
         """Ensure only admins and responsables can list assignable users."""
@@ -190,8 +197,10 @@ class UserService:
         }
 
     @staticmethod
-    def get_user_details(user_id):
+    def get_user_details(current_user, user_id):
         """Return a single user's details."""
+        UserService._check_user_details_permissions(current_user, user_id)
+
         user = UserRepository.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found.")
@@ -228,19 +237,29 @@ class UserService:
 
     @staticmethod
     def delete_user(current_user, user_id):
-        """Delete a user and related authentication tokens directly."""
+        """Delete a locked user and authentication state in one transaction."""
         UserService._check_user_delete_permissions(current_user)
 
-        user = UserRepository.get_by_id(user_id)
-        if not user:
-            raise NotFoundError("User not found.")
+        try:
+            user = UserRepository.get_by_id_for_update(user_id)
+            if not user:
+                raise NotFoundError("User not found.")
 
-        AccountActivationToken.query.filter_by(user_id=user.id).delete()
-        PasswordResetToken.query.filter_by(user_id=user.id).delete()
-        RefreshToken.query.filter_by(user_id=user.id).delete()
+            if MissionRepository.exists_by_creator(user.id):
+                raise ConflictError(
+                    "User cannot be deleted because they created one or more missions."
+                )
 
-        db.session.delete(user)
-        db.session.commit()
+            AccountActivationToken.query.filter_by(user_id=user.id).delete()
+            PasswordResetToken.query.filter_by(user_id=user.id).delete()
+            RefreshToken.query.filter_by(user_id=user.id).delete()
+            TokenBlocklist.query.filter_by(user_id=user.id).delete()
+
+            db.session.delete(user)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
         return {"message": "User deleted successfully"}
 

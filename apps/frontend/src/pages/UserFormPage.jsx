@@ -7,6 +7,7 @@ import { Trash2 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import ConfirmModal from "../components/common/ConfirmModal";
 import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
+import AlertModal from "../components/common/AlertModal";
 import { AuthContext } from "../contexts/AuthContext";
 import { getUser, createUser, updateUser, deleteUser } from "../api/usersApi";
 import { getRoles, getServices } from "../api/metadataApi";
@@ -32,7 +33,7 @@ function UserFormPage({ mode = "create" }) {
       { value: "agent", label: "Agent" },
       { value: "responsable", label: "Responsable" },
       { value: "admin", label: "Admin" },
-    ]
+    ],
   );
 
   const [form, setForm, setField] = useFormState({
@@ -50,6 +51,7 @@ function UserFormPage({ mode = "create" }) {
   const [loadedRoleLabel, setLoadedRoleLabel] = useState("");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Loads the target user in view/edit mode.
@@ -66,7 +68,7 @@ function UserFormPage({ mode = "create" }) {
         setLoadedRoleLabel(data.roleLabel || "");
       });
     }
-  }, [mode, id]);
+  }, [mode, id, setForm]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -84,17 +86,31 @@ function UserFormPage({ mode = "create" }) {
   };
 
   const handleDelete = async () => {
-    await deleteUser(id);
-    navigate("/users");
+    try {
+      await deleteUser(id);
+      navigate("/users");
+    } catch (error) {
+      setShowDeleteModal(false);
+      if (error?.status === 409) {
+        setDeleteError(
+          "Impossible de supprimer cet utilisateur car il a créé une ou plusieurs missions.",
+        );
+      } else {
+        setDeleteError(
+          error?.message && error.message !== "API request failed."
+            ? error.message
+            : "Une erreur est survenue lors de la suppression de l'utilisateur.",
+        );
+      }
+    }
   };
 
   // A "responsable" can never assign the "admin" role, even when editing.
   const roleOptions = isAdmin
     ? roleOptionsSource
     : roleOptionsSource.filter((role) => role.value !== "admin");
-  const selectedServiceLabel = (
-    serviceOptions.find((service) => service.id === form.service)?.label || form.service
-  );
+  const selectedServiceLabel =
+    serviceOptions.find((service) => service.id === form.service)?.label || form.service;
   const selectedRoleLabel =
     loadedRoleLabel ||
     roleOptionsSource.find((role) => role.value === form.role)?.label ||
@@ -124,6 +140,8 @@ function UserFormPage({ mode = "create" }) {
         />
       )}
 
+      {deleteError && <AlertModal message={deleteError} onClose={() => setDeleteError(null)} />}
+
       <div className="user-form-page">
         <button className="back-link" onClick={() => navigate(-1)}>
           ← Retour
@@ -135,7 +153,6 @@ function UserFormPage({ mode = "create" }) {
           <form onSubmit={handleSubmit} noValidate>
             {!isReadOnly && <RequiredFieldsNote />}
             <div className="profile-form-grid">
-
               <div className="profile-field">
                 <label className="profile-field-label" htmlFor="role">
                   Rôle
@@ -159,7 +176,9 @@ function UserFormPage({ mode = "create" }) {
                   >
                     <option value="" />
                     {roleOptions.map((roleOption) => (
-                      <option key={roleOption.value} value={roleOption.value}>{roleOption.label}</option>
+                      <option key={roleOption.value} value={roleOption.value}>
+                        {roleOption.label}
+                      </option>
                     ))}
                   </select>
                 )}
@@ -187,7 +206,9 @@ function UserFormPage({ mode = "create" }) {
                   >
                     <option value="" />
                     {serviceOptions.map((service) => (
-                      <option key={service.id} value={service.id}>{service.label}</option>
+                      <option key={service.id} value={service.id}>
+                        {service.label}
+                      </option>
                     ))}
                   </select>
                 )}
@@ -245,8 +266,8 @@ function UserFormPage({ mode = "create" }) {
 
             {mode === "create" && (
               <p className="form-note">
-                <strong>Note :</strong> Le compte sera créé sans mot de passe.
-                Un email d'activation sera envoyé automatiquement à l'adresse email de l'utilisateur.
+                <strong>Note :</strong> Le compte sera créé sans mot de passe. Un email d'activation
+                sera envoyé automatiquement à l'adresse email de l'utilisateur.
               </p>
             )}
 

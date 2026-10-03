@@ -34,11 +34,13 @@ function ForgotPasswordPage() {
     return (
       <AuthLayout>
         <div className="auth-card">
-          <div className="auth-icon-circle" aria-hidden="true">✉</div>
+          <div className="auth-icon-circle" aria-hidden="true">
+            ✉
+          </div>
           <h1 className="auth-card-title">Lien envoyé !</h1>
           <p className="auth-card-subtitle">
-            Un lien de réinitialisation a été envoyé à <strong>{email}</strong>.
-            Vérifiez votre boîte de réception.
+            Un lien de réinitialisation a été envoyé à <strong>{email}</strong>. Vérifiez votre
+            boîte de réception.
           </p>
           <Link to="/login" className="auth-back-link">
             Retour à la connexion
@@ -51,12 +53,14 @@ function ForgotPasswordPage() {
   return (
     <AuthLayout>
       <div className="auth-card">
-        <div className="auth-icon-circle" aria-hidden="true">✉</div>
+        <div className="auth-icon-circle" aria-hidden="true">
+          ✉
+        </div>
 
         <h1 className="auth-card-title">Mot de passe oublié ?</h1>
         <p className="auth-card-subtitle">
-          Entrez votre adresse email et nous vous enverrons
-          un lien pour réinitialiser votre mot de passe.
+          Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de
+          passe.
         </p>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -78,7 +82,10 @@ function ForgotPasswordPage() {
           </div>
 
           {error && (
-            <p role="alert" style={{ color: "var(--auth-required)", fontSize: "0.875rem", marginBottom: "12px" }}>
+            <p
+              role="alert"
+              style={{ color: "var(--auth-required)", fontSize: "0.875rem", marginBottom: "12px" }}
+            >
               {error}
             </p>
           )}
