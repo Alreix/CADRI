@@ -83,11 +83,6 @@
   margin-bottom: 6px;
 }
 
-.auth-label-required {
-  color: var(--auth-required);
-  margin-left: 1px;
-}
-
 .auth-input {
   width: 100%;
   padding: 10px 14px;
@@ -291,7 +286,6 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #e4e7eb;
 }
 
 .auth-modal-title {
