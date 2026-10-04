@@ -5,11 +5,11 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import AlertModal from "../components/common/AlertModal";
+import StatusBadge from "../components/mission/StatusBadge";
 import { AuthContext } from "../contexts/AuthContext";
 import { formatDateFR } from "../api/missionsApi";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/MissionDetailPage.css";
-import "../styles/StatusBadge.css";
 import "../styles/ConfirmModals.css";
 import {
   getMission,
@@ -17,14 +17,6 @@ import {
   updateMissionStatus,
   completeMission,
 } from "../api/missionsApi";
-
-// Status -> color variant of the status badge (see MissionDetailPage.css).
-const statusBadgeModifiers = {
-  to_do: " mission-badge--to-do",
-  in_progress: " mission-badge--in-progress",
-  remark_pending_validation: " mission-badge--validation",
-  completed: " mission-badge--completed",
-};
 
 function MissionDetailPage() {
   const { id } = useParams();
@@ -113,7 +105,6 @@ function MissionDetailPage() {
 
   // Derived permission flags: each action button below is shown only if the
   // matching flag is true. The backend re-validates all of this independently.
-  const priorityIsUrgent = mission.priority === "high";
   const isAssignedToMission = (mission.assignedUsers || []).some(
     (assignedUserId) => String(assignedUserId) === String(user?.id),
   );
@@ -148,16 +139,7 @@ function MissionDetailPage() {
             <h1 className="mission-detail-title">{mission.title}</h1>
 
             <div className="mission-detail-badges">
-              {priorityIsUrgent && (
-                <span className="mission-badge mission-badge--urgente">Urgente</span>
-              )}
-              {mission.status && (
-                <span
-                  className={`mission-badge mission-badge--status${statusBadgeModifiers[mission.status] ?? ""}`}
-                >
-                  {mission.statusLabel}
-                </span>
-              )}
+              <StatusBadge priority={mission.priorityLabel} status={mission.statusLabel} />
             </div>
 
             <div className="mission-detail-grid">
@@ -165,7 +147,7 @@ function MissionDetailPage() {
                 <span className="mission-detail-label">Service</span>
                 <div className="mission-service-tags">
                   {(mission.services || []).map((service) => (
-                    <span key={service.id ?? service.name} className="mission-service-tag">
+                    <span key={service.id ?? service.name} className="tag">
                       {service.label ?? service.name}
                     </span>
                   ))}
