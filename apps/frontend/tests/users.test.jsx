@@ -286,12 +286,13 @@ describe("UserFormPage — création (responsable)", () => {
 // UserFormPage — view
 // ---------------------------------------------------------------------------
 describe("UserFormPage — profil utilisateur (lecture seule)", () => {
-  test("affiche les informations utilisateur en lecture seule", async () => {
+  test("affiche les informations utilisateur en texte, sans champ de formulaire", async () => {
     renderForm("admin", "view", "1", { user: USERS_MOCK[1] });
     await waitFor(() => {
       expect(screen.getByText("Profil utilisateur")).toBeInTheDocument();
-      expect(screen.getByLabelText(/prénom/i)).toHaveValue("Claire");
+      expect(screen.getByText("Claire")).toBeInTheDocument();
     });
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /valider|mettre à jour|créer/i }),
     ).not.toBeInTheDocument();
@@ -300,7 +301,7 @@ describe("UserFormPage — profil utilisateur (lecture seule)", () => {
   test("le rôle est affiché avec son libellé capitalisé, pas la valeur technique brute", async () => {
     renderForm("admin", "view", "2", { user: USERS_MOCK[1] });
     await waitFor(() => {
-      expect(screen.getByLabelText(/^rôle/i)).toHaveValue("Responsable");
+      expect(screen.getByText("Responsable")).toBeInTheDocument();
     });
   });
 });
