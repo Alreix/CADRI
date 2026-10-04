@@ -194,7 +194,8 @@ function UserFormPage({ mode = "create" }) {
                 <div className="profile-field">
                   <label className="profile-field-label" htmlFor="role">
                     Rôle
-                    <span className="profile-field-required">*</span>
+                    {/* Locked to "agent" for a responsable: nothing to fill in. */}
+                    {!isManager && <span className="profile-field-required">*</span>}
                   </label>
                   {isManager ? (
                     <input
