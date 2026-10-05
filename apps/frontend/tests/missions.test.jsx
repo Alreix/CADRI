@@ -272,6 +272,8 @@ describe("MissionFormPage — création", () => {
     fireEvent.change(screen.getByLabelText(/date de début/i), { target: { value: "2026-07-01" } });
     fireEvent.change(screen.getByLabelText(/date de fin/i), { target: { value: "2026-07-31" } });
     fireEvent.change(screen.getByLabelText(/durée estimée/i), { target: { value: "16" } });
+    fireEvent.click(screen.getByRole("button", { name: /ajouter des utilisateurs/i }));
+    fireEvent.click(await screen.findByLabelText(/assigner jean dupont/i));
     fireEvent.click(screen.getByRole("button", { name: /créer la mission/i }));
 
     await waitFor(() => {
@@ -280,6 +282,21 @@ describe("MissionFormPage — création", () => {
       );
       expect(postCall).toBeTruthy();
     });
+  });
+
+  test("la création est bloquée tant qu'aucun utilisateur n'est assigné", async () => {
+    renderForm("responsable", "create");
+    await waitFor(() => screen.getByLabelText(/^titre/i));
+
+    fireEvent.change(screen.getByLabelText(/^titre/i), { target: { value: "New mission" } });
+    fireEvent.change(screen.getByLabelText(/durée estimée/i), { target: { value: "16" } });
+    fireEvent.click(screen.getByRole("button", { name: /créer la mission/i }));
+
+    expect(await screen.findByText(/au moins un utilisateur/i)).toBeInTheDocument();
+    const postCall = global.fetch.mock.calls.find(
+      ([url, options]) => options?.method === "POST" && String(url).includes("/missions"),
+    );
+    expect(postCall).toBeUndefined();
   });
 
   test("une durée estimée inférieure à 1 heure bloque la création", async () => {
