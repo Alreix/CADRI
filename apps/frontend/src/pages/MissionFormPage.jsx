@@ -183,6 +183,13 @@ function MissionFormPage({ mode = "create" }) {
       return;
     }
 
+    // Business rule: a mission always has at least one assignee. Enforced here
+    // only, the backend accepts an empty assigned_user_ids list.
+    if (isManager && form.assignedUsers.length === 0) {
+      setAlertMessage("Veuillez assigner au moins un utilisateur à la mission.");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -527,7 +534,10 @@ function MissionFormPage({ mode = "create" }) {
             {/* Utilisateurs assignés — manager/admin only */}
             {isManager && (
               <div className="mission-field">
-                <label className="mission-field-label">Utilisateurs assignés</label>
+                <label className="mission-field-label">
+                  Utilisateurs assignés
+                  <span className="mission-field-required">*</span>
+                </label>
 
                 {assignedUserDetails.length > 0 && (
                   <div className="mission-users-table-wrapper">

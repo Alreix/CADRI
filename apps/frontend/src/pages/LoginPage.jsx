@@ -5,7 +5,6 @@ import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import Modal from "../components/common/Modal";
 import PasswordInput from "../components/common/PasswordInput";
-import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
 import { AuthContext } from "../contexts/AuthContext";
 import { login as loginApi } from "../api/authApi";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -49,10 +48,9 @@ function LoginPage() {
         <h1 className="auth-card-title">Connexion à CADRI</h1>
 
         <form onSubmit={handleSubmit} noValidate>
-          <RequiredFieldsNote />
           <div className="auth-field">
             <label className="auth-label" htmlFor="email">
-              Email<span className="auth-label-required">*</span>
+              Email
             </label>
             <input
               id="email"
@@ -68,7 +66,7 @@ function LoginPage() {
 
           <div className="auth-field">
             <label className="auth-label" htmlFor="password">
-              Mot de passe<span className="auth-label-required">*</span>
+              Mot de passe
             </label>
             <PasswordInput
               id="password"

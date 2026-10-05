@@ -1,6 +1,6 @@
-// Single form used for creating, viewing and editing a user (mode="create" | "view" | "edit").
-// Same "mode" pattern as MissionFormPage: one component, fields become
-// read-only inputs in "view" mode instead of duplicating three near-identical forms.
+// Single page used for creating, viewing and editing a user (mode="create" | "view" | "edit").
+// Same "mode" pattern as MissionFormPage: one component instead of three near-identical
+// pages. "view" mode shows the information as plain text, like ProfilePage does.
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Trash2 } from "lucide-react";
@@ -150,53 +150,84 @@ function UserFormPage({ mode = "create" }) {
         <div className="profile-card">
           <h1 className="profile-section-title">{titles[mode]}</h1>
 
-          <form onSubmit={handleSubmit} noValidate>
-            {!isReadOnly && <RequiredFieldsNote />}
-            <div className="profile-form-grid">
-              <div className="profile-field">
-                <label className="profile-field-label" htmlFor="role">
-                  Rôle
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                {isReadOnly || isManager ? (
-                  <input
-                    id="role"
-                    className="profile-field-input"
-                    value={selectedRoleLabel}
-                    readOnly
-                    placeholder={isManager ? "Agent" : ""}
-                  />
-                ) : (
-                  <select
-                    id="role"
-                    className="profile-field-select"
-                    value={form.role}
-                    onChange={(event) => setField("role", event.target.value)}
-                    required
-                  >
-                    <option value="" />
-                    {roleOptions.map((roleOption) => (
-                      <option key={roleOption.value} value={roleOption.value}>
-                        {roleOption.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
+          {isReadOnly ? (
+            <>
+              <div className="profile-info-grid">
+                <div className="profile-info-item">
+                  <span className="profile-info-label">Rôle</span>
+                  <span className="profile-info-value">{selectedRoleLabel}</span>
+                </div>
+                <div className="profile-info-item">
+                  <span className="profile-info-label">Service</span>
+                  <span className="profile-info-value">{selectedServiceLabel}</span>
+                </div>
+                <div className="profile-info-item">
+                  <span className="profile-info-label">Prénom</span>
+                  <span className="profile-info-value">{form.firstName}</span>
+                </div>
+                <div className="profile-info-item">
+                  <span className="profile-info-label">Nom</span>
+                  <span className="profile-info-value">{form.lastName}</span>
+                </div>
+                <div className="profile-info-item profile-info-grid--full">
+                  <span className="profile-info-label">Email</span>
+                  <span className="profile-info-value">{form.email}</span>
+                </div>
               </div>
 
-              <div className="profile-field">
-                <label className="profile-field-label" htmlFor="service">
-                  Service
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                {isReadOnly ? (
-                  <input
-                    id="service"
-                    className="profile-field-input"
-                    value={selectedServiceLabel}
-                    readOnly
-                  />
-                ) : (
+              <hr className="profile-divider" />
+
+              <div className="profile-actions profile-actions--center">
+                <button
+                  type="button"
+                  className="profile-btn-primary"
+                  onClick={() => navigate(`/users/${id}/edit`)}
+                >
+                  Modifier le profil utilisateur
+                </button>
+              </div>
+            </>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate>
+              <RequiredFieldsNote />
+              <div className="profile-form-grid">
+                <div className="profile-field">
+                  <label className="profile-field-label" htmlFor="role">
+                    Rôle
+                    {/* Locked to "agent" for a responsable: nothing to fill in. */}
+                    {!isManager && <span className="profile-field-required">*</span>}
+                  </label>
+                  {isManager ? (
+                    <input
+                      id="role"
+                      className="profile-field-input"
+                      value={selectedRoleLabel}
+                      readOnly
+                      placeholder="Agent"
+                    />
+                  ) : (
+                    <select
+                      id="role"
+                      className="profile-field-select"
+                      value={form.role}
+                      onChange={(event) => setField("role", event.target.value)}
+                      required
+                    >
+                      <option value="" />
+                      {roleOptions.map((roleOption) => (
+                        <option key={roleOption.value} value={roleOption.value}>
+                          {roleOption.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div className="profile-field">
+                  <label className="profile-field-label" htmlFor="service">
+                    Service
+                    <span className="profile-field-required">*</span>
+                  </label>
                   <select
                     id="service"
                     className="profile-field-select"
@@ -211,102 +242,87 @@ function UserFormPage({ mode = "create" }) {
                       </option>
                     ))}
                   </select>
-                )}
+                </div>
+
+                <div className="profile-field">
+                  <label className="profile-field-label" htmlFor="firstName">
+                    Prénom
+                    <span className="profile-field-required">*</span>
+                  </label>
+                  <input
+                    id="firstName"
+                    className="profile-field-input"
+                    value={form.firstName}
+                    onChange={(event) => setField("firstName", event.target.value)}
+                    required
+                    placeholder="Jean"
+                  />
+                </div>
+
+                <div className="profile-field">
+                  <label className="profile-field-label" htmlFor="lastName">
+                    Nom
+                    <span className="profile-field-required">*</span>
+                  </label>
+                  <input
+                    id="lastName"
+                    className="profile-field-input"
+                    value={form.lastName}
+                    onChange={(event) => setField("lastName", event.target.value)}
+                    required
+                    placeholder="Dupont"
+                  />
+                </div>
+
+                <div className="profile-field profile-form-grid--full">
+                  <label className="profile-field-label" htmlFor="email">
+                    Email
+                    <span className="profile-field-required">*</span>
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    className="profile-field-input"
+                    value={form.email}
+                    onChange={(event) => setField("email", event.target.value)}
+                    required
+                    placeholder="jean.dupont@municipality.fr"
+                  />
+                </div>
               </div>
 
-              <div className="profile-field">
-                <label className="profile-field-label" htmlFor="firstName">
-                  Prénom
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                <input
-                  id="firstName"
-                  className="profile-field-input"
-                  value={form.firstName}
-                  onChange={(event) => setField("firstName", event.target.value)}
-                  readOnly={isReadOnly}
-                  required={!isReadOnly}
-                  placeholder={isReadOnly ? "" : "Jean"}
-                />
-              </div>
+              {mode === "create" && (
+                <p className="form-note">
+                  <strong>Note :</strong> Le compte sera créé sans mot de passe. Un email
+                  d'activation sera envoyé automatiquement à l'adresse email de l'utilisateur.
+                </p>
+              )}
 
-              <div className="profile-field">
-                <label className="profile-field-label" htmlFor="lastName">
-                  Nom
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                <input
-                  id="lastName"
-                  className="profile-field-input"
-                  value={form.lastName}
-                  onChange={(event) => setField("lastName", event.target.value)}
-                  readOnly={isReadOnly}
-                  required={!isReadOnly}
-                  placeholder={isReadOnly ? "" : "Dupont"}
-                />
-              </div>
+              {mode === "create" && (
+                <div className="profile-actions profile-actions--center">
+                  <button type="submit" className="profile-btn-primary" disabled={loading}>
+                    {loading ? "Création…" : "Créer un nouvel utilisateur"}
+                  </button>
+                </div>
+              )}
 
-              <div className="profile-field profile-form-grid--full">
-                <label className="profile-field-label" htmlFor="email">
-                  Email
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  className="profile-field-input"
-                  value={form.email}
-                  onChange={(event) => setField("email", event.target.value)}
-                  readOnly={isReadOnly}
-                  required={!isReadOnly}
-                  placeholder={isReadOnly ? "" : "jean.dupont@municipality.fr"}
-                />
-              </div>
-            </div>
-
-            {mode === "create" && (
-              <p className="form-note">
-                <strong>Note :</strong> Le compte sera créé sans mot de passe. Un email d'activation
-                sera envoyé automatiquement à l'adresse email de l'utilisateur.
-              </p>
-            )}
-
-            {mode === "view" && (
-              <div className="profile-actions profile-actions--center">
-                <button
-                  type="button"
-                  className="profile-btn-primary"
-                  onClick={() => navigate(`/users/${id}/edit`)}
-                >
-                  Modifier le profil utilisateur
-                </button>
-              </div>
-            )}
-
-            {mode === "create" && (
-              <div className="profile-actions profile-actions--center">
-                <button type="submit" className="profile-btn-primary" disabled={loading}>
-                  {loading ? "Création…" : "Créer un nouvel utilisateur"}
-                </button>
-              </div>
-            )}
-
-            {mode === "edit" && (
-              <div className="profile-actions profile-actions--center">
-                <button type="submit" className="profile-btn-primary" disabled={loading}>
-                  {loading ? "Enregistrement…" : "Sauvegarder les modifications"}
-                </button>
-                <button
-                  type="button"
-                  className="profile-btn-danger"
-                  onClick={() => setShowDeleteModal(true)}
-                >
-                  <Trash2 size={16} />
-                  Supprimer l'utilisateur
-                </button>
-              </div>
-            )}
-          </form>
+              {mode === "edit" && (
+                <div className="profile-actions profile-actions--center">
+                  <button type="submit" className="profile-btn-primary" disabled={loading}>
+                    {loading ? "Enregistrement…" : "Sauvegarder les modifications"}
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-btn-danger"
+                    onClick={() => setShowDeleteModal(true)}
+                  >
+                    <Trash2 size={16} />
+                    Supprimer l'utilisateur
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
         </div>
       </div>
     </Layout>

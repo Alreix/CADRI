@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
-import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
 import { requestPasswordReset } from "../api/authApi";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/AuthLayout.css";
@@ -64,10 +63,9 @@ function ForgotPasswordPage() {
         </p>
 
         <form onSubmit={handleSubmit} noValidate>
-          <RequiredFieldsNote />
           <div className="auth-field">
             <label className="auth-label" htmlFor="email">
-              Email<span className="auth-label-required">*</span>
+              Email
             </label>
             <input
               id="email"
