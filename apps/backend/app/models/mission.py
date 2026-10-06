@@ -110,12 +110,8 @@ class Mission(BaseModel):
                 float(self.actual_duration) if self.actual_duration is not None else None
             ),
             "remark": self.remark,
-            "remark_added_by": (
-                str(self.remark_added_by) if self.remark_added_by else None
-            ),
-            "remark_added_at": (
-                self.remark_added_at.isoformat() if self.remark_added_at else None
-            ),
+            "remark_added_by": (str(self.remark_added_by) if self.remark_added_by else None),
+            "remark_added_at": (self.remark_added_at.isoformat() if self.remark_added_at else None),
             "validated_by": str(self.validated_by) if self.validated_by else None,
             "validated_at": self.validated_at.isoformat() if self.validated_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
@@ -125,11 +121,7 @@ class Mission(BaseModel):
         }
 
         if include_relations:
-            data["services"] = [
-                service_link.service.to_dict() for service_link in self.services
-            ]
-            data["assignments"] = [
-                assignment.user.to_dict() for assignment in self.assignments
-            ]
+            data["services"] = [service_link.service.to_dict() for service_link in self.services]
+            data["assignments"] = [assignment.user.to_dict() for assignment in self.assignments]
 
         return data

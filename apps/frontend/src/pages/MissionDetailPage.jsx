@@ -3,10 +3,12 @@
 // This is where the mission lifecycle (see missionsApi.js) becomes visible to the user.
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
 import Layout from "../components/layout/Layout";
+import AlertModal from "../components/common/AlertModal";
+import StatusBadge from "../components/mission/StatusBadge";
 import { AuthContext } from "../contexts/AuthContext";
 import { formatDateFR } from "../api/missionsApi";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/MissionDetailPage.css";
 import "../styles/ConfirmModals.css";
 import {
@@ -15,26 +17,6 @@ import {
   updateMissionStatus,
   completeMission,
 } from "../api/missionsApi";
-
-// Simple blocking alert dialog used to surface API errors to the user.
-function AlertModal({ message, onClose }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Attention</span>
-          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">{message}</div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-confirm-primary" onClick={onClose}>OK</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MissionDetailPage() {
   const { id } = useParams();
@@ -49,6 +31,8 @@ function MissionDetailPage() {
   const [validating, setValidating] = useState(false);
   const [savingAction, setSavingAction] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
+
+  useDocumentTitle(mission?.title || "Détail de la mission");
 
   // Load the mission whenever the :id route param changes.
   useEffect(() => {
@@ -67,8 +51,11 @@ function MissionDetailPage() {
   const handleStartMission = async () => {
     setSavingAction(true);
     try {
-      const updatedMission = await updateMissionStatus(id, "in_progress");
-      setMission(updatedMission);
+      // The /status endpoint returns the mission without its relations
+      // (services, assignments): re-fetch it instead of using that response,
+      // otherwise the service badges disappear once the mission is started.
+      await updateMissionStatus(id, "in_progress");
+      await refreshMission();
     } catch (err) {
       setAlertMessage(err.message || "Impossible de démarrer la mission.");
     } finally {
@@ -107,12 +94,17 @@ function MissionDetailPage() {
     }
   };
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <Layout>
+        <p role="status">Chargement…</p>
+      </Layout>
+    );
+  }
   if (!mission) return null;
 
   // Derived permission flags: each action button below is shown only if the
   // matching flag is true. The backend re-validates all of this independently.
-  const priorityIsUrgent = mission.priority === "high";
   const isAssignedToMission = (mission.assignedUsers || []).some(
     (assignedUserId) => String(assignedUserId) === String(user?.id),
   );
@@ -121,24 +113,13 @@ function MissionDetailPage() {
     mission.actualDuration !== null &&
     mission.actualDuration !== undefined &&
     mission.actualDuration !== "";
-  const canStartMission =
-    canActOnMission &&
-    mission.status === "to_do";
+  const canStartMission = canActOnMission && mission.status === "to_do";
   const canEditMission =
     mission.status !== "completed" &&
-    (
-      isManager ||
-      (
-        isAgent &&
-        isAssignedToMission &&
-        mission.status === "in_progress" &&
-        !mission.remark
-      )
-    );
+    (isManager ||
+      (isAgent && isAssignedToMission && mission.status === "in_progress" && !mission.remark));
   const canRequestCompleteMission =
-    canActOnMission &&
-    mission.status === "in_progress" &&
-    !mission.remark;
+    canActOnMission && mission.status === "in_progress" && !mission.remark;
   const canValidateMission =
     isManager &&
     mission.status === "remark_pending_validation" &&
@@ -147,12 +128,7 @@ function MissionDetailPage() {
 
   return (
     <>
-      {alertMessage && (
-        <AlertModal
-          message={alertMessage}
-          onClose={() => setAlertMessage(null)}
-        />
-      )}
+      {alertMessage && <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />}
       <Layout>
         <div className="mission-detail-page">
           <button className="back-link" onClick={() => navigate("/missions")}>
@@ -163,17 +139,7 @@ function MissionDetailPage() {
             <h1 className="mission-detail-title">{mission.title}</h1>
 
             <div className="mission-detail-badges">
-              {priorityIsUrgent && (
-                <span className="mission-badge mission-badge--urgente">Urgente</span>
-              )}
-              {mission.status && (
-                <span
-                  className={`mission-badge mission-badge--status${mission.statusLabel === "En cours" ? " mission-badge--in-progress" : ""
-                    }`}
-                >
-                  {mission.statusLabel}
-                </span>
-              )}
+              <StatusBadge priority={mission.priorityLabel} status={mission.statusLabel} />
             </div>
 
             <div className="mission-detail-grid">
@@ -181,7 +147,7 @@ function MissionDetailPage() {
                 <span className="mission-detail-label">Service</span>
                 <div className="mission-service-tags">
                   {(mission.services || []).map((service) => (
-                    <span key={service.id ?? service.name} className="mission-service-tag">
+                    <span key={service.id ?? service.name} className="tag">
                       {service.label ?? service.name}
                     </span>
                   ))}

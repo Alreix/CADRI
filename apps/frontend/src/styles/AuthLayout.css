@@ -1,9 +1,9 @@
 :root {
-  --auth-header-bg:   #234e70;
-  --auth-btn-bg:      #234e70;
-  --auth-btn-hover:   #193c57;
-  --auth-link-color:  #234e70;
-  --auth-required:    #d4183d;
+  --auth-header-bg: #234e70;
+  --auth-btn-bg: #234e70;
+  --auth-btn-hover: #193c57;
+  --auth-link-color: #234e70;
+  --auth-required: #d4183d;
   --auth-card-radius: 12px;
 }
 
@@ -32,12 +32,14 @@
   letter-spacing: 0.02em;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 3px;
 }
 
 .auth-logo-image {
-  width: 70px;
-  height: 70px;
+  width: 48px;
+  height: 48px;
+  margin-left: -14px;
+  margin-right: -4px;
   object-fit: contain;
 }
 
@@ -81,11 +83,6 @@
   margin-bottom: 6px;
 }
 
-.auth-label-required {
-  color: var(--auth-required);
-  margin-left: 1px;
-}
-
 .auth-input {
   width: 100%;
   padding: 10px 14px;
@@ -95,7 +92,9 @@
   background: #ffffff;
   border: 1px solid #d1d9e0;
   border-radius: 8px;
-  transition: border-color 150ms, box-shadow 150ms;
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
   box-sizing: border-box;
 }
 
@@ -128,6 +127,7 @@
   font-size: 1rem;
   user-select: none;
 }
+
 .auth-password-info-btn {
   position: absolute;
   right: 12px;
@@ -286,7 +286,6 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #e4e7eb;
 }
 
 .auth-modal-title {
@@ -355,16 +354,21 @@
 .password-toggle {
   position: absolute;
   top: 50%;
-  right: 60px;
+  right: 15px;
   transform: translateY(-50%);
-
   border: none;
   background: transparent;
   cursor: pointer;
-
+  color: #9aa5b4;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.password-toggle:hover,
+.password-toggle:focus {
+  color: #234e70;
+  outline: none;
 }
 
 .password-toggle-with-info {
@@ -373,6 +377,10 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+  .auth-header {
+    padding: 0 12px;
+  }
+
   .auth-body {
     padding: 24px 16px;
   }

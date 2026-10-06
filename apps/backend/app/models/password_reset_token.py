@@ -29,7 +29,9 @@ class PasswordResetToken(BaseModel):
     user = db.relationship("User", backref="password_reset_tokens")
 
     @classmethod
-    def create_for_user(cls, user_id: int, expires_in_hours: int = 2) -> tuple["PasswordResetToken", str]:
+    def create_for_user(
+        cls, user_id: int, expires_in_hours: int = 2
+    ) -> tuple["PasswordResetToken", str]:
         """Create a token instance and return (token_obj, raw_token).
 
         The raw token is returned so the caller can embed it in the password

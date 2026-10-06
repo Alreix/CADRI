@@ -13,7 +13,6 @@
   5. Shared page components
 */
 
-
 /* --- 1. CSS VARIABLES (design tokens) --- */
 
 :root {
@@ -32,7 +31,7 @@
   --color-success: #057a55;
   /* Success green */
   --color-success-light: #def7ec;
-  --color-warning: #c27803;
+  --color-warning: #8f5802;
   /* Warning orange */
   --color-warning-light: #fdf6b2;
 
@@ -41,7 +40,7 @@
   /* Main text (near black) */
   --color-text-secondary: #52606d;
   /* Secondary text (medium grey) */
-  --color-text-muted: #9aa5b4;
+  --color-text-muted: #5f6f82;
   /* Disabled / light text */
   --color-bg: #e9eef2;
   /* Page background */
@@ -116,7 +115,6 @@
   --transition: 150ms ease;
 }
 
-
 /* --- 2. RESET & BASE --- */
 
 *,
@@ -126,6 +124,20 @@
   /* Width includes padding and border */
   margin: 0;
   padding: 0;
+}
+
+/* Visually hidden but still announced by screen readers (e.g. loading status
+   text that would be redundant/noisy on screen for sighted users). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 html {
@@ -178,7 +190,6 @@ a:hover {
   text-decoration: underline;
 }
 
-
 /* --- 3. TYPOGRAPHY --- */
 
 .page-title {
@@ -207,7 +218,6 @@ a:hover {
   font-size: var(--text-sm);
 }
 
-
 /* --- 4. REUSABLE COMPONENTS --- */
 
 /* --- Card / Panel --- */
@@ -229,7 +239,10 @@ a:hover {
   font-weight: var(--font-medium);
   border-radius: var(--radius);
   border: 1px solid transparent;
-  transition: background-color var(--transition), color var(--transition), border-color var(--transition);
+  transition:
+    background-color var(--transition),
+    color var(--transition),
+    border-color var(--transition);
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
@@ -328,7 +341,9 @@ a:hover {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .form-input:focus,
@@ -344,6 +359,17 @@ a:hover {
   color: var(--color-danger);
 }
 
+/* "Fields marked with * are required" legend (RequiredFieldsNote.jsx). */
+.required-fields-note {
+  font-size: 0.85rem;
+  color: #52606d;
+  margin: 0 0 20px;
+}
+
+.required-fields-note-star {
+  color: #d4183d;
+  font-weight: 600;
+}
 
 /* --- 5. SHARED PAGE COMPONENTS --- */
 
@@ -397,7 +423,9 @@ a:hover {
   background: #ffffff;
   border: 1px solid #d1d9e0;
   border-radius: 8px;
-  transition: border-color 150ms, box-shadow 150ms;
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
   box-sizing: border-box;
 }
 
@@ -451,7 +479,8 @@ a:hover {
 }
 
 /* Active state: filter panel is open */
-.filter-btn--active {
+.filter-btn--active,
+.filter-btn--active:hover {
   background-color: #234e70;
   color: #ffffff;
   border-color: #234e70;

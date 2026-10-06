@@ -52,14 +52,14 @@ def test_change_password_updates_user_password(agent_user):
     result = AuthService.change_password(
         agent_user.id,
         "StrongPass1",
-        "NewAgentPass1",
+        "NewAgentPass1!",
     )
 
     assert result["message"] == "Password changed successfully"
 
     user = UserRepository.get_by_id(agent_user.id)
 
-    assert user.check_password("NewAgentPass1") is True
+    assert user.check_password("NewAgentPass1!") is True
 
 
 def test_request_password_reset_creates_token_and_sends_email(admin_user, monkeypatch):
@@ -113,7 +113,7 @@ def test_activate_account_marks_user_active_and_consumes_token(inactive_user):
     db.session.add(token)
     db.session.commit()
 
-    result = AuthService.activate_account(raw_token, "ActivatedPass1")
+    result = AuthService.activate_account(raw_token, "ActivatedPass1!")
 
     assert result["message"] == "Account activated successfully"
 
@@ -121,7 +121,7 @@ def test_activate_account_marks_user_active_and_consumes_token(inactive_user):
     db.session.refresh(token)
 
     assert user.is_active is True
-    assert user.check_password("ActivatedPass1") is True
+    assert user.check_password("ActivatedPass1!") is True
     assert token.used_at is not None
 
 
@@ -132,12 +132,12 @@ def test_reset_password_marks_token_used_and_updates_password(admin_user):
     db.session.add(token)
     db.session.commit()
 
-    result = AuthService.reset_password(raw_token, "ResetStrongPass1")
+    result = AuthService.reset_password(raw_token, "ResetStrongPass1!")
 
     assert result["message"] == "Password reset successfully"
 
     db.session.refresh(user)
     db.session.refresh(token)
 
-    assert user.check_password("ResetStrongPass1") is True
+    assert user.check_password("ResetStrongPass1!") is True
     assert token.used_at is not None

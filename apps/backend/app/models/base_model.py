@@ -6,6 +6,7 @@ from sqlalchemy.sql import func
 
 from app.extensions import db
 
+
 class BaseModel(db.Model):
     """Shared persistence base for CADRI database entities.
 

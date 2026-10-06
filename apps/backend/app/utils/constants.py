@@ -2,7 +2,6 @@
 
 from typing import Final
 
-
 ADMIN_ROLE: Final[str] = "admin"
 RESPONSABLE_ROLE: Final[str] = "responsable"
 AGENT_ROLE: Final[str] = "agent"
@@ -19,9 +18,7 @@ ADMIN_ALLOWED_CREATION_ROLES: Final[tuple[str, ...]] = (
     AGENT_ROLE,
 )
 
-RESPONSABLE_ALLOWED_CREATION_ROLES: Final[tuple[str, ...]] = (
-    AGENT_ROLE,
-)
+RESPONSABLE_ALLOWED_CREATION_ROLES: Final[tuple[str, ...]] = (AGENT_ROLE,)
 
 ASSIGNABLE_ROLE_NAMES: Final[tuple[str, ...]] = (
     RESPONSABLE_ROLE,

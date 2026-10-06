@@ -7,9 +7,10 @@ function UserFilters({ filters, services, onChange }) {
     <div className="user-filters-panel">
       <p className="user-filters-title">Filtrer les utilisateurs</p>
       <div className="user-filters-grid">
-
         <div className="filter-group">
-          <label className="filter-label" htmlFor="filter-role">Rôle</label>
+          <label className="filter-label" htmlFor="filter-role">
+            Rôle
+          </label>
           <select
             id="filter-role"
             className="filter-select"
@@ -24,7 +25,9 @@ function UserFilters({ filters, services, onChange }) {
         </div>
 
         <div className="filter-group">
-          <label className="filter-label" htmlFor="filter-service">Service</label>
+          <label className="filter-label" htmlFor="filter-service">
+            Service
+          </label>
           <select
             id="filter-service"
             className="filter-select"
@@ -33,11 +36,12 @@ function UserFilters({ filters, services, onChange }) {
           >
             <option value="">Tous</option>
             {services.map((service) => (
-              <option key={service} value={service}>{service}</option>
+              <option key={service} value={service}>
+                {service}
+              </option>
             ))}
           </select>
         </div>
-
       </div>
     </div>
   );

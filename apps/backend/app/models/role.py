@@ -1,6 +1,7 @@
 from app.extensions import db
 from app.models.base_model import BaseModel
 
+
 class Role(BaseModel):
     """Authorization role used to group permissions and access levels in CADRI.
 

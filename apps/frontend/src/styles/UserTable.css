@@ -1,3 +1,7 @@
+/* =============================================================================
+   User table — UserTable.jsx (table layout, role badges, action links).
+   ============================================================================= */
+
 .users-table-wrapper {
   background: #ffffff;
   border-radius: 10px;
@@ -18,7 +22,7 @@
   font-weight: 600;
   color: #52606d;
   padding: 14px 20px;
-  background: #e9eef2;
+  background: #d3dce2;
   border-bottom: 1px solid #e4e7eb;
 }
 
@@ -33,6 +37,8 @@
   border-bottom: none;
 }
 
+/* Borders are a darker shade of each badge's fill with at least a 3:1
+   contrast against the white table behind them (WCAG 1.4.11). */
 .role-badge {
   display: inline-flex;
   align-items: center;
@@ -40,19 +46,19 @@
   border-radius: 4px;
   font-size: 0.78rem;
   font-weight: 500;
-  border: 1px solid transparent;
+  border: 1px solid #7b8794;
   color: #1f2933;
   background: #e9eef2;
 }
 
 .role-badge--admin {
   border-color: #e5748a;
-  color: #d4183d;
+  color: #b01230;
   background: #f6d1d8;
 }
 
 .role-badge--manager {
-  border-color: #aebdc9;
+  border-color: #6b7f8f;
   color: #234e70;
   background: #d3dce2;
 }
@@ -70,10 +76,4 @@
 
 .table-action-link:hover {
   text-decoration: underline;
-}
-
-.users-table-empty {
-  text-align: center;
-  color: #52606d;
-  padding: 32px;
 }

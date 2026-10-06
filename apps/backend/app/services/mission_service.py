@@ -1,7 +1,5 @@
 """Business service for mission workflows."""
 
-from datetime import datetime, timezone
-
 from app.extensions import db
 from app.models.mission import Mission
 from app.models.mission_assignment import MissionAssignment
@@ -15,7 +13,6 @@ from app.utils.constants import (
     ADMIN_ROLE,
     AGENT_ROLE,
     ASSIGNABLE_ROLE_NAMES,
-    MISSION_STATUS_COMPLETED,
     MISSION_STATUS_IN_PROGRESS,
     MISSION_STATUS_REMARK_PENDING_VALIDATION,
     MISSION_STATUS_TO_DO,
@@ -38,13 +35,12 @@ class MissionService:
         """Ensure the current user can perform field-level mission actions."""
         if current_user.role.name not in (AGENT_ROLE, RESPONSABLE_ROLE, ADMIN_ROLE):
             raise AuthorizationError("You are not allowed to access this mission action.")
-        
+
     @staticmethod
     def _is_user_assigned_to_mission(current_user, mission: Mission) -> bool:
         """Return whether the current user is assigned to the mission."""
         return any(
-            str(assignment.user_id) == str(current_user.id)
-            for assignment in mission.assignments
+            str(assignment.user_id) == str(current_user.id) for assignment in mission.assignments
         )
 
     @staticmethod
@@ -57,10 +53,47 @@ class MissionService:
             raise AuthorizationError("Agent can only act on assigned missions.")
 
     @staticmethod
+    def _require_mission_status(
+        mission: Mission, allowed_statuses: tuple[str, ...], action: str
+    ) -> None:
+        """Ensure the current mission state permits the requested workflow action."""
+        if mission.status not in allowed_statuses:
+            raise ConflictError(
+                f"Cannot {action} while mission status is {mission.status}. "
+                f"Allowed statuses: {', '.join(allowed_statuses)}."
+            )
+
+    @staticmethod
+    def _get_mission_for_workflow(current_user, mission_id) -> Mission:
+        """Lock a fresh mission and enforce existing visibility permissions."""
+        MissionService._require_agent_or_manager(current_user)
+        mission = MissionRepository.get_by_id_for_update(mission_id)
+        if mission is None:
+            raise NotFoundError("Mission not found.")
+        MissionService._require_agent_assignment_if_agent(current_user, mission)
+        return mission
+
+    @staticmethod
     def _validate_dates(start_date, end_date) -> None:
-        """Ensure the mission end date is not before the start date."""
-        if end_date < start_date:
+        """Require compatible timezone information and an ordered mission date range."""
+        try:
+            end_before_start = end_date < start_date
+        except TypeError as exc:
+            raise ValidationError(
+                "Start date and end date must use compatible timezone information."
+            ) from exc
+        if end_before_start:
             raise ValidationError("End date must be greater than or equal to start date.")
+
+    @staticmethod
+    def _validate_pagination(page: int, per_page: int) -> None:
+        """Validate mission pagination bounds before querying the repository."""
+        if page < 1:
+            raise ValidationError("Page must be greater than or equal to 1.")
+        if per_page < 1:
+            raise ValidationError("Per page must be greater than or equal to 1.")
+        if per_page > 100:
+            raise ValidationError("Per page must be less than or equal to 100.")
 
     @staticmethod
     def _validate_services(service_ids: list[str]) -> None:
@@ -131,8 +164,14 @@ class MissionService:
     @staticmethod
     def list_missions(current_user, **filters) -> tuple[list[Mission], int]:
         """Return missions with filters, search, and pagination."""
+        page = filters.get("page", 1)
+        per_page = filters.get("per_page", 10)
+        MissionService._validate_pagination(page, per_page)
+
         assigned_to_user_id = None
-        if filters.get("my_missions_only"):
+        if current_user.role.name == AGENT_ROLE:
+            assigned_to_user_id = str(current_user.id)
+        elif filters.get("my_missions_only"):
             assigned_to_user_id = str(current_user.id)
 
         return MissionRepository.list_filtered(
@@ -144,16 +183,20 @@ class MissionService:
             has_remark=filters.get("has_remark"),
             start_date=filters.get("start_date"),
             end_date=filters.get("end_date"),
-            page=filters.get("page", 1),
-            per_page=filters.get("per_page", 10),
+            page=page,
+            per_page=per_page,
         )
 
     @staticmethod
-    def get_mission_details(mission_id) -> Mission:
+    def get_mission_details(current_user, mission_id) -> Mission:
         """Return mission details."""
+        MissionService._require_agent_or_manager(current_user)
+
         mission = MissionRepository.get_by_id(mission_id)
         if not mission:
             raise NotFoundError("Mission not found.")
+
+        MissionService._require_agent_assignment_if_agent(current_user, mission)
         return mission
 
     @staticmethod
@@ -161,7 +204,7 @@ class MissionService:
         """Update editable mission fields."""
         MissionService._require_admin_or_responsable(current_user)
 
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService.get_mission_details(current_user, mission_id)
 
         service_ids = payload.get("service_ids", [])
         assigned_user_ids = payload.get("assigned_user_ids", [])
@@ -205,8 +248,7 @@ class MissionService:
     def update_status(current_user, mission_id, new_status: str) -> Mission:
         """Update mission status according to business rules."""
         MissionService._require_agent_or_manager(current_user)
-        mission = MissionService.get_mission_details(mission_id)
-        MissionService._require_agent_assignment_if_agent(current_user, mission)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
 
         if new_status == MISSION_STATUS_IN_PROGRESS:
             if mission.status != MISSION_STATUS_TO_DO:
@@ -222,8 +264,13 @@ class MissionService:
     def update_actual_duration(current_user, mission_id, actual_duration: float) -> Mission:
         """Update the actual duration."""
         MissionService._require_agent_or_manager(current_user)
-        mission = MissionService.get_mission_details(mission_id)
-        MissionService._require_agent_assignment_if_agent(current_user, mission)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
+
+        MissionService._require_mission_status(
+            mission,
+            (MISSION_STATUS_IN_PROGRESS, MISSION_STATUS_REMARK_PENDING_VALIDATION),
+            "update actual duration",
+        )
 
         if actual_duration <= 0:
             raise ValidationError("Actual duration must be greater than zero.")
@@ -236,11 +283,9 @@ class MissionService:
     def add_remark(current_user, mission_id, remark: str) -> Mission:
         """Add an assigned agent or responsable remark and apply business effects."""
         if current_user.role.name not in (AGENT_ROLE, RESPONSABLE_ROLE):
-            raise AuthorizationError(
-                "Only an assigned agent or responsable can add a remark."
-            )
+            raise AuthorizationError("Only an assigned agent or responsable can add a remark.")
 
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
 
         if not MissionService._is_user_assigned_to_mission(current_user, mission):
             raise AuthorizationError("Only assigned users can add a remark.")
@@ -248,11 +293,15 @@ class MissionService:
         if mission.remark:
             raise ConflictError("A remark already exists for this mission.")
 
+        MissionService._require_mission_status(
+            mission, (MISSION_STATUS_IN_PROGRESS,), "add a remark"
+        )
+
         mission.add_remark(remark, current_user.id)
         mission.update_status(MISSION_STATUS_REMARK_PENDING_VALIDATION)
         MissionRepository.update()
         return mission
-    
+
     @staticmethod
     def _validate_estimated_duration(estimated_duration) -> None:
         """Ensure the planned mission duration is at least one hour."""
@@ -263,7 +312,7 @@ class MissionService:
     def validate_mission(current_user, mission_id) -> Mission:
         """Validate a mission containing a remark."""
         MissionService._require_admin_or_responsable(current_user)
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
 
         if not mission.remark:
             raise ValidationError("Mission validation requires an existing remark.")
@@ -283,17 +332,17 @@ class MissionService:
     def complete_mission(current_user, mission_id) -> Mission:
         """Complete a mission if business conditions are met."""
         MissionService._require_agent_or_manager(current_user)
-        mission = MissionService.get_mission_details(mission_id)
-        MissionService._require_agent_assignment_if_agent(current_user, mission)
+        mission = MissionService._get_mission_for_workflow(current_user, mission_id)
+
+        MissionService._require_mission_status(
+            mission, (MISSION_STATUS_IN_PROGRESS,), "complete the mission"
+        )
 
         if mission.actual_duration is None:
             raise ValidationError("Actual duration is required before completion.")
 
         if mission.remark and mission.validated_at is None:
             raise ConflictError("Mission remark must be validated before completion.")
-
-        if mission.status == MISSION_STATUS_COMPLETED:
-            raise ConflictError("Mission is already completed.")
 
         mission.complete_mission()
         MissionRepository.update()
@@ -303,5 +352,5 @@ class MissionService:
     def delete_mission(current_user, mission_id) -> None:
         """Delete a mission in an exceptional way."""
         MissionService._require_admin_or_responsable(current_user)
-        mission = MissionService.get_mission_details(mission_id)
+        mission = MissionService.get_mission_details(current_user, mission_id)
         MissionRepository.delete(mission)

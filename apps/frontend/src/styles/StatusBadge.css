@@ -1,3 +1,13 @@
+/* =============================================================================
+   Mission badges — priority, status, intervention type and services.
+   Used by StatusBadge.jsx (priority/status), MissionList.jsx and
+   MissionDetailPage.jsx (intervention type, services: plain .tag).
+
+   Every border is a darker shade of its badge's fill with at least a 3:1
+   contrast against the white card behind it (WCAG 1.4.11).
+   ============================================================================= */
+
+/* Base shape, also the neutral grey used for services / intervention type. */
 .tag {
   display: inline-flex;
   align-items: center;
@@ -5,19 +15,41 @@
   border-radius: 4px;
   font-size: 0.78rem;
   font-weight: 500;
-  border: 1px solid #d1d9e0;
-  color: #1a2332;
-  background: #ffffff;
+  border: 1px solid #7b8794;
+  color: #1f2933;
+  background: #e9eef2;
 }
 
-.tag--urgente {
+/* ── Color variants ── */
+.tag--urgent {
   background: #f6d1d8;
   border-color: #e5748a;
-  color: #d4183d;
+  color: #b01230;
+}
+
+.tag--to-do {
+  background: #d3dce2;
+  border-color: #6b7f8f;
+  color: #234e70;
+}
+
+.tag--in-progress {
+  background: #a9cbe8;
+  border-color: #4a7fae;
+  color: #234e70;
 }
 
 .tag--validation {
   background: #fdf6b2;
-  border-color: #fcd34d;
+  border-color: #a17c00;
   color: #92400e;
+}
+
+/* Lighter than the active header tab green (#6fa58a): on a white card, that
+   exact green looks darker than it does on the dark blue header. Dark text
+   keeps a ~10:1 contrast ratio. */
+.tag--completed {
+  background: #b7d6c5;
+  border-color: #4a7d63;
+  color: #1a2332;
 }

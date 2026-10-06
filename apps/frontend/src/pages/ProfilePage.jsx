@@ -1,61 +1,29 @@
 // Current user's own profile page: view mode (read-only) toggled with an
 // edit mode that also lets the user optionally change their password.
 import { useState, useEffect, useContext } from "react";
-import { User, Info, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { User, Info } from "lucide-react";
 import Layout from "../components/layout/Layout";
+import ConfirmModal from "../components/common/ConfirmModal";
+import AlertModal from "../components/common/AlertModal";
 import { AuthContext } from "../contexts/AuthContext";
 import { getProfile, updateProfile } from "../api/profileApi";
 import { changePassword } from "../api/authApi";
+import { useFormState } from "../hooks/useFormState";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import PasswordRequirementsModal from "../components/common/PasswordRequirementsModal";
 import PasswordInput from "../components/common/PasswordInput";
+import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
 import "../styles/ProfilePage.css";
 import "../styles/ConfirmModals.css";
 
-function LogoutConfirmModal({ onConfirm, onCancel }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Déconnexion</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">
-          Êtes-vous sûr de vouloir vous déconnecter ?
-        </div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-cancel" onClick={onCancel}>Non</button>
-          <button className="profile-btn-primary" onClick={onConfirm}>Oui</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AlertModal({ message, onClose }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Attention</span>
-          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">{message}</div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-confirm-primary" onClick={onClose}>OK</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ProfilePage() {
-  const { user, logout } = useContext(AuthContext);
+  useDocumentTitle("Profil");
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
 
   const [profile, setProfile] = useState(null);
+  const [profileLoadError, setProfileLoadError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
@@ -63,7 +31,7 @@ function ProfilePage() {
 
   // Single form object covering both profile fields and the optional password
   // change fields, following the same pattern as the mission/user forms.
-  const [form, setForm] = useState({
+  const [form, setForm, setField] = useFormState({
     firstName: "",
     lastName: "",
     email: "",
@@ -74,18 +42,25 @@ function ProfilePage() {
 
   // Load the current user's profile once on mount.
   useEffect(() => {
-    getProfile().then((data) => {
-      setProfile(data);
-      setForm({
-        firstName: data.firstName || "",
-        lastName: data.lastName || "",
-        email: data.email || "",
-        currentPassword: "",
-        password: "",
-        confirmPassword: "",
+    getProfile()
+      .then((data) => {
+        setProfile(data);
+        setForm({
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          email: data.email || "",
+          currentPassword: "",
+          password: "",
+          confirmPassword: "",
+        });
+      })
+      .catch(() => {
+        // A dead session (401) is already handled globally (AuthContext
+        // redirects to /login); this covers other failures (network, 500),
+        // so the page shows something actionable instead of staying blank.
+        setProfileLoadError(true);
       });
-    });
-  }, []);
+  }, [setForm]);
 
   const clearPasswordFields = () => {
     setForm((prevForm) => ({
@@ -113,20 +88,42 @@ function ProfilePage() {
       }
     }
 
+    // Profile fields are always saved first, while the current session is
+    // still guaranteed valid. Changing the password (below) revokes that
+    // same session server-side, so it must always happen last.
+    let updatedProfile;
     try {
-      if (wantsPasswordChange) {
-        await changePassword({
-          currentPassword: form.currentPassword,
-          newPassword: form.password,
-        });
-      }
-      const updatedProfile = await updateProfile(form);
-      setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
+      updatedProfile = await updateProfile(form);
+    } catch (err) {
+      setAlertMessage(err.message || "Impossible d'enregistrer le profil.");
+      return;
+    }
+
+    setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
+
+    if (!wantsPasswordChange) {
       clearPasswordFields();
       setEditing(false);
-    } catch (err) {
-      setAlertMessage(err.message || "Le mot de passe ne respecte pas les critères de sécurité.");
+      return;
     }
+
+    try {
+      await changePassword({
+        currentPassword: form.currentPassword,
+        newPassword: form.password,
+      });
+    } catch (err) {
+      // Profile fields were already saved above, but the password itself
+      // wasn't changed: keep the current session and let the user retry.
+      setAlertMessage(err.message || "Le mot de passe ne respecte pas les critères de sécurité.");
+      return;
+    }
+
+    // The password change just revoked this session's credentials server-side
+    // (access + refresh tokens): no further authenticated request may follow
+    // it. Clear the session locally and send the user back to log in again.
+    await logout();
+    navigate("/login", { replace: true });
   };
 
   // Discards any unsaved changes and resets the form back to the loaded profile.
@@ -142,24 +139,42 @@ function ProfilePage() {
     setEditing(false);
   };
 
-  if (!profile) return null;
+  if (!profile) {
+    if (profileLoadError) {
+      // A dead session (401) is already handled globally (AuthContext
+      // redirects to /login); this covers other failures (network, 500),
+      // so the page shows something actionable instead of a stuck spinner.
+      return (
+        <Layout>
+          <p role="status">
+            Impossible de charger votre profil pour le moment. Veuillez réessayer plus tard.
+          </p>
+        </Layout>
+      );
+    }
+    return (
+      <Layout>
+        <p role="status">Chargement…</p>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       {showLogout && (
-        <LogoutConfirmModal
+        <ConfirmModal
+          title="Déconnexion"
+          message="Êtes-vous sûr de vouloir vous déconnecter ?"
+          cancelLabel="Non"
+          confirmLabel="Oui"
           onConfirm={logout}
           onCancel={() => setShowLogout(false)}
         />
       )}
 
-      {alertMessage && (
-        <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
-      )}
+      {alertMessage && <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />}
 
-      {showPasswordHint && (
-        <PasswordRequirementsModal onClose={() => setShowPasswordHint(false)} />
-      )}
+      {showPasswordHint && <PasswordRequirementsModal onClose={() => setShowPasswordHint(false)} />}
 
       <div className="profile-page">
         <div className="profile-title">
@@ -198,17 +213,11 @@ function ProfilePage() {
 
               <hr className="profile-divider" />
 
-              <div className="profile-actions">
-                <button
-                  className="profile-btn-primary"
-                  onClick={() => setEditing(true)}
-                >
+              <div className="profile-actions profile-actions--center">
+                <button className="profile-btn-primary" onClick={() => setEditing(true)}>
                   Modifier le profil
                 </button>
-                <button
-                  className="profile-btn-cancel"
-                  onClick={() => setShowLogout(true)}
-                >
+                <button className="profile-btn-cancel" onClick={() => setShowLogout(true)}>
                   Déconnexion
                 </button>
               </div>
@@ -217,6 +226,7 @@ function ProfilePage() {
 
           {editing && (
             <form onSubmit={handleSave} autoComplete="off" noValidate>
+              <RequiredFieldsNote />
               <p className="profile-section-title">Informations personnelles</p>
 
               <div className="profile-form-grid">
@@ -238,7 +248,7 @@ function ProfilePage() {
                     id="firstName"
                     className="profile-field-input"
                     value={form.firstName}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, firstName: event.target.value }))}
+                    onChange={(event) => setField("firstName", event.target.value)}
                     required
                   />
                 </div>
@@ -251,7 +261,7 @@ function ProfilePage() {
                     id="lastName"
                     className="profile-field-input"
                     value={form.lastName}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, lastName: event.target.value }))}
+                    onChange={(event) => setField("lastName", event.target.value)}
                     required
                   />
                 </div>
@@ -265,7 +275,7 @@ function ProfilePage() {
                     type="email"
                     className="profile-field-input"
                     value={form.email}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, email: event.target.value }))}
+                    onChange={(event) => setField("email", event.target.value)}
                     required
                   />
                 </div>
@@ -285,7 +295,7 @@ function ProfilePage() {
                     className="profile-field-input"
                     placeholder="Saisir votre mot de passe actuel"
                     value={form.currentPassword}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, currentPassword: event.target.value }))}
+                    onChange={(event) => setField("currentPassword", event.target.value)}
                     autoComplete="current-password"
                     rightIcon={
                       <button
@@ -310,12 +320,7 @@ function ProfilePage() {
                     className="profile-field-input"
                     placeholder="Laisser vide pour conserver l'actuel"
                     value={form.password}
-                    onChange={(event) =>
-                      setForm((prevForm) => ({
-                        ...prevForm,
-                        password: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => setField("password", event.target.value)}
                     autoComplete="new-password"
                     rightIcon={
                       <button
@@ -340,7 +345,7 @@ function ProfilePage() {
                     className="profile-field-input"
                     placeholder="Laisser vide pour conserver l'actuel"
                     value={form.confirmPassword}
-                    onChange={(event) => setForm((prevForm) => ({ ...prevForm, confirmPassword: event.target.value }))}
+                    onChange={(event) => setField("confirmPassword", event.target.value)}
                     autoComplete="new-password"
                     rightIcon={
                       <button
@@ -356,7 +361,7 @@ function ProfilePage() {
                 </div>
               </div>
 
-              <div className="profile-actions">
+              <div className="profile-actions profile-actions--center">
                 <button type="submit" className="profile-btn-primary">
                   Mettre à jour le profil
                 </button>
@@ -372,4 +377,4 @@ function ProfilePage() {
   );
 }
 
-  export default ProfilePage;
+export default ProfilePage;

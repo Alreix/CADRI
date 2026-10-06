@@ -7,9 +7,10 @@ import Layout from "../components/layout/Layout";
 import UserFilters from "../components/user/UserFilters";
 import UserTable from "../components/user/UserTable";
 import { getUsers } from "../api/usersApi";
+import { usePagination } from "../hooks/usePagination";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
-import '../styles/UserManagementPage.css';
-
+import "../styles/UserManagementPage.css";
 
 const items_per_page = 10;
 
@@ -19,11 +20,11 @@ const defaul_filters = {
 };
 
 function UserManagementPage() {
+  useDocumentTitle("Gestion des utilisateurs");
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState(defaul_filters);
-  const [page, setPage] = useState(1);
 
   // Fetch the full user list once on mount.
   useEffect(() => {
@@ -41,14 +42,18 @@ function UserManagementPage() {
 
   const filtered = users.filter((user) => {
     const term = search.toLowerCase();
-    if (term && !user.firstName.toLowerCase().includes(term) && !user.lastName.toLowerCase().includes(term)) return false;
+    if (
+      term &&
+      !user.firstName.toLowerCase().includes(term) &&
+      !user.lastName.toLowerCase().includes(term)
+    )
+      return false;
     if (filters.role && user.role !== filters.role) return false;
     if (filters.service && user.service !== filters.service) return false;
     return true;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / items_per_page));
-  const paginated = filtered.slice((page - 1) * items_per_page, page * items_per_page);
+  const { page, setPage, totalPages, paginated } = usePagination(filtered, items_per_page);
 
   return (
     <Layout>
@@ -61,15 +66,12 @@ function UserManagementPage() {
 
       <div className="search-bar">
         <div className="search-input-wrapper">
-          <Search
-            className="search-input-icon"
-            size={18}
-            aria-hidden="true"
-          />
+          <Search className="search-input-icon" size={18} aria-hidden="true" />
           <input
             type="search"
             className="search-input"
             placeholder="Rechercher des utilisateurs..."
+            aria-label="Rechercher des utilisateurs"
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -88,11 +90,7 @@ function UserManagementPage() {
       </div>
 
       {showFilters && (
-        <UserFilters
-          filters={filters}
-          services={services}
-          onChange={handleFiltersChange}
-        />
+        <UserFilters filters={filters} services={services} onChange={handleFiltersChange} />
       )}
 
       <UserTable users={paginated} />
@@ -111,6 +109,7 @@ function UserManagementPage() {
             key={pageNumber}
             className={`pagination-page ${pageNumber === page ? "pagination-page--active" : ""}`}
             onClick={() => setPage(pageNumber)}
+            aria-current={pageNumber === page ? "page" : undefined}
           >
             {pageNumber}
           </button>

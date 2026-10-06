@@ -4,11 +4,14 @@ import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/layout/AuthLayout";
 import Modal from "../components/common/Modal";
+import PasswordInput from "../components/common/PasswordInput";
 import { AuthContext } from "../contexts/AuthContext";
 import { login as loginApi } from "../api/authApi";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/AuthLayout.css";
 
 function LoginPage() {
+  useDocumentTitle("Connexion");
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
@@ -38,11 +41,7 @@ function LoginPage() {
   return (
     <AuthLayout>
       {modal && (
-        <Modal
-          title={modal.title}
-          message={modal.message}
-          onClose={() => setModal(null)}
-        />
+        <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />
       )}
 
       <div className="auth-card">
@@ -51,7 +50,7 @@ function LoginPage() {
         <form onSubmit={handleSubmit} noValidate>
           <div className="auth-field">
             <label className="auth-label" htmlFor="email">
-              Email<span className="auth-label-required">*</span>
+              Email
             </label>
             <input
               id="email"
@@ -67,11 +66,11 @@ function LoginPage() {
 
           <div className="auth-field">
             <label className="auth-label" htmlFor="password">
-              Mot de passe<span className="auth-label-required">*</span>
+              Mot de passe
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
+              name="password"
               className="auth-input"
               placeholder="••••••••"
               value={password}

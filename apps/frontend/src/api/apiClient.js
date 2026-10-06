@@ -2,24 +2,45 @@
 // Handles attaching the auth token and silently refreshing it on expiry.
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export const ACCESS_TOKEN_STORAGE_KEY = "cadri_access_token";
-
 // Shared in-flight refresh promise: prevents firing multiple parallel
 // /auth/refresh calls if several requests get a 401 at the same time.
 let refreshRequest = null;
 
+// The access token lives only in this module-level variable, never in
+// localStorage/sessionStorage: it's wiped on every reload, which limits what
+// an XSS payload could steal. The refresh token (a separate HTTP-only cookie,
+// see refreshAccessToken below) is what makes the session survive reloads.
+let accessToken = null;
+
 export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  return accessToken;
 }
 
 export function setAccessToken(token) {
   if (token) {
-    localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+    accessToken = token;
   }
 }
 
 export function clearAccessToken() {
-  localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  accessToken = null;
+}
+
+// Registered by AuthContext so this framework-agnostic module can announce a
+// dead session without importing React state directly. AuthContext already
+// imports apiClient, so importing AuthContext back here would create a
+// circular dependency — a plain callback keeps the two decoupled.
+let sessionExpiredHandler = null;
+
+export function setSessionExpiredHandler(handler) {
+  sessionExpiredHandler = handler;
+}
+
+// Clears the access token and tells whoever is listening (AuthContext) that
+// the session is definitively over, so React state stays in sync with it.
+function notifySessionExpired() {
+  clearAccessToken();
+  sessionExpiredHandler?.();
 }
 
 // Merges default headers (JSON content type, Bearer token) with any custom headers.
@@ -59,9 +80,8 @@ async function refreshAccessToken() {
         const data = await parseResponse(response);
 
         if (!response.ok || !data?.access_token) {
-          // Refresh failed: the session is dead, clear everything locally.
-          localStorage.removeItem("cadri_user");
-          clearAccessToken();
+          // Refresh failed: the session is dead.
+          notifySessionExpired();
           return null;
         }
 
@@ -88,11 +108,7 @@ export async function apiRequest(path, options = {}, retryOnUnauthorized = true)
 
   const data = await parseResponse(response);
 
-  if (
-    response.status === 401 &&
-    retryOnUnauthorized &&
-    shouldRefresh(path)
-  ) {
+  if (response.status === 401 && retryOnUnauthorized && shouldRefresh(path)) {
     const refreshedToken = await refreshAccessToken();
 
     if (refreshedToken) {
@@ -103,16 +119,17 @@ export async function apiRequest(path, options = {}, retryOnUnauthorized = true)
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
-      // Refresh didn't help (or wasn't attempted): force logout locally.
-      localStorage.removeItem("cadri_user");
-      clearAccessToken();
+    if (response.status === 401 && shouldRefresh(path)) {
+      // Refresh didn't help (or wasn't attempted): the session is dead.
+      // Auth endpoints (login/logout/refresh) are excluded so a wrong
+      // password on login is never mistaken for an expired session.
+      notifySessionExpired();
     }
 
-      const error = new Error(data?.message || data?.error || "API request failed.");
-      error.status = response.status;
-      throw error;
-    }
-
-    return data;
+    const error = new Error(data?.message || data?.error || data?.msg || "API request failed.");
+    error.status = response.status;
+    throw error;
   }
+
+  return data;
+}

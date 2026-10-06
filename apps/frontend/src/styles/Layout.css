@@ -3,9 +3,9 @@
    ============================================================================= */
 
 :root {
-  --intranet-header-bg:      #234e70;
-  --intranet-nav-active-bg:  #6fa58a;
-  --intranet-sidebar-bg:     #234e70;
+  --intranet-header-bg: #234e70;
+  --intranet-nav-active-bg: #6fa58a;
+  --intranet-sidebar-bg: #234e70;
   --intranet-sidebar-active: #6fa58a;
 }
 
@@ -15,6 +15,26 @@
   flex-direction: column;
   min-height: 100vh;
   background-color: #e9eef2;
+}
+
+/* Hidden off-screen until keyboard-focused, so keyboard users can jump past
+   the header/nav straight to the page content. */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  z-index: 1000;
+  padding: 8px 16px;
+  background: #234e70;
+  color: #ffffff;
+  border-radius: 0 0 6px 6px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.skip-link:focus {
+  top: 0;
 }
 
 /* ── Header ── */
@@ -34,17 +54,23 @@
 .intranet-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.125rem;
+  gap: 3px;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.02em;
   margin-right: auto;
 }
 
+/* Fits inside the 56px header. The negative margins cancel the transparent
+   padding baked into logo.png (~30% of its width on the left, ~23% on the
+   right), which otherwise pushes the logo away from the edge and from the
+   "CADRI" text. */
 .intranet-logo-image {
-  height: 70px;
-  width: 70px;
+  height: 48px;
+  width: 48px;
+  margin-left: -14px;
+  margin-right: -4px;
   object-fit: contain;
   display: block;
   flex-shrink: 0;
@@ -68,16 +94,16 @@
 .intranet-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .intranet-nav-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 8px 12px;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: #cdd8e3;
   text-decoration: none;
@@ -85,7 +111,9 @@
   border: none;
   background: none;
   cursor: pointer;
-  transition: background-color 150ms, color 150ms;
+  transition:
+    background-color 150ms,
+    color 150ms;
   white-space: nowrap;
 }
 
@@ -225,7 +253,9 @@
   background: none;
   cursor: pointer;
   width: 100%;
-  transition: background-color 150ms, color 150ms;
+  transition:
+    background-color 150ms,
+    color 150ms;
 }
 
 .sidebar-link:hover {
@@ -258,12 +288,14 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .intranet-hamburger {
-    display: block;
+  .intranet-header {
+    padding: 0 12px;
+    gap: 8px;
   }
 
-  .intranet-logo {
-    margin-right: auto;
+  .intranet-hamburger {
+    display: block;
+    padding: 4px;
   }
 
   .intranet-nav {

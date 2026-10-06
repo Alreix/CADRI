@@ -8,7 +8,6 @@ from app.facades.user_facade import UserFacade
 from app.repositories.user_repository import UserRepository
 from app.utils.exceptions import AppError, NotFoundError, ValidationError
 
-
 me_ns = Namespace("me", description="Current user profile operations")
 
 update_me_model = me_ns.model(

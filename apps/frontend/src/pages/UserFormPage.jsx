@@ -1,42 +1,20 @@
-// Single form used for creating, viewing and editing a user (mode="create" | "view" | "edit").
-// Same "mode" pattern as MissionFormPage: one component, fields become
-// read-only inputs in "view" mode instead of duplicating three near-identical forms.
+// Single page used for creating, viewing and editing a user (mode="create" | "view" | "edit").
+// Same "mode" pattern as MissionFormPage: one component instead of three near-identical
+// pages. "view" mode shows the information as plain text, like ProfilePage does.
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Trash2, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Layout from "../components/layout/Layout";
+import ConfirmModal from "../components/common/ConfirmModal";
+import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
+import AlertModal from "../components/common/AlertModal";
 import { AuthContext } from "../contexts/AuthContext";
 import { getUser, createUser, updateUser, deleteUser } from "../api/usersApi";
 import { getRoles, getServices } from "../api/metadataApi";
+import { useMetadataOptions } from "../hooks/useMetadataOptions";
+import { useFormState } from "../hooks/useFormState";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/ConfirmModals.css";
-
-function DeleteConfirmModal({ onConfirm, onCancel }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Supprimer l'utilisateur</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">
-          Êtes-vous sûr de vouloir supprimer cet utilisateur ?
-          Cette action ne peut pas être annulée.
-        </div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-cancel" onClick={onCancel}>Non, conserver</button>
-          <button
-            className="confirm-modal-confirm-danger"
-            onClick={onConfirm}
-          >
-            Oui, supprimer
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function UserFormPage({ mode = "create" }) {
   const { id } = useParams();
@@ -45,16 +23,20 @@ function UserFormPage({ mode = "create" }) {
 
   const isAdmin = currentUser?.role === "admin";
   const isManager = currentUser?.role === "responsable";
-  const [serviceOptions, setServiceOptions] = useState([]);
+
+  const [serviceOptions] = useMetadataOptions(getServices, []);
 
   // Hardcoded fallback roles, replaced by the backend list once it loads.
-  const [roleOptionsSource, setRoleOptionsSource] = useState([
-    { value: "agent", label: "Agent" },
-    { value: "responsable", label: "Responsable" },
-    { value: "admin", label: "Admin" },
-  ]);
+  const [roleOptionsSource] = useMetadataOptions(
+    () => getRoles().then((data) => data.map((role) => ({ value: role.value, label: role.label }))),
+    [
+      { value: "agent", label: "Agent" },
+      { value: "responsable", label: "Responsable" },
+      { value: "admin", label: "Admin" },
+    ],
+  );
 
-  const [form, setForm] = useState({
+  const [form, setForm, setField] = useFormState({
     // A "responsable" creating a user can only create agents (see backend rules),
     // so the role is pre-filled and locked to "agent" for them.
     role: isManager ? "agent" : "",
@@ -69,26 +51,11 @@ function UserFormPage({ mode = "create" }) {
   const [loadedRoleLabel, setLoadedRoleLabel] = useState("");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Loads reference data (services, roles) and, in view/edit mode, the target user.
+  // Loads the target user in view/edit mode.
   useEffect(() => {
-    getServices()
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setServiceOptions(data);
-      })
-      .catch(() => {});
-
-    getRoles()
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setRoleOptionsSource(
-            data.map((role) => ({ value: role.value, label: role.label }))
-          );
-        }
-      })
-      .catch(() => {});
-
     if ((mode === "view" || mode === "edit") && id) {
       getUser(id).then((data) => {
         setForm({
@@ -101,7 +68,7 @@ function UserFormPage({ mode = "create" }) {
         setLoadedRoleLabel(data.roleLabel || "");
       });
     }
-  }, [mode, id]);
+  }, [mode, id, setForm]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -119,17 +86,31 @@ function UserFormPage({ mode = "create" }) {
   };
 
   const handleDelete = async () => {
-    await deleteUser(id);
-    navigate("/users");
+    try {
+      await deleteUser(id);
+      navigate("/users");
+    } catch (error) {
+      setShowDeleteModal(false);
+      if (error?.status === 409) {
+        setDeleteError(
+          "Impossible de supprimer cet utilisateur car il a créé une ou plusieurs missions.",
+        );
+      } else {
+        setDeleteError(
+          error?.message && error.message !== "API request failed."
+            ? error.message
+            : "Une erreur est survenue lors de la suppression de l'utilisateur.",
+        );
+      }
+    }
   };
 
   // A "responsable" can never assign the "admin" role, even when editing.
   const roleOptions = isAdmin
     ? roleOptionsSource
     : roleOptionsSource.filter((role) => role.value !== "admin");
-  const selectedServiceLabel = (
-    serviceOptions.find((service) => service.id === form.service)?.label || form.service
-  );
+  const selectedServiceLabel =
+    serviceOptions.find((service) => service.id === form.service)?.label || form.service;
   const selectedRoleLabel =
     loadedRoleLabel ||
     roleOptionsSource.find((role) => role.value === form.role)?.label ||
@@ -141,16 +122,25 @@ function UserFormPage({ mode = "create" }) {
     edit: "Modifier le profil utilisateur",
   };
 
+  useDocumentTitle(titles[mode]);
+
   const isReadOnly = mode === "view";
 
   return (
     <Layout>
       {showDeleteModal && (
-        <DeleteConfirmModal
+        <ConfirmModal
+          title="Supprimer l'utilisateur"
+          message="Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action ne peut pas être annulée."
+          cancelLabel="Non, conserver"
+          confirmLabel="Oui, supprimer"
+          danger
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteModal(false)}
         />
       )}
+
+      {deleteError && <AlertModal message={deleteError} onClose={() => setDeleteError(null)} />}
 
       <div className="user-form-page">
         <button className="back-link" onClick={() => navigate(-1)}>
@@ -158,127 +148,36 @@ function UserFormPage({ mode = "create" }) {
         </button>
 
         <div className="profile-card">
-          <p className="profile-section-title">{titles[mode]}</p>
+          <h1 className="profile-section-title">{titles[mode]}</h1>
 
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="profile-form-grid">
-
-              <div className="profile-field">
-                <label className="profile-field-label" htmlFor="role">
-                  Rôle
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                {isReadOnly || isManager ? (
-                  <input
-                    id="role"
-                    className="profile-field-input"
-                    value={selectedRoleLabel}
-                    readOnly
-                    placeholder={isManager ? "Agent" : ""}
-                  />
-                ) : (
-                  <select
-                    id="role"
-                    className="profile-field-select"
-                    value={form.role}
-                    onChange={(event) => setForm((formData) => ({ ...formData, role: event.target.value }))}
-                    required
-                  >
-                    <option value="" />
-                    {roleOptions.map((roleOption) => (
-                      <option key={roleOption.value} value={roleOption.value}>{roleOption.label}</option>
-                    ))}
-                  </select>
-                )}
+          {isReadOnly ? (
+            <>
+              <div className="profile-info-grid">
+                <div className="profile-info-item">
+                  <span className="profile-info-label">Rôle</span>
+                  <span className="profile-info-value">{selectedRoleLabel}</span>
+                </div>
+                <div className="profile-info-item">
+                  <span className="profile-info-label">Service</span>
+                  <span className="profile-info-value">{selectedServiceLabel}</span>
+                </div>
+                <div className="profile-info-item">
+                  <span className="profile-info-label">Prénom</span>
+                  <span className="profile-info-value">{form.firstName}</span>
+                </div>
+                <div className="profile-info-item">
+                  <span className="profile-info-label">Nom</span>
+                  <span className="profile-info-value">{form.lastName}</span>
+                </div>
+                <div className="profile-info-item profile-info-grid--full">
+                  <span className="profile-info-label">Email</span>
+                  <span className="profile-info-value">{form.email}</span>
+                </div>
               </div>
 
-              <div className="profile-field">
-                <label className="profile-field-label" htmlFor="service">
-                  Service
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                {isReadOnly ? (
-                  <input
-                    id="service"
-                    className="profile-field-input"
-                    value={selectedServiceLabel}
-                    readOnly
-                  />
-                ) : (
-                  <select
-                    id="service"
-                    className="profile-field-select"
-                    value={form.service}
-                    onChange={(event) => setForm((formData) => ({ ...formData, service: event.target.value }))}
-                    required
-                  >
-                    <option value="" />
-                    {serviceOptions.map((service) => (
-                      <option key={service.id} value={service.id}>{service.label}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
+              <hr className="profile-divider" />
 
-              <div className="profile-field">
-                <label className="profile-field-label" htmlFor="firstName">
-                  Prénom
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                <input
-                  id="firstName"
-                  className="profile-field-input"
-                  value={form.firstName}
-                  onChange={(event) => setForm((formData) => ({ ...formData, firstName: event.target.value }))}
-                  readOnly={isReadOnly}
-                  required={!isReadOnly}
-                  placeholder={isReadOnly ? "" : "Jean"}
-                />
-              </div>
-
-              <div className="profile-field">
-                <label className="profile-field-label" htmlFor="lastName">
-                  Nom
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                <input
-                  id="lastName"
-                  className="profile-field-input"
-                  value={form.lastName}
-                  onChange={(event) => setForm((formData) => ({ ...formData, lastName: event.target.value }))}
-                  readOnly={isReadOnly}
-                  required={!isReadOnly}
-                  placeholder={isReadOnly ? "" : "Dupont"}
-                />
-              </div>
-
-              <div className="profile-field profile-form-grid--full">
-                <label className="profile-field-label" htmlFor="email">
-                  Email
-                  {!isReadOnly && <span className="profile-field-required">*</span>}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  className="profile-field-input"
-                  value={form.email}
-                  onChange={(event) => setForm((formData) => ({ ...formData, email: event.target.value }))}
-                  readOnly={isReadOnly}
-                  required={!isReadOnly}
-                  placeholder={isReadOnly ? "" : "jean.dupont@municipality.fr"}
-                />
-              </div>
-            </div>
-
-            {mode === "create" && (
-              <p className="form-note">
-                <strong>Note :</strong> Le compte sera créé sans mot de passe.
-                Un email d'activation sera envoyé automatiquement à l'adresse email de l'utilisateur.
-              </p>
-            )}
-
-            {mode === "view" && (
-              <div className="profile-actions">
+              <div className="profile-actions profile-actions--center">
                 <button
                   type="button"
                   className="profile-btn-primary"
@@ -287,32 +186,143 @@ function UserFormPage({ mode = "create" }) {
                   Modifier le profil utilisateur
                 </button>
               </div>
-            )}
+            </>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate>
+              <RequiredFieldsNote />
+              <div className="profile-form-grid">
+                <div className="profile-field">
+                  <label className="profile-field-label" htmlFor="role">
+                    Rôle
+                    {/* Locked to "agent" for a responsable: nothing to fill in. */}
+                    {!isManager && <span className="profile-field-required">*</span>}
+                  </label>
+                  {isManager ? (
+                    <input
+                      id="role"
+                      className="profile-field-input"
+                      value={selectedRoleLabel}
+                      readOnly
+                      placeholder="Agent"
+                    />
+                  ) : (
+                    <select
+                      id="role"
+                      className="profile-field-select"
+                      value={form.role}
+                      onChange={(event) => setField("role", event.target.value)}
+                      required
+                    >
+                      <option value="" />
+                      {roleOptions.map((roleOption) => (
+                        <option key={roleOption.value} value={roleOption.value}>
+                          {roleOption.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
 
-            {mode === "create" && (
-              <div className="profile-actions">
-                <button type="submit" className="profile-btn-primary" disabled={loading}>
-                  {loading ? "Création…" : "Créer un nouvel utilisateur"}
-                </button>
-              </div>
-            )}
+                <div className="profile-field">
+                  <label className="profile-field-label" htmlFor="service">
+                    Service
+                    <span className="profile-field-required">*</span>
+                  </label>
+                  <select
+                    id="service"
+                    className="profile-field-select"
+                    value={form.service}
+                    onChange={(event) => setField("service", event.target.value)}
+                    required
+                  >
+                    <option value="" />
+                    {serviceOptions.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            {mode === "edit" && (
-              <div className="profile-actions profile-actions--spread">
-                <button type="submit" className="profile-btn-primary" disabled={loading}>
-                  {loading ? "Enregistrement…" : "Valider la modification"}
-                </button>
-                <button
-                  type="button"
-                  className="profile-btn-danger"
-                  onClick={() => setShowDeleteModal(true)}
-                >
-                  <Trash2 size={16} />
-                  Supprimer l'utilisateur
-                </button>
+                <div className="profile-field">
+                  <label className="profile-field-label" htmlFor="firstName">
+                    Prénom
+                    <span className="profile-field-required">*</span>
+                  </label>
+                  <input
+                    id="firstName"
+                    className="profile-field-input"
+                    value={form.firstName}
+                    onChange={(event) => setField("firstName", event.target.value)}
+                    required
+                    placeholder="Jean"
+                  />
+                </div>
+
+                <div className="profile-field">
+                  <label className="profile-field-label" htmlFor="lastName">
+                    Nom
+                    <span className="profile-field-required">*</span>
+                  </label>
+                  <input
+                    id="lastName"
+                    className="profile-field-input"
+                    value={form.lastName}
+                    onChange={(event) => setField("lastName", event.target.value)}
+                    required
+                    placeholder="Dupont"
+                  />
+                </div>
+
+                <div className="profile-field profile-form-grid--full">
+                  <label className="profile-field-label" htmlFor="email">
+                    Email
+                    <span className="profile-field-required">*</span>
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    className="profile-field-input"
+                    value={form.email}
+                    onChange={(event) => setField("email", event.target.value)}
+                    required
+                    placeholder="jean.dupont@municipality.fr"
+                  />
+                </div>
               </div>
-            )}
-          </form>
+
+              {mode === "create" && (
+                <p className="form-note">
+                  <strong>Note :</strong> Le compte sera créé sans mot de passe. Un email
+                  d'activation sera envoyé automatiquement à l'adresse email de l'utilisateur.
+                </p>
+              )}
+
+              {mode === "create" && (
+                <div className="profile-actions profile-actions--center">
+                  <button type="submit" className="profile-btn-primary" disabled={loading}>
+                    {loading ? "Création…" : "Créer un nouvel utilisateur"}
+                  </button>
+                </div>
+              )}
+
+              {mode === "edit" && (
+                <div className="profile-actions profile-actions--center">
+                  <button type="submit" className="profile-btn-primary" disabled={loading}>
+                    {loading ? "Enregistrement…" : "Sauvegarder les modifications"}
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-btn-danger"
+                    onClick={() => setShowDeleteModal(true)}
+                  >
+                    <Trash2 size={16} />
+                    Supprimer l'utilisateur
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
         </div>
       </div>
     </Layout>

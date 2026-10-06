@@ -6,6 +6,9 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, X, UserPlus } from "lucide-react";
 import Layout from "../components/layout/Layout";
+import ConfirmModal from "../components/common/ConfirmModal";
+import AlertModal from "../components/common/AlertModal";
+import RequiredFieldsNote from "../components/common/RequiredFieldsNote";
 import { AuthContext } from "../contexts/AuthContext";
 import { getServices } from "../api/metadataApi";
 import {
@@ -17,6 +20,7 @@ import {
   addMissionRemark,
 } from "../api/missionsApi";
 import { getAssignableUsers } from "../api/usersApi";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../styles/MissionFormPage.css";
 import "../styles/ConfirmModals.css";
 
@@ -45,47 +49,6 @@ const emptyForm = {
   remark: "",
   assignedUsers: [],
 };
-
-function DeleteConfirmModal({ onConfirm, onCancel }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Supprimer la mission</span>
-          <button className="confirm-modal-close" onClick={onCancel} aria-label="Fermer">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">
-          Êtes-vous sûr de vouloir supprimer cette mission ? Cette action ne peut pas être annulée.
-        </div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-cancel" onClick={onCancel}>Non, conserver</button>
-          <button className="confirm-modal-confirm-danger" onClick={onConfirm}>Oui, supprimer</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AlertModal({ message, onClose }) {
-  return (
-    <div className="confirm-modal-overlay" role="dialog" aria-modal="true">
-      <div className="confirm-modal">
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-title">Attention</span>
-          <button className="confirm-modal-close" onClick={onClose} aria-label="Fermer">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="confirm-modal-body">{message}</div>
-        <div className="confirm-modal-footer">
-          <button className="confirm-modal-confirm-primary" onClick={onClose}>OK</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MissionFormPage({ mode = "create" }) {
   const { id } = useParams();
@@ -116,19 +79,23 @@ function MissionFormPage({ mode = "create" }) {
     edit: "Modifier la mission",
   };
 
+  useDocumentTitle(titles[mode]);
+
   // Loads reference data (services, assignable users) and, in edit mode, the
   // mission itself. Assignable users are only fetched for managers since
   // agents can't reassign a mission.
   useEffect(() => {
     const requests = [
-      getServices().then(setServiceOptions).catch(() => { }),
+      getServices()
+        .then(setServiceOptions)
+        .catch(() => {}),
     ];
 
     if (isManager) {
       requests.push(
         getAssignableUsers()
           .then(setAssignableUsers)
-          .catch(() => { })
+          .catch(() => {}),
       );
     }
 
@@ -202,12 +169,24 @@ function MissionFormPage({ mode = "create" }) {
       return;
     }
 
-    if (
-      isAgentEdit &&
-      (!form.actualDuration ||
-        Number(form.actualDuration) <= 0)
-    ) {
+    if (isAgentEdit && (!form.actualDuration || Number(form.actualDuration) <= 0)) {
       setAlertMessage("La durée réelle doit être supérieure à 0.");
+      return;
+    }
+
+    // Whole hours only, at least 1 (the backend enforces the >= 1 part in
+    // MissionService._validate_estimated_duration); the form uses noValidate,
+    // so the input's min/step attributes alone don't block submission.
+    const estimatedDuration = Number(form.estimatedDuration);
+    if (!isAgent && (!Number.isInteger(estimatedDuration) || estimatedDuration < 1)) {
+      setAlertMessage("La durée estimée doit être un nombre entier d'au moins 1 heure.");
+      return;
+    }
+
+    // Business rule: a mission always has at least one assignee. Enforced here
+    // only, the backend accepts an empty assigned_user_ids list.
+    if (isManager && form.assignedUsers.length === 0) {
+      setAlertMessage("Veuillez assigner au moins un utilisateur à la mission.");
       return;
     }
 
@@ -220,32 +199,26 @@ function MissionFormPage({ mode = "create" }) {
         if (!isAgent) {
           await updateMission(id, form);
         }
-        // Only sends the actual-duration update if it actually changed.
+        // Only sends the actual-duration update if it actually changed, and
+        // only while the mission's status allows it — otherwise the backend
+        // rejects it with a 409, and a stale value from before the mission
+        // was completed (or before it started) must never be resubmitted.
         if (
+          canEditActualDuration &&
           form.actualDuration !== "" &&
           String(form.actualDuration) !== String(initialForm.actualDuration)
         ) {
           await updateMissionActualDuration(id, form.actualDuration);
         }
-        if (
-          canAddRemark &&
-          form.remark.trim()
-        ) {
-          await addMissionRemark(
-            id,
-            form.remark.trim()
-          );
+        if (canAddRemark && form.remark.trim()) {
+          await addMissionRemark(id, form.remark.trim());
         }
       } else {
         await createMission(form);
       }
-      navigate(
-        isEdit
-          ? `/missions/${id}`
-          : "/"
-      );
+      navigate(isEdit ? `/missions/${id}` : "/");
     } catch (err) {
-      console.error("Error saving mission:", err);
+      setAlertMessage(err.message || "Impossible d'enregistrer la mission.");
     } finally {
       setSaving(false);
     }
@@ -269,27 +242,27 @@ function MissionFormPage({ mode = "create" }) {
   const isAgentEdit = isEdit && isAgent && !isManager;
   const lockMissionFields = isAgentEdit;
 
-  const isAssignedToMission =
-    (loadedMission?.assignedUsers || []).some(
-      (assignedUserId) =>
-        String(assignedUserId) === String(currentUser?.id)
-    );
+  const isAssignedToMission = (loadedMission?.assignedUsers || []).some(
+    (assignedUserId) => String(assignedUserId) === String(currentUser?.id),
+  );
 
-  // Actual duration follows the manager/agent workflow, while remarks are
-  // limited by the backend to an assigned agent or assigned responsable.
+  // Actual duration can only be touched while the mission is in progress or
+  // has a remark pending validation — matches the backend's own restriction
+  // (MissionService._require_mission_status), for every role including
+  // managers, who used to bypass this check entirely.
+  const isActualDurationEditableStatus = ["in_progress", "remark_pending_validation"].includes(
+    loadedMission?.status,
+  );
+
+  // Remarks are limited by the backend to an assigned agent or assigned responsable.
   const canAgentUpdateTracking =
-    isAgentEdit &&
-    isAssignedToMission &&
-    ["in_progress", "remark_pending_validation"].includes(
-      loadedMission?.status
-    );
+    isAgentEdit && isAssignedToMission && isActualDurationEditableStatus;
 
-  const canEditActualDuration = isManager || canAgentUpdateTracking;
+  const canEditActualDuration =
+    (isManager && isActualDurationEditableStatus) || canAgentUpdateTracking;
 
   const canAgentAddRemark =
-    canAgentUpdateTracking &&
-    loadedMission?.status === "in_progress" &&
-    !loadedMission?.remark;
+    canAgentUpdateTracking && loadedMission?.status === "in_progress" && !loadedMission?.remark;
 
   const canAssignedResponsableAddRemark =
     isResponsable &&
@@ -299,15 +272,21 @@ function MissionFormPage({ mode = "create" }) {
 
   const canAddRemark = canAgentAddRemark || canAssignedResponsableAddRemark;
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <Layout>
+        <p role="status">Chargement…</p>
+      </Layout>
+    );
+  }
 
   // Splits the pool of assignable users into "already assigned" (shown in the
   // table with a remove button) and "not yet assigned" (shown in the add-users panel).
   const assignedUserDetails = assignableUsers.filter((candidate) =>
-    form.assignedUsers.includes(candidate.id)
+    form.assignedUsers.includes(candidate.id),
   );
   const unassignedUsers = assignableUsers.filter(
-    (candidate) => !form.assignedUsers.includes(candidate.id)
+    (candidate) => !form.assignedUsers.includes(candidate.id),
   );
 
   return (
@@ -319,23 +298,26 @@ function MissionFormPage({ mode = "create" }) {
         </button>
 
         {showDeleteModal && (
-          <DeleteConfirmModal
+          <ConfirmModal
+            title="Supprimer la mission"
+            message="Êtes-vous sûr de vouloir supprimer cette mission ? Cette action ne peut pas être annulée."
+            cancelLabel="Non, conserver"
+            confirmLabel="Oui, supprimer"
+            danger
             onConfirm={handleDelete}
             onCancel={() => setShowDeleteModal(false)}
           />
         )}
 
         {alertMessage && (
-          <AlertModal
-            message={alertMessage}
-            onClose={() => setAlertMessage(null)}
-          />
+          <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
         )}
 
         <div className="mission-form-card">
-          <p className="mission-form-title">{titles[mode]}</p>
+          <h1 className="mission-form-title">{titles[mode]}</h1>
 
           <form onSubmit={handleSave} noValidate>
+            <RequiredFieldsNote />
             {/* Titre */}
             <div className="mission-field">
               <label className="mission-field-label" htmlFor="title">
@@ -394,7 +376,9 @@ function MissionFormPage({ mode = "create" }) {
                 >
                   <option value="" />
                   {priorityOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -504,6 +488,8 @@ function MissionFormPage({ mode = "create" }) {
                 type="number"
                 id="estimatedDuration"
                 name="estimatedDuration"
+                min="1"
+                step="1"
                 placeholder="ex : 16"
                 value={form.estimatedDuration}
                 onChange={handleChange}
@@ -548,17 +534,20 @@ function MissionFormPage({ mode = "create" }) {
             {/* Utilisateurs assignés — manager/admin only */}
             {isManager && (
               <div className="mission-field">
-                <label className="mission-field-label">Utilisateurs assignés</label>
+                <label className="mission-field-label">
+                  Utilisateurs assignés
+                  <span className="mission-field-required">*</span>
+                </label>
 
                 {assignedUserDetails.length > 0 && (
                   <div className="mission-users-table-wrapper">
                     <table className="mission-users-table">
                       <thead>
                         <tr>
-                          <th>Nom</th>
-                          <th>Prénom</th>
-                          <th>Service</th>
-                          <th>Action</th>
+                          <th scope="col">Nom</th>
+                          <th scope="col">Prénom</th>
+                          <th scope="col">Service</th>
+                          <th scope="col">Action</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -599,10 +588,10 @@ function MissionFormPage({ mode = "create" }) {
                     <table className="mission-users-table">
                       <thead>
                         <tr>
-                          <th>Nom</th>
-                          <th>Prénom</th>
-                          <th>Service</th>
-                          <th>Assigner</th>
+                          <th scope="col">Nom</th>
+                          <th scope="col">Prénom</th>
+                          <th scope="col">Service</th>
+                          <th scope="col">Assigner</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -672,15 +661,11 @@ function MissionFormPage({ mode = "create" }) {
             <hr className="mission-divider" />
 
             {/* Actions */}
-            <div className={`mission-form-actions${isEdit ? "" : " mission-form-actions--center"}`}>
+            <div className="mission-form-actions mission-form-actions--center">
               <button
                 type="submit"
                 className="profile-btn-primary"
-                disabled={
-                  saving ||
-                  (isAgentEdit &&
-                    !canAgentUpdateTracking)
-                }
+                disabled={saving || (isAgentEdit && !canAgentUpdateTracking)}
               >
                 {saving
                   ? "Enregistrement…"
