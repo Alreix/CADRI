@@ -241,9 +241,16 @@ class UserService:
         UserService._check_user_delete_permissions(current_user)
 
         try:
+            # Lock the active admins before the target row, always in the same
+            # order, so concurrent deletions are serialized instead of racing.
+            active_admin_ids = {admin.id for admin in UserRepository.get_active_admins_for_update()}
+
             user = UserRepository.get_by_id_for_update(user_id)
             if not user:
                 raise NotFoundError("User not found.")
+
+            if user.id in active_admin_ids and len(active_admin_ids) == 1:
+                raise ConflictError("The last active administrator cannot be deleted.")
 
             if MissionRepository.exists_by_creator(user.id):
                 raise ConflictError(

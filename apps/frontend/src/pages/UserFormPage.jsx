@@ -91,7 +91,9 @@ function UserFormPage({ mode = "create" }) {
       navigate("/users");
     } catch (error) {
       setShowDeleteModal(false);
-      if (error?.status === 409) {
+      if (error?.status === 409 && /administrator/i.test(error.message)) {
+        setDeleteError("Impossible de supprimer le dernier administrateur actif.");
+      } else if (error?.status === 409) {
         setDeleteError(
           "Impossible de supprimer cet utilisateur car il a créé une ou plusieurs missions.",
         );

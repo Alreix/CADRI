@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from uuid import UUID
 
 from app.utils.exceptions import ValidationError
 
@@ -20,6 +21,17 @@ def parse_iso_datetime(value, field_name: str) -> datetime:
         return datetime.fromisoformat(value)
     except (TypeError, ValueError) as exc:
         raise ValidationError(f"{field_name} must be a valid ISO datetime.") from exc
+
+
+def is_valid_uuid(value) -> bool:
+    """Return whether a client-provided identifier can be parsed as a UUID."""
+    if isinstance(value, UUID):
+        return True
+    try:
+        UUID(str(value))
+    except (TypeError, ValueError, AttributeError):
+        return False
+    return True
 
 
 def validate_email(email):

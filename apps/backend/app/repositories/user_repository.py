@@ -7,7 +7,10 @@ layers do not duplicate database access code.
 from sqlalchemy import or_
 
 from app.extensions import db
+from app.models.role import Role
 from app.models.user import User
+from app.utils.constants import ADMIN_ROLE
+from app.utils.validators import is_valid_uuid
 
 
 class UserRepository:
@@ -20,14 +23,37 @@ class UserRepository:
 
     @staticmethod
     def get_by_id(user_id):
-        """Return the user with the given primary key, if any."""
+        """Return the user with the given primary key, if any.
+
+        A malformed identifier simply matches no user, so callers answer 404
+        instead of letting the UUID column conversion fail with a 500.
+        """
+        if not is_valid_uuid(user_id):
+            return None
         return db.session.get(User, user_id)
 
     @staticmethod
     def get_by_id_for_update(user_id):
         """Return and lock a user row for serialized security-state changes."""
-
+        if not is_valid_uuid(user_id):
+            return None
         return User.query.populate_existing().filter_by(id=user_id).with_for_update().first()
+
+    @staticmethod
+    def get_active_admins_for_update():
+        """Lock every active admin row, in a stable order to avoid deadlocks.
+
+        Used before deleting a user so two concurrent deletions cannot each
+        see the other admin and remove the last two administrators together.
+        """
+        return (
+            User.query.populate_existing()
+            .join(User.role)
+            .filter(Role.name == ADMIN_ROLE, User.is_active.is_(True))
+            .order_by(User.id)
+            .with_for_update(of=User)
+            .all()
+        )
 
     @staticmethod
     def get_by_email(email):

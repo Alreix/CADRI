@@ -4,11 +4,26 @@ import pytest
 
 from app.utils.exceptions import ValidationError
 from app.utils.validators import (
+    is_valid_uuid,
     parse_integer,
     parse_iso_datetime,
     validate_email,
     validate_password,
 )
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("3f2c8a4e-1b6d-4c1e-9f0a-2d7b5e8c9a10", True),
+        ("not-a-uuid", False),
+        ("", False),
+        (None, False),
+        (42, False),
+    ],
+)
+def test_is_valid_uuid(value, expected):
+    assert is_valid_uuid(value) is expected
 
 
 def test_validate_email_normalizes_email():

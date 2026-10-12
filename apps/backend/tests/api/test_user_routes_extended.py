@@ -235,6 +235,71 @@ def test_non_admin_cannot_delete_user(client, responsable_token, agent_user):
     assert response.status_code == 403
 
 
+def test_admin_cannot_delete_the_last_active_admin(client, admin_token, admin_user):
+    response = client.delete(
+        f"/users/{admin_user.id}",
+        headers=auth_headers(admin_token),
+    )
+
+    assert response.status_code == 409
+    assert response.get_json()["error"] == "The last active administrator cannot be deleted."
+    assert UserRepository.get_by_id(admin_user.id) is not None
+
+
+def test_inactive_admins_do_not_count_as_remaining_admins(
+    client, admin_token, admin_user, user_factory, roles_services
+):
+    user_factory(
+        email="inactive.admin@cadri.test",
+        role=roles_services["admin_role"],
+        is_active=False,
+    )
+
+    response = client.delete(
+        f"/users/{admin_user.id}",
+        headers=auth_headers(admin_token),
+    )
+
+    assert response.status_code == 409
+    assert UserRepository.get_by_id(admin_user.id) is not None
+
+
+def test_admin_can_delete_an_admin_when_another_active_admin_remains(
+    client, admin_token, user_factory, roles_services
+):
+    other_admin = user_factory(
+        email="other.admin@cadri.test",
+        role=roles_services["admin_role"],
+    )
+
+    response = client.delete(
+        f"/users/{other_admin.id}",
+        headers=auth_headers(admin_token),
+    )
+
+    assert response.status_code == 200
+    assert UserRepository.get_by_id(other_admin.id) is None
+
+
+def test_malformed_user_id_returns_404_instead_of_500(client, admin_token, roles_services):
+    headers = auth_headers(admin_token)
+    update_payload = {
+        "first_name": "Jean",
+        "last_name": "Dupont",
+        "email": "jean.dupont@cadri.test",
+        "role": "agent",
+        "service_id": str(roles_services["roads_id"]),
+    }
+
+    responses = [
+        client.get("/users/not-a-uuid", headers=headers),
+        client.patch("/users/not-a-uuid", json=update_payload, headers=headers),
+        client.delete("/users/not-a-uuid", headers=headers),
+    ]
+
+    assert [response.status_code for response in responses] == [404, 404, 404]
+
+
 def test_assignable_users_only_return_active_agents_and_responsables(
     client,
     admin_token,
