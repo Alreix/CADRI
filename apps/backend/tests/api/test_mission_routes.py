@@ -147,6 +147,49 @@ def test_create_mission_requires_at_least_one_service(
     assert response.status_code == 400
 
 
+def test_create_mission_requires_at_least_one_assigned_user(
+    client,
+    admin_access_token,
+    roles_services,
+):
+    payload = mission_payload(
+        service_ids=[str(roles_services["roads_id"])],
+        assigned_user_ids=[],
+    )
+
+    response = client.post(
+        "/missions",
+        headers=auth_headers(admin_access_token),
+        json=payload,
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "At least one user must be assigned to the mission."
+
+
+def test_update_mission_cannot_remove_every_assigned_user(
+    client,
+    admin_access_token,
+    roles_services,
+    agent_user,
+):
+    mission = create_mission(client, admin_access_token, roles_services, agent_user)
+    payload = mission_payload(
+        service_ids=[str(roles_services["roads_id"])],
+        assigned_user_ids=[],
+    )
+
+    response = client.patch(
+        f"/missions/{mission['id']}",
+        headers=auth_headers(admin_access_token),
+        json=payload,
+    )
+
+    assert response.status_code == 400
+    details = client.get(f"/missions/{mission['id']}", headers=auth_headers(admin_access_token))
+    assert [user["id"] for user in details.get_json()["assignments"]] == [str(agent_user.id)]
+
+
 def test_create_mission_rejects_invalid_date_order(
     client,
     admin_access_token,

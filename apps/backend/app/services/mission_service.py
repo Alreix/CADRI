@@ -103,7 +103,11 @@ class MissionService:
 
     @staticmethod
     def _validate_assignable_users(user_ids: list[str]) -> None:
-        """Ensure assigned users exist, are active, and have assignable roles."""
+        """Ensure at least one user is assigned, and that each one exists, is
+        active and has an assignable role."""
+        if not user_ids:
+            raise ValidationError("At least one user must be assigned to the mission.")
+
         for user_id in user_ids:
             user = UserRepository.get_by_id(user_id)
             if not user:

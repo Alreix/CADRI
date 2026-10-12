@@ -183,8 +183,8 @@ function MissionFormPage({ mode = "create" }) {
       return;
     }
 
-    // Business rule: a mission always has at least one assignee. Enforced here
-    // only, the backend accepts an empty assigned_user_ids list.
+    // Business rule: a mission always has at least one assignee. Checked here for
+    // a clear message; the backend rejects an empty list too.
     if (isManager && form.assignedUsers.length === 0) {
       setAlertMessage("Veuillez assigner au moins un utilisateur à la mission.");
       return;
