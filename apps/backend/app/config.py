@@ -17,6 +17,12 @@ class BaseConfig:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Flask-RESTX only hands exceptions over to the app-level error handlers
+    # when this is on, and otherwise only enables it in debug/testing. Without
+    # it, the 401 handlers registered by flask_jwt_extended never run in
+    # production: a missing, expired or revoked token becomes a 500.
+    PROPAGATE_EXCEPTIONS = True
+
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
     MAIL_SERVER = os.getenv("MAIL_SERVER", "mailpit")
